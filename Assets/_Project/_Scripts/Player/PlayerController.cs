@@ -1,9 +1,43 @@
+using System.Collections; // 코루틴 사용
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerController : MonoBehaviour
 {
+    #region [ Input ]
+    public enum InputMode { Toggle, Hold }
+
+    // [하이브리드 아키텍처 핵심] 의도(Intent) 버퍼 구조체
+    // 하드웨어 입력 이벤트는 오직 이 버퍼의 값만 갱신하며, 로직 처리는 하지 않습니다.
+    private struct InputIntent
+    {
+        public Vector2 moveInput;
+        public Vector2 lookInput;
+        
+        public bool aimHeld;
+        public bool aimTriggered;
+        
+        public bool dashHeld;
+        public bool dashTriggered;
+        
+        public bool rollTriggered;
+        
+        // 매 프레임 파이프라인 처리가 끝나면 단발성 트리거를 초기화합니다.
+        public void ResetTriggers()
+        {
+            aimTriggered = false;
+            dashTriggered = false;
+            rollTriggered = false;
+        }
+    }
+
+    private PlayerInputActions inputActions;
+    // 의도 버퍼 인스턴스
+    private InputIntent intent;
+    #endregion
+
+
     #region [ Components & References ]
     private Rigidbody rb;
     
@@ -14,27 +48,34 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private TPSCameraController tpsCamera;
     #endregion
 
-    #region [ Input Actions ]
-    // TODO: Input Action System 파일을 아예 연동시키는 방안으로 생각
-
-    [Header("입력 설정 (New Input System)")]
-    public InputAction moveAction;
-    public InputAction lookAction; // 마우스 움직임(Delta) 감지용
-
-    [Tooltip("우클릭 조준 토글 입력")]
-    public InputAction aimAction; // 신규: 조준 액션
-    #endregion
-
     #region [ Settings & State ]
     [Header("이동 및 회전 설정")]
     [SerializeField] private float rotationSpeed = 12f;
-    
-    // 현재 플레이어의 상태 플래그 (추후 US-1.02 연계)
-    public bool isAiming { get; private set; } = false;
-    
-    private Vector2 currentMoveInput;
-    private Vector2 currentLookInput;
+
+    [Header("입력 모드 설정 (Inspector)")]
+    [SerializeField] private InputMode aimMode = InputMode.Toggle;
+    [SerializeField] private InputMode dashMode = InputMode.Hold;
+
+    // 강제 취소 시, 키를 뗐다가 다시 누르기 전까지 입력을 막는 락(Lock)
+    private bool aimRequiresRepress = false;
+    private bool dashRequiresRepress = false;
+
+    // 구르기 시전 시 향할 고정된 전방 벡터
+    private Vector3 rollDirection;
     #endregion
+
+    // Input Action System 파일을 아예 연동시켰기에 제거
+    // #region [ Input Actions ]
+    // [Header("입력 설정 (New Input System)")]
+    // public InputAction moveAction;
+    // public InputAction lookAction; // 마우스 움직임(Delta) 감지용
+    // [Tooltip("우클릭 조준 토글 입력")]
+    // public InputAction aimAction; // 신규: 조준 액션
+    // [Tooltip("Shift 대쉬(달리기) 입력 (Hold 방식)")]
+    // public InputAction dashAction; // 신규: 대쉬 액션
+    // [Tooltip("Space 구르기 입력")]
+    // public InputAction rollAction; // 신규: 구르기 액션
+    // #endregion
 
     private void Awake()
     {
@@ -46,67 +87,278 @@ public class PlayerController : MonoBehaviour
             
         if (tpsCamera == null && cameraTransform != null)
             tpsCamera = cameraTransform.GetComponent<TPSCameraController>();
+        
+        inputActions = new PlayerInputActions();
+        RegisterInputCallbacks();
     }
 
-    private void OnEnable()
-    {
-        moveAction.Enable();
-        lookAction.Enable();
-        aimAction.Enable();
-    }
+    private void OnEnable() => inputActions.Enable();
+    private void OnDisable() => inputActions.Disable();
 
-    private void OnDisable()
+    // 1단계: 하드웨어 이벤트를 받아 의도(Intent)만 캐싱하는 등록부
+    private void RegisterInputCallbacks()
     {
-        moveAction.Disable();
-        lookAction.Disable();
-        aimAction.Disable();
+        // 이동 & 회전 (연속 데이터)
+        inputActions.Player.Move.performed += ctx => intent.moveInput = ctx.ReadValue<Vector2>();
+        inputActions.Player.Move.canceled += ctx => intent.moveInput = Vector2.zero;
+
+        inputActions.Player.Look.performed += ctx => intent.lookInput = ctx.ReadValue<Vector2>();
+        inputActions.Player.Look.canceled += ctx => intent.lookInput = Vector2.zero;
+
+        // 조준
+        inputActions.Player.Aim.started += ctx => { intent.aimTriggered = true; intent.aimHeld = true; };
+        inputActions.Player.Aim.canceled += ctx => intent.aimHeld = false;
+
+        // 대쉬
+        inputActions.Player.Dash.started += ctx => { intent.dashTriggered = true; intent.dashHeld = true; };
+        inputActions.Player.Dash.canceled += ctx => intent.dashHeld = false;
+
+        // 구르기
+        inputActions.Player.Roll.started += ctx => intent.rollTriggered = true;
     }
 
     private void Update()
     {
-        HandleInput();
-        HandleRotation(); // 시각적 회전은 Update
+        HandleStatePipeline(); // 2단계: 중앙 파이프라인에서 상태 처리
+        HandleRotation();      // 3단계: 시각적 회전 처리
+        intent.ResetTriggers(); // 4단계: 처리된 단발성 트리거 초기화
     }
 
     private void FixedUpdate()
     {
-        HandleMovement(); // 물리적 이동은 FixedUpdate
+        HandleMovement();      // 5단계: 물리적 이동 처리
     }
 
-    private void HandleInput()
+    // [핵심] 2단계: 캐싱된 Intent를 바탕으로 상태 우선순위와 정책을 결정하는 파이프라인
+    private void HandleStatePipeline()
     {
-        // 1. WASD 이동 입력
-        currentMoveInput = moveAction.ReadValue<Vector2>();
-        
-        // 2. 마우스 델타(움직임 변화량) 입력
-        currentLookInput = lookAction.ReadValue<Vector2>();
-
-        // 마우스가 움직였다면 TPS 카메라에 회전 명령 전달
-        if (currentLookInput.sqrMagnitude > 0.01f && tpsCamera != null)
+        // 0. 카메라 회전은 어떤 상태든 허용
+        if (intent.lookInput.sqrMagnitude > 0.01f && tpsCamera != null)
         {
-            tpsCamera.RotateCamera(currentLookInput);
+            tpsCamera.RotateCamera(intent.lookInput);
         }
 
-        // 3. 조준 상태 토글 (버튼이 눌린 프레임에만 작동)
-        if (aimAction.WasPressedThisFrame())
-        {
-            isAiming = !isAiming; // 상태 반전
+        // 1. Repress Lock 해제: 물리적으로 키를 완전히 뗐다면 락을 풀어줌
+        if (!intent.aimHeld) aimRequiresRepress = false;
+        if (!intent.dashHeld) dashRequiresRepress = false;
 
-            if (tpsCamera != null)
+        // 2. 구르기 진행 중일 때의 예외 처리 (최우선순위 상태)
+        if (PlayerStatManager.Instance.IsRolling)
+        {
+            // 구르기 도중 키를 누르면 무시하고 Repress 락을 걸어, 구르기가 끝난 뒤 오발동 방지
+            if (intent.dashTriggered) dashRequiresRepress = true;
+            if (intent.aimTriggered) aimRequiresRepress = true;
+
+            // [정책] 구르기 도중 조준(Hold) 키를 뗐다면, 시각적 조준은 유지되더라도 내부 상태는 즉시 해제해둠
+            if (aimMode == InputMode.Hold && !intent.aimHeld && PlayerStatManager.Instance.IsAiming)
             {
-                tpsCamera.SetAimState(isAiming); // 카메라 줌인/아웃 전달
+                StopAim();
+            }
+            
+            return; // 다른 모든 액션 검사 중지
+        }
+
+        // 3. 구르기 시작 처리 (가장 높은 권한의 액션)
+        if (intent.rollTriggered)
+        {
+            Vector3 desiredRollDir = transform.forward; 
+
+            // 조준 중일 때 이동 입력이 있다면 그 방향으로 구름
+            if (PlayerStatManager.Instance.IsAiming && intent.moveInput.magnitude >= 0.1f)
+            {
+                Vector3 camPlanarForward = Quaternion.Euler(0, cameraTransform.eulerAngles.y, 0) * Vector3.forward;
+                Vector3 camPlanarRight = Quaternion.Euler(0, cameraTransform.eulerAngles.y, 0) * Vector3.right;
+                desiredRollDir = (camPlanarForward * intent.moveInput.y + camPlanarRight * intent.moveInput.x).normalized;
             }
 
-            // TODO: [Animation] 조준/비조준 애니메이션 상태 전환 (CrossFade 또는 Bool 파라미터)
-            // TODO: [UI] 조준 시 화면 중앙에 크로스헤어(Crosshair) 활성화
+            if (PlayerStatManager.Instance.TryStartRoll())
+            {
+                // [정책] 대쉬 중 구르기 시 대쉬 강제 취소 및 Repress 요구
+                if (PlayerStatManager.Instance.IsDashing)
+                {
+                    StopDash();
+                    dashRequiresRepress = true;
+                }
+                
+                // TODO: [Weapon] 사격 중단 (충전, 연사 취소) 로직 호출 예정
+
+                StartCoroutine(RollRoutine(desiredRollDir));
+                return; // 구르기를 시작한 프레임에는 대쉬/조준 진입을 무시함
+            }
         }
 
-        // TODO: [Input] 마우스 우클릭 입력 시 isAiming 상태 토글 로직 추가 예정 (US-1.02)
+        // 4. 대쉬 및 조준 처리 (상호 배제)
+        bool startDashIntended = false;
+        bool startAimIntended = false;
+
+        // 대쉬 의도 파악
+        if (!dashRequiresRepress)
+        {
+            if (dashMode == InputMode.Toggle && intent.dashTriggered)
+            {
+                if (PlayerStatManager.Instance.IsDashing) StopDash();
+                else startDashIntended = true;
+            }
+            else if (dashMode == InputMode.Hold)
+            {
+                if (intent.dashHeld && !PlayerStatManager.Instance.IsDashing) startDashIntended = true;
+                else if (!intent.dashHeld && PlayerStatManager.Instance.IsDashing) StopDash();
+            }
+        }
+
+        // 조준 의도 파악
+        if (!aimRequiresRepress)
+        {
+            if (aimMode == InputMode.Toggle && intent.aimTriggered)
+            {
+                if (PlayerStatManager.Instance.IsAiming) StopAim();
+                else startAimIntended = true;
+            }
+            else if (aimMode == InputMode.Hold)
+            {
+                if (intent.aimHeld && !PlayerStatManager.Instance.IsAiming) startAimIntended = true;
+                else if (!intent.aimHeld && PlayerStatManager.Instance.IsAiming) StopAim();
+            }
+        }
+
+        // 5. 실제 상태 전이 (Conflict Resolution)
+        if (startDashIntended) StartDash();
+        if (startAimIntended) StartAim();
     }
+
+    #region [ Action Executors ]
+    private void StartDash()
+    {
+        if (PlayerStatManager.Instance.TryStartDash())
+        {
+            // [정책] 대쉬 진입 시 조준 상태 강제 해제 및 재입력 요구
+            if (PlayerStatManager.Instance.IsAiming)
+            {
+                StopAim();
+                aimRequiresRepress = true;
+            }
+        }
+    }
+
+    private void StopDash()
+    {
+        PlayerStatManager.Instance.StopDash();
+    }
+
+    private void StartAim()
+    {
+        // [정책] 조준 진입 시 대쉬 상태 강제 해제 및 재입력 요구
+        if (PlayerStatManager.Instance.IsDashing)
+        {
+            StopDash();
+            dashRequiresRepress = true;
+        }
+
+        // 매니저에게 상태 전이 요청
+        if (PlayerStatManager.Instance.TryStartAim())
+        {
+            if (tpsCamera != null) tpsCamera.SetAimState(true);
+        }
+    }
+
+    private void StopAim()
+    {
+        // 매니저에게 상태 해제 요청
+        PlayerStatManager.Instance.StopAim();
+        if (tpsCamera != null) tpsCamera.SetAimState(false);
+    }
+    #endregion
+
+
+    // private void HandleInput()
+    // {
+    //     // 1. WASD 이동 입력
+    //     currentMoveInput = moveAction.ReadValue<Vector2>();
+        
+    //     // 2. 마우스 델타(움직임 변화량) 입력
+    //     currentLookInput = lookAction.ReadValue<Vector2>();
+
+    //     // 마우스가 움직였다면 TPS 카메라에 회전 명령 전달 + 메라 회전은 구르기 중에도 가능하게 허용 (시야 확보)
+    //     if (currentLookInput.sqrMagnitude > 0.01f && tpsCamera != null)
+    //     {
+    //         tpsCamera.RotateCamera(currentLookInput);
+    //     }
+
+    //     // 구르기 중이라면 다른 모든 상태 전환(대쉬, 조준, 중복 구르기)을 막음
+    //     if (PlayerStatManager.Instance.IsRolling) return;
+
+    //     // 3-1. 구르기 입력 처리
+    //     if (rollAction.WasPressedThisFrame())
+    //     {
+    //         //  조준 상태 여부에 따른 구르기 방향 결정 로직
+    //         Vector3 desiredRollDir = transform.forward; // 기본: 현재 캐릭터가 바라보는 정면
+
+    //         if (isAiming && currentMoveInput.magnitude >= 0.1f)
+    //         {
+    //             // 조준 중이고 이동 입력이 있다면, 입력된 방향(WASD)으로 구르기 방향 설정
+    //             Vector3 camPlanarForward = Quaternion.Euler(0, cameraTransform.eulerAngles.y, 0) * Vector3.forward;
+    //             Vector3 camPlanarRight = Quaternion.Euler(0, cameraTransform.eulerAngles.y, 0) * Vector3.right;
+    //             desiredRollDir = (camPlanarForward * currentMoveInput.y + camPlanarRight * currentMoveInput.x).normalized;
+    //         }
+
+    //         // 매니저 허가 시 코루틴에 계산된 방향을 넘겨줌
+    //         if (PlayerStatManager.Instance.TryStartRoll())
+    //         {
+    //             // 조건 만족 시 구르기 타이머 코루틴 시작
+    //             StartCoroutine(RollRoutine(desiredRollDir));
+    //         }
+    //     }
+
+    //     // 3-2. 대쉬 입력 처리 (매니저로 신호만 전달하는 Dumb 역할)
+    //     if (dashAction.WasPressedThisFrame())
+    //     {
+    //         PlayerStatManager.Instance.TryStartDash();
+    //     }
+    //     else if (dashAction.WasReleasedThisFrame())
+    //     {
+    //         PlayerStatManager.Instance.StopDash();
+    //     }
+
+    //     // 3-3. 대쉬 중일 경우 조준 강제 해제 (외부 개입으로 매니저 상태가 풀렸을 때도 즉각 반응)
+    //     if (PlayerStatManager.Instance.IsDashing && isAiming)
+    //     {
+    //         isAiming = false;
+    //         if (tpsCamera != null) tpsCamera.SetAimState(false);
+    //         // TODO: [Weapon] 총기 사격 불가 로직 연계 예정
+    //     }
+
+    //     // 3-4. 조준 상태 토글 (대쉬 중이 아닐 때만 진입 가능, 버튼이 눌린 프레임에만 작동)
+    //     if (aimAction.WasPressedThisFrame())
+    //     {
+    //         if(!PlayerStatManager.Instance.IsDashing)
+    //         {
+    //             isAiming = !isAiming; // 상태 반전
+
+    //             if (tpsCamera != null)
+    //             {
+    //                 tpsCamera.SetAimState(isAiming); // 카메라 줌인/아웃 전달
+    //             }
+    //         }
+
+    //         // TODO: [Animation] 조준/비조준 애니메이션 상태 전환 (CrossFade 또는 Bool 파라미터)
+    //         // TODO: [UI] 조준 시 화면 중앙에 크로스헤어(Crosshair) 활성화
+    //     }
+    // }
 
     private void HandleMovement()
     {
-        if (currentMoveInput.magnitude >= 0.1f)
+        // 구르기 중일 때의 강제 이동 처리
+        if (PlayerStatManager.Instance.IsRolling)
+        {
+            // 속도 = 거리 / 시간 (v = s / t)
+            // 지정한 구르기 길이를 지정한 구르기 시전 시간동안 빠르게 위치이동해야 하므로
+            float rollSpeed = PlayerStatManager.Instance.RollDistance / PlayerStatManager.Instance.RollDuration;
+            rb.linearVelocity = new Vector3(rollDirection.x * rollSpeed, rb.linearVelocity.y, rollDirection.z * rollSpeed);
+            return; // 일반 이동 로직 무시
+        }
+
+        // 일반 이동 로직
+        if (intent.moveInput.magnitude >= 0.1f)
         {
             // ----**짐벌락으로 인해 폐기**----
             // // 카메라 평면(Y축 0) 기준 전방/우측 벡터 도출
@@ -124,8 +376,9 @@ public class PlayerController : MonoBehaviour
             Vector3 camPlanarRight = Quaternion.Euler(0, cameraTransform.eulerAngles.y, 0) * Vector3.right;
 
             // 카메라가 바라보는 방향을 기준으로 한 플레이어의 실제 이동 방향
-            Vector3 moveDirection = (camPlanarForward * currentMoveInput.y + camPlanarRight * currentMoveInput.x).normalized;
+            Vector3 moveDirection = (camPlanarForward * intent.moveInput.y + camPlanarRight * intent.moveInput.x).normalized;
 
+            // 매니저에서 알아서 대쉬 배율이 곱해진 속도를 반환하므로 그대로 사용함
             float moveSpeed = PlayerStatManager.Instance.GetMoveSpeed();
             // TODO: [Stat] 조준 시 이동 속도 페널티를 줄지 여부를 PlayerStatManager와 연계하여 결정
             // if(isAiming) moveSpeed *= 0.5f;
@@ -139,6 +392,9 @@ public class PlayerController : MonoBehaviour
 
     private void HandleRotation()
     {
+        // 구르기 중에는 몸을 틀 수 없음 - 즉, 구를 때의 방향을 그대로 유지하도록 강제
+        if (PlayerStatManager.Instance.IsRolling) return;
+
         // TODO: 자연스러운 연출
         // US-1.01
         //      후에 플레이어의 회전은, 해당 방향으로 회전하는 플레이어의 애니메이션 (예를들어 뒤로 가다가 갑자기 앞으로 틀어버리는 그러한 액션)을 구현해야할 것 같다.
@@ -149,16 +405,17 @@ public class PlayerController : MonoBehaviour
 
 
         // // 카메라 전방 벡터는 두 상태 모두 동일, 다만 조준과 비조준의 차이는 몸이 회전하냐 안하냐의 차이
+        // ----**짐벌락으로 인해 폐기**----
         // Vector3 camForward = cameraTransform.forward;
         // camForward.y = 0f;
         // camForward.Normalize();
 
-        // ----**짐벌락으로 인해 폐기**----
+        
         // 회전 역시 Planar 벡터를 사용하도록 일괄 수정
         Vector3 camPlanarForward = Quaternion.Euler(0, cameraTransform.eulerAngles.y, 0) * Vector3.forward;
 
         // 조준 상태에 따른 회전 방식 분기
-        if (isAiming)
+        if (PlayerStatManager.Instance.IsAiming)
         {
             // 조준 상태: 이동 방향과 무관하게 항상 카메라 전방을 바라봄
             if (camPlanarForward != Vector3.zero)
@@ -170,10 +427,10 @@ public class PlayerController : MonoBehaviour
         else
         {
             // 비조준 상태: 이동하는 방향으로 캐릭터가 몸을 틂
-            if (currentMoveInput.magnitude >= 0.1f)
+            if (intent.moveInput.magnitude >= 0.1f)
             {
                 Vector3 camPlanarRight = Quaternion.Euler(0, cameraTransform.eulerAngles.y, 0) * Vector3.right;
-                Vector3 moveDirection = (camPlanarForward * currentMoveInput.y + camPlanarRight * currentMoveInput.x).normalized;
+                Vector3 moveDirection = (camPlanarForward * intent.moveInput.y + camPlanarRight * intent.moveInput.x).normalized;
 
                 if (moveDirection != Vector3.zero)
                 {
@@ -182,5 +439,20 @@ public class PlayerController : MonoBehaviour
                 }
             }
         }
+    }
+
+    // 구르기 지속 시간을 제어하는 코루틴
+    private IEnumerator RollRoutine(Vector3 dir)
+    {
+        // 시전 순간의 캐릭터 정면을 전달받은 방향으로 고정
+        rollDirection = dir;
+        
+        // TODO: [Animation] 구르기 애니메이션 Trigger 호출 예정
+        
+        // 매니저에 설정된 시간만큼 대기
+        yield return new WaitForSeconds(PlayerStatManager.Instance.RollDuration);
+        
+        // 시간이 끝나면 매니저에게 상태 해제 요청
+        PlayerStatManager.Instance.EndRoll();
     }
 }
