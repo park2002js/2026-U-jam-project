@@ -132,11 +132,23 @@ public class PlayerController : MonoBehaviour
     // [핵심] 2단계: 캐싱된 Intent를 바탕으로 상태 우선순위와 정책을 결정하는 파이프라인
     private void HandleStatePipeline()
     {
-        // 0. 카메라 회전은 어떤 상태든 허용
-        if (intent.lookInput.sqrMagnitude > 0.01f && tpsCamera != null)
+        // 권한 잠금(Lock) 확인 방식으로 비활성화 된 기능들을 확인하고 이를 조정
+        // 0-1. 시점(Look) 잠금 확인
+        if (!PlayerStatManager.Instance.HasLock(PlayerLockFlags.Look))
         {
-            tpsCamera.RotateCamera(intent.lookInput);
+            if (intent.lookInput.sqrMagnitude > 0.01f && tpsCamera != null)
+                tpsCamera.RotateCamera(intent.lookInput);
         }
+
+        // 0-2. 액션(Action) 잠금 확인 (조준, 대쉬, 구르기 등 모든 스킬 행동)
+        if (PlayerStatManager.Instance.HasLock(PlayerLockFlags.Action))
+        {
+            // 액션이 잠겼다면 진행 중인 모든 상태를 즉시 해제
+            if (PlayerStatManager.Instance.IsAiming) StopAim();
+            if (PlayerStatManager.Instance.IsDashing) StopDash();
+            return; // 이후 로직(구르기, 대쉬 트리거 등) 전면 차단
+        }
+
 
         // 1. Repress Lock 해제: 물리적으로 키를 완전히 뗐다면 락을 풀어줌
         if (!intent.aimHeld) aimRequiresRepress = false;
@@ -347,6 +359,13 @@ public class PlayerController : MonoBehaviour
 
     private void HandleMovement()
     {
+        // 이동(Move) 잠금 확인 - 외부 개입으로 인해 플레이어가 움직일 수 없는 상태인지 확인하고 이를 적용
+        if (PlayerStatManager.Instance.HasLock(PlayerLockFlags.Move))
+        {
+            rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
+            return; 
+        }
+
         // 구르기 중일 때의 강제 이동 처리
         if (PlayerStatManager.Instance.IsRolling)
         {
