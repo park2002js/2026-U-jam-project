@@ -2,55 +2,54 @@ using UnityEngine;
 
 public abstract class DefenseBuilding : MonoBehaviour
 {
-    [Header("Building Settings")]
+    public enum ElementType { None, Water, Lightning, Poison, Wind }
+
+    [Header("Base Settings")]
     public string buildingName;
-    public int buildCost;
-    public float maxHealth = 100f;
-    protected float currentHealth;
+    public ElementType myElement;
+    public int baseCost;
 
-    // Grid 연동을 위한 좌표 정보 (GridManager 구현 시 사용)
-    protected Vector2Int gridPosition; 
+    [Header("Level Settings")]
+    protected int currentLevel = 1;
+    protected int maxLevel = 3;
+    
+    protected Vector2Int gridPosition; // 설치된 타일 좌표
 
-    protected virtual void Awake()
-    {
-        currentHealth = maxHealth;
-    }
+    // --- 외부 호출 가능 공통 API ---
 
-    // 건물이 배치될 때 초기화 (GridManager에서 호출 예정)
-    public virtual void Setup(Vector2Int pos)
+    // 최초 설치 시 GridManager 등에 의해 호출
+    public virtual void Initialize(Vector2Int pos)
     {
         gridPosition = pos;
-        Debug.Log($"{buildingName}이(가) {pos} 위치에 건설되었습니다.");
     }
 
-    // 데미지 처리
-    public virtual void TakeDamage(float damage)
+    // 상점 UI 등에서 강화 가능 여부 확인용
+    public bool CanUpgrade()
     {
-        currentHealth -= damage;
-        Debug.Log($"{buildingName} 체력: {currentHealth}/{maxHealth}");
-
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
+        return currentLevel < maxLevel;
     }
 
-    // 파괴 로직
-    protected virtual void Die()
-    {
-        Debug.Log($"{buildingName}이(가) 파괴되었습니다.");
-        // GridManager 연계: 타일 점유 해제 호출
-        // GridManager.Instance.FreeTile(gridPosition); 
-        Destroy(gameObject);
-    }
+    // --- 자식 클래스에서 반드시 구현해야 할 추상 함수 ---
 
-    private void OnDestroy()
+    public abstract string GetUpgradeDescription(); // 강화 설명 텍스트 반환
+    public abstract int GetUpgradeCost();           // 현재 레벨 기준 강화 비용 계산
+    public abstract void ApplyUpgrade();            // 실제 능력치 상승 로직
+
+    // --- 공통 로직 ---
+
+    protected void FreeTileOnDestroy()
     {
-        // Die()를 통하지 않고 에디터나 다른 방식으로 파괴될 때를 대비해 
-        // 여기서도 GridManager의 점유 해제 API를 호출해주는 것이 안전합니다.
+        // 향후 구현될 GridManager/TileManager 연동
         if (GridManager.Instance != null)
         {
-            GridManager.Instance.FreeTileOnDestroy(gridPosition);
+            GridManager.Instance.FreeTile(gridPosition);
+            Debug.Log($"{gridPosition} 타일의 점유가 해제되었습니다.");
         }
+    }
+
+    // 오브젝트 파괴 시(철거 포함) 공통적으로 타일 해제 실행
+    protected virtual void OnDestroy()
+    {
+        FreeTileOnDestroy();
     }
 }
