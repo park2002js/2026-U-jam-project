@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class ArcherTower : DefenseBuilding
@@ -5,13 +6,15 @@ public class ArcherTower : DefenseBuilding
     [Header("Archer Tower Settings")]
     public float attackRange = 5f;
     public float fireRate = 1f;
-    public float attackDamage = 10f; // ✨ 추가: 타워의 기본 공격력 설정
+    public float attackDamage = 10f;
+    public float damageDelay = 0.5f; 
+    
     public GameObject projectilePrefab;
     public Transform firePoint;
     public LayerMask enemyLayer;
 
     [Header("Debug / Test")]
-    public bool isBattlePhase = true; // PhaseManager 구현 전까지 사용할 임시 변수
+    public bool isBattlePhase = true;
 
     private float lastFireTime = 0f;
     private Transform currentTarget;
@@ -22,9 +25,14 @@ public class ArcherTower : DefenseBuilding
         {
             FindClosestEnemy();
 
-            if (currentTarget != null && Time.time >= lastFireTime + fireRate)
+            if (currentTarget != null)
             {
-                Shoot();
+                transform.LookAt(currentTarget);
+
+                if (Time.time >= lastFireTime + fireRate)
+                {
+                    Shoot();
+                }
             }
         }
     }
@@ -50,19 +58,53 @@ public class ArcherTower : DefenseBuilding
 
     private void Shoot()
     {
-        if (projectilePrefab != null && firePoint != null)
+        if (projectilePrefab != null && firePoint != null && currentTarget != null)
         {
-            GameObject projectileObj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
+            Collider targetCollider = currentTarget.GetComponent<Collider>();
+            Vector3 targetCenter = targetCollider != null ? targetCollider.bounds.center : currentTarget.position;
+            Vector3 direction = (targetCenter - firePoint.position).normalized;
             
-            MeshProjectile projectileScript = projectileObj.GetComponent<MeshProjectile>();
-            if (projectileScript != null)
+            // ✨ 1. 타워와 적 사이의 거리를 계산합니다.
+            float distance = Vector3.Distance(firePoint.position, targetCenter);
+
+            if (Physics.Raycast(firePoint.position, direction, out RaycastHit hit, attackRange, enemyLayer))
             {
-                projectileScript.SetElement(myElement);
-                projectileScript.SetTarget(currentTarget);
-                projectileScript.SetDamage(attackDamage); // ✨ 추가: 생성된 투사체에 공격력 전달
+                Enemy targetEnemy = hit.collider.GetComponent<Enemy>();
+                
+                if (targetEnemy != null)
+                {
+                    Debug.Log($"'{targetEnemy.name}' 공격, ({damageDelay}초 후 명중 예정)");
+                    GameObject projectileObj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
+                    MeshProjectile projectileScript = projectileObj.GetComponent<MeshProjectile>();
+
+                    if (projectileScript != null)
+                    {
+                        projectileScript.SetTarget(currentTarget);
+                        
+                        // ✨ 2. 속력 = 거리 / 시간 공식을 적용하여 투사체의 속도를 자동 조절합니다.
+                        // (만약 damageDelay가 0이라면 에러가 나므로, 0보다 클 때만 적용하도록 안전장치 추가)
+                        if (damageDelay > 0)
+                        {
+                            projectileScript.speed = distance / damageDelay;
+                        }
+                    }
+
+                    StartCoroutine(ApplyDamageAfterDelay(targetEnemy, damageDelay));
+                }
             }
-            Debug.Log($"[아처 타워] '{currentTarget.name}'을(를) 향해 투사체 발사 완료!");
+            
             lastFireTime = Time.time;
+        }
+    }
+
+    private IEnumerator ApplyDamageAfterDelay(Enemy enemy, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        if (enemy != null)
+        {
+            enemy.takeDamage(attackDamage);
+            Debug.Log($"피격 후 {delay}초 경과 데미지 적용 완료.");
         }
     }
 
