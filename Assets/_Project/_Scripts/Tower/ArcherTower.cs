@@ -18,6 +18,7 @@ public class ArcherTower : DefenseBuilding
 
     private float lastFireTime = 0f;
     private Transform currentTarget;
+    private bool hasTarget = false;
 
     void Update()
     {
@@ -53,24 +54,26 @@ public class ArcherTower : DefenseBuilding
             }
         }
 
-        if (currentTarget != nearestEnemy)
+        bool foundNew = nearestEnemy != null;
+
+        // ✨ 탐지 상태 변경 로직 수정 (적 파괴를 완벽하게 감지합니다)
+        if (hasTarget && !foundNew)
         {
-            // 1. 타겟이 없었는데 새로 발견했을 때
-            if (currentTarget == null && nearestEnemy != null)
-            {
-                Debug.Log($" 새로운 타겟 포착: '{nearestEnemy.name}'");
-            }
-            // 2. 타겟이 있었는데 사라졌을 때 (죽었거나 사거리 밖으로 도망침)
-            else if (currentTarget != null && nearestEnemy == null)
-            {
-                Debug.Log($"타겟 상실 (처치됨 또는 사거리 이탈)");
-            }
-            // 3. 둘 다 있는데 더 가까운 다른 타겟으로 변경되었을 때
-            else if (currentTarget != null && nearestEnemy != null)
-            {
-                Debug.Log($"타겟 변경: '{currentTarget.name}' -> '{nearestEnemy.name}'");
-            }
+            // 방금 전까지 적이 있었는데, 파괴되어서 주변에 아무도 안 남았을 때
+            Debug.Log("타겟 처치 완료! 새로운 적이 나타날 때까지 탐색을 대기합니다.");
         }
+        else if (!hasTarget && foundNew)
+        {
+            // 아무도 없다가 새로운 적이 나타났을 때
+            Debug.Log($" 새로운 타겟 포착: '{nearestEnemy.name}'");
+        }
+        else if (hasTarget && foundNew && currentTarget != nearestEnemy)
+        {
+            // 기존 적이 파괴되자마자 다른 적을 찾았거나, 더 가까운 적이 나타났을 때
+            Debug.Log($"타겟 파괴(또는 변경)됨! 다음 타겟: '{nearestEnemy.name}'");
+        }
+
+        hasTarget = foundNew;
         currentTarget = nearestEnemy;
     }
 

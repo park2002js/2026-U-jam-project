@@ -407,7 +407,7 @@ MonoBehaviour:
   attackRange: 100
   fireRate: 3
   attackDamage: 10
-  damageDelay: 3
+  damageDelay: 1.5
   projectilePrefab: {fileID: 1647337938470186487, guid: 340ea42483816b3489c8e514856ef483, type: 3}
   firePoint: {fileID: 1751974884}
   enemyLayer:
