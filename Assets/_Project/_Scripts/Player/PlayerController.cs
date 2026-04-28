@@ -22,6 +22,9 @@ public class PlayerController : MonoBehaviour
         public bool dashTriggered;
         
         public bool rollTriggered;
+
+        public bool attackHeld;
+        public bool attackTriggered;
         
         // 매 프레임 파이프라인 처리가 끝나면 단발성 트리거를 초기화합니다.
         public void ResetTriggers()
@@ -29,12 +32,16 @@ public class PlayerController : MonoBehaviour
             aimTriggered = false;
             dashTriggered = false;
             rollTriggered = false;
+            attackTriggered = false;
         }
     }
 
     private PlayerInputActions inputActions;
     // 의도 버퍼 인스턴스
     private InputIntent intent;
+
+    // 좌클릭을 바인딩하기 위한 변수
+    private InputAction manualAttackAction;
     #endregion
 
 
@@ -46,6 +53,11 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Transform cameraTransform;
     [Tooltip("마우스 입력을 전달할 TPS 카메라 컨트롤러")]
     [SerializeField] private TPSCameraController tpsCamera;
+
+    [Header("무기 시스템")]
+    [Tooltip("현재 장착 중인 무기 (인스펙터 할당 또는 EquipWeapon으로 장착)")]
+    [SerializeField] private PlayerEquipments playerEquipments;
+
     #endregion
 
     #region [ Settings & State ]
@@ -115,6 +127,10 @@ public class PlayerController : MonoBehaviour
 
         // 구르기
         inputActions.Player.Roll.started += ctx => intent.rollTriggered = true;
+
+        // 공격
+        inputActions.Player.Attack.started += ctx => { intent.attackTriggered = true; intent.attackHeld = true; };
+        inputActions.Player.Attack.canceled += ctx => intent.attackHeld = false;
     }
 
     private void Update()
@@ -236,6 +252,16 @@ public class PlayerController : MonoBehaviour
         // 5. 실제 상태 전이 (Conflict Resolution)
         if (startDashIntended) StartDash();
         if (startAimIntended) StartAim();
+
+        // 6. 사격 처리 (가장 후순위, 조준 상태일 때만)
+        if (PlayerStatManager.Instance.IsAiming && intent.attackHeld)
+        {
+            // 무기가 뭔지 알 필요 없이, 장비 관리자에게 공격 신호만 위임
+            if (playerEquipments != null)
+            {
+                playerEquipments.ExecuteAttack();
+            }
+        }
     }
 
     #region [ Action Executors ]
@@ -474,4 +500,5 @@ public class PlayerController : MonoBehaviour
         // 시간이 끝나면 매니저에게 상태 해제 요청
         PlayerStatManager.Instance.EndRoll();
     }
+
 }

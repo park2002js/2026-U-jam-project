@@ -69,7 +69,7 @@ public abstract class Enemy : MonoBehaviour
             if (dist <= 10f)
             {
                 // 50 데미지를 입힘
-                takeDamage(1);
+                TakeDamage(1);
 
                 // 콘솔창에 어떤 적이 데미지를 입었는지 출력
                 Debug.Log($"<color=red>[Test]</color> {gameObject.name}가 플레이어 범위(10m)에 진입! 현재 거리: {dist:F2}m / 남은 HP: {hp}");
@@ -228,8 +228,9 @@ public abstract class Enemy : MonoBehaviour
         UpdateTarget();
     }
 
-    public void takeDamage(float damage)
+    public void TakeDamage(int damage)
     {
+        Debug.Log($"적 공격 받음, 남은 체력 {hp}");
         if (isDead) return;
         hp -= damage;
         if (hp <= 0) Die();

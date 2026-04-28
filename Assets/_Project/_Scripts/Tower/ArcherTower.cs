@@ -125,7 +125,7 @@ public class ArcherTower : DefenseBuilding
 
         if (enemy != null)
         {
-            enemy.takeDamage(attackDamage);
+            enemy.TakeDamage((int)attackDamage);
             Debug.Log($"{delay}초 경과 데미지 적용 완료.");
         }
     }
