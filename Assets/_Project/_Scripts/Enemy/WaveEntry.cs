@@ -1,26 +1,30 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 public class WaveEntry : MonoBehaviour
 {
-    public GameObject enemyPrefab; // »ı¼ºÇÒ Àû ÇÁ¸®ÆÕ
-    public int enemyCount = 5; // »ı¼ºÇÒ ÀûÀÇ ¼ö
-    public float spawnInterval = 2.0f; // Àû »ı¼º °£°İ(ÃÊ)
+    public GameObject enemyPrefab; // ìƒì„±í•  ì  í”„ë¦¬íŒ¹
+    public int enemyCount = 5;     // ìƒì„±í•  ì ì˜ ìˆ˜
+    public float spawnInterval = 0.1f; // ì  ìƒì„± ê°„ê²©(ì´ˆ)
 
-    public EnemySpawner spawner; // Àû »ı¼º±â ÂüÁ¶
+    public EnemySpawner spawner;   // ì  ìƒì„±ê¸° ì°¸ì¡°
 
-    public void StartWave() //¿şÀÌºê ½ÃÀÛ ¸Ş¼­µå
+    public void StartWave()
     {
+        // ì½˜ì†”ì°½ì— ìˆ«ìê°€ ì •í™•íˆ ì¶œë ¥ë˜ëŠ”ì§€ í™•ì¸í•˜ëŠ” ë¡œê·¸
+        Debug.Log($"[WaveEntry] ëª…ë ¹ ì „ë‹¬ ì¤‘: ë§ˆë¦¿ìˆ˜ {enemyCount}");
+
         if (BattleManager.Instance != null)
         {
-            BattleManager.Instance.SetTotalEnemies(enemyCount); //battle manager¿¡ ÃÑ Àû ¼ö ¼³Á¤
+            BattleManager.Instance.SetTotalEnemies(enemyCount);
         }
 
         if (spawner != null)
         {
-            spawner.StartSpawning(enemyPrefab, enemyCount, spawnInterval);  //Àû ½ºÆù ½ÃÀÛ
+            spawner.StartSpawning(enemyPrefab, enemyCount, spawnInterval);
         }
     }
 
+    // í…ŒìŠ¤íŠ¸ë¥¼ ìœ„í•´ ê²Œì„ ì‹œì‘ ì‹œ ìë™ìœ¼ë¡œ StartWaveë¥¼ ì‹¤í–‰í•˜ê²Œ í•¨
     private void Start()
     {
         StartWave();

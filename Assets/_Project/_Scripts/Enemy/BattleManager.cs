@@ -1,8 +1,8 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 public class BattleManager : MonoBehaviour
 {
-    public static BattleManager Instance { get; private set; } //battlemanager.Instance·Î ¼ÒÈ¯ °¡´ÉÇÏ°Ô ÇÏ´Â ½Ì±ÛÅæ ÆĞÅÏ
+    public static BattleManager Instance { get; private set; } //battlemanager.Instanceë¡œ ì†Œí™˜ ê°€ëŠ¥í•˜ê²Œ í•˜ëŠ” ì‹±ê¸€í†¤ íŒ¨í„´
 
     private void Awake()
     {
@@ -15,8 +15,8 @@ public class BattleManager : MonoBehaviour
 
     public void SetTotalEnemies(int count)
     {
-        totalEnemies = count; //ÃÑ Àû ¼ö ¼³Á¤
-        currentEnemies = count; //ÇöÀç Àû ¼öµµ ÃÑ Àû ¼ö·Î ÃÊ±âÈ­
-        Debug.Log($"ÀüÅõ ½ÃÀÛ! ÃÑ Àû ¼ö: {totalEnemies}");
+        totalEnemies = count; //ì´ ì  ìˆ˜ ì„¤ì •
+        currentEnemies = count; //í˜„ì¬ ì  ìˆ˜ë„ ì´ ì  ìˆ˜ë¡œ ì´ˆê¸°í™”
+        Debug.Log($"ì „íˆ¬ ì‹œì‘! ì´ ì  ìˆ˜: {totalEnemies}");
     }
 }
