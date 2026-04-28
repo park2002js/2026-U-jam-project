@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using System.Collections;
 
 public class EnemySpawner : MonoBehaviour
@@ -11,38 +11,29 @@ public class EnemySpawner : MonoBehaviour
     [Header("Physics Settings")]
     public LayerMask groundLayer;
 
-    [Header("Test Settings")]
-    public GameObject testEnemyPrefab; // Å¬·¡½º ³»ºÎ·Î ÀÌµ¿µÊ
-
+    [Header("Gizmo Settings")]
     public Color gizmoColor = Color.cyan;
 
-    // 1. °ÔÀÓ ½ÃÀÛ ½Ã È£ÃâµÇ´Â ºÎºĞ (Å¬·¡½º ³»ºÎ·Î ÀÌµ¿µÊ)
-    void Start()
-    {
-        if (testEnemyPrefab != null)
-        {
-            // 2ÃÊ µÚ¿¡ Å×½ºÆ® ¼ÒÈ¯ ½ÃÀÛ
-            Invoke("LaunchTest", 2f);
-        }
-    }
-
-    void LaunchTest()
-    {
-        StartSpawning(testEnemyPrefab, 5, 1.0f);
-    }
+    // [ìˆ˜ì •] Start()ì™€ LaunchTest()ë¥¼ ì œê±°í–ˆìŠµë‹ˆë‹¤. 
+    // ì´ì œ ì™¸ë¶€(WaveEntry)ì—ì„œ ëª…ë ¹ì„ ë‚´ë¦´ ë•Œë§Œ ì ì´ ìƒì„±ë©ë‹ˆë‹¤.
 
     public void StartSpawning(GameObject prefab, int count, float interval)
     {
+        // [ì¤‘ìš”] ì´ì „ ì†Œí™˜ ë£¨í‹´ì´ ëŒê³  ìˆë‹¤ë©´ ë©ˆì¶°ì„œ ì¤‘ë³µ ìƒì„±ì„ ë°©ì§€í•©ë‹ˆë‹¤.
+        StopAllCoroutines();
         StartCoroutine(SpawnRoutine(prefab, count, interval));
     }
 
     private IEnumerator SpawnRoutine(GameObject prefab, int count, float interval)
     {
+        Debug.Log($"[Spawner] ì†Œí™˜ ì‹œì‘: {count}ë§ˆë¦¬");
+
         for (int i = 0; i < count; i++)
         {
             Vector3 spawnPosition = GetRandomPositionIn3DRegion();
             GameObject enemy = Instantiate(prefab, spawnPosition, Quaternion.identity);
 
+            // EnemyControllerê°€ ìˆë‹¤ë©´ í™œì„±í™” (ì—†ì–´ë„ ì—ëŸ¬ ì•ˆ ë‚¨)
             if (enemy.TryGetComponent(out EnemyController controller))
             {
                 controller.ActivateEnemy();
@@ -50,6 +41,8 @@ public class EnemySpawner : MonoBehaviour
 
             yield return new WaitForSeconds(interval);
         }
+
+        Debug.Log("[Spawner] ëª¨ë“  ì  ìƒì„± ì™„ë£Œ");
     }
 
     private Vector3 GetRandomPositionIn3DRegion()
