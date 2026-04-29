@@ -150,15 +150,16 @@ public class EnemySpawner : MonoBehaviour
         Vector3 rayOrigin = transform.position + rotatedOffset + (Vector3.up * 10f);
         Vector3 finalPos = rayOrigin;
 
-        // 아래로 Ray를 쏴서 땅바닥 높이 찾기
-        if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, 20f, groundLayer))
-        {
-            finalPos = hit.point;
-        }
-        else
-        {
-            finalPos.y = transform.position.y;
-        }
+        // // 아래로 Ray를 쏴서 땅바닥 높이 찾기
+        // if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, 20f, groundLayer))
+        // {
+        //     finalPos = hit.point;
+        // }
+        // else
+        // {
+        //     finalPos.y = transform.position.y;
+        // }
+        finalPos.y = transform.position.y;
 
         return finalPos;
     }
