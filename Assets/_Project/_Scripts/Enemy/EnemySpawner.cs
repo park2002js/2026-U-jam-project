@@ -1,8 +1,11 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+using EnemySystem;
 
 public class EnemySpawner : MonoBehaviour
 {
+    public List<Enemy> list;
     [Header("Spawn Area Settings (3D Region)")]
     public float minXOffset = -2f;
     public float maxXOffset = -4f;

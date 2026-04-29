@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-
+using EnemySystem;
 public class WaveEntry : MonoBehaviour
 {
     public GameObject enemyPrefab; // 생성할 적 프리팹
