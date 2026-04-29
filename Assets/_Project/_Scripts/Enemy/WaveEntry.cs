@@ -17,11 +17,6 @@ public class WaveEntry : MonoBehaviour
         {
             BattleManager.Instance.SetTotalEnemies(enemyCount);
         }
-
-        if (spawner != null)
-        {
-            spawner.StartSpawning(enemyPrefab, enemyCount, spawnInterval);
-        }
     }
 
     // 테스트를 위해 게임 시작 시 자동으로 StartWave를 실행하게 함

@@ -11,6 +11,19 @@ public class TPSCameraController : MonoBehaviour
     // 카메라 시점 모드 정의
     public enum CameraViewMode { TPS, TopView }
 
+    #region "임시"
+    [Header("Camera Offset (실시간 튜닝용)")]
+    [Tooltip("평상시 카메라의 위치 (보통 플레이어 머리 위)")]
+    public Vector3 normalOffset = new Vector3(0f, 1.5f, 0f);
+    
+    [Tooltip("조준 시 카메라의 위치 (숄더뷰 - 우측 어깨 너머)")]
+    public Vector3 aimOffset = new Vector3(0.8f, 1.5f, 0f); // X값을 양수로 주면 우측으로 빠짐
+
+    [Header("UI System")]
+    [Tooltip("아까 만든 Crosshair 이미지 오브젝트를 여기에 넣으세요")]
+    public GameObject crosshairUI;
+    #endregion
+
     [Header("View Mode Settings")]
     [Tooltip("현재 카메라 시점 모드 (테스트를 위해 인스펙터에서 수정 가능)")]
     [SerializeField] private CameraViewMode currentViewMode = CameraViewMode.TPS;
@@ -71,12 +84,17 @@ public class TPSCameraController : MonoBehaviour
     // 내부 계산용 변수 (현재 카메라의 회전 각도)
     private float currentYaw = 0f;
     private float currentPitch = 15f;
+    private bool isAiming = false;       // 현재 조준 중인지 여부
+    private Vector3 currentOffset;       // 실시간으로 변하는 현재 오프셋 (보간용)
 
     private void Start()
     {
         // 초기 거리 설정
         targetDistance = normalDistance;
         currentDistance = normalDistance;
+
+        currentOffset = normalOffset;
+        if (crosshairUI != null) crosshairUI.SetActive(false);
     }
 
     private void LateUpdate()
@@ -94,16 +112,36 @@ public class TPSCameraController : MonoBehaviour
             currentYaw = Mathf.LerpAngle(currentYaw, topViewYaw, zoomTransitionSpeed * Time.deltaTime);
         }
 
-        // 2. 카메라 거리의 부드러운 보간(Lerp) 처리 (동일)
-        currentDistance = Mathf.Lerp(currentDistance, activeTargetDistance, zoomTransitionSpeed * Time.deltaTime);
-        //currentDistance = Mathf.Lerp(currentDistance, **targetDistance**, zoomTransitionSpeed * Time.deltaTime);
+        // // 2. 카메라 거리의 부드러운 보간(Lerp) 처리 (동일)
+        // currentDistance = Mathf.Lerp(currentDistance, activeTargetDistance, zoomTransitionSpeed * Time.deltaTime);
+        // //currentDistance = Mathf.Lerp(currentDistance, **targetDistance**, zoomTransitionSpeed * Time.deltaTime);
 
-        // 3. 카메라의 최종 위치 및 회전 계산
-        // 구면 좌표계를 기반으로 Pitch(상하)와 Yaw(좌우)를 Quaternion으로 변환
-        Quaternion rotation = Quaternion.Euler(currentPitch, currentYaw, 0);
+        // // 3. 카메라의 최종 위치 및 회전 계산
+        // // 구면 좌표계를 기반으로 Pitch(상하)와 Yaw(좌우)를 Quaternion으로 변환
+        // Quaternion rotation = Quaternion.Euler(currentPitch, currentYaw, 0);
         
-        // 타겟 위치에서 계산된 회전값과 거리만큼 뒤로 물러난 위치가 카메라의 위치
-        Vector3 focusPosition = target.position + targetOffset;
+        // // 타겟 위치에서 계산된 회전값과 거리만큼 뒤로 물러난 위치가 카메라의 위치
+        // Vector3 focusPosition = target.position + targetOffset;
+
+        // --- 추가 및 수정된 구간 ---
+        // 2. 오프셋 목표값 결정 및 부드러운 보간
+        Vector3 targetOff = isAiming ? aimOffset : normalOffset;
+        currentOffset = Vector3.Lerp(currentOffset, targetOff, zoomTransitionSpeed * Time.deltaTime);
+
+        // 2-1. 카메라 거리 보간 (기존 로직 유지)
+        currentDistance = Mathf.Lerp(currentDistance, activeTargetDistance, zoomTransitionSpeed * Time.deltaTime);
+
+        // 3. 카메라 최종 위치 계산
+        Quaternion rotation = Quaternion.Euler(currentPitch, currentYaw, 0);
+
+        // [중요 수정]: focusPosition 계산 시 캐릭터의 회전(target.rotation)을 오프셋에 곱해줍니다.
+        // 이렇게 해야 캐릭터가 보는 방향을 기준으로 오른쪽/왼쪽 어깨 너머 시점이 형성됩니다.
+        // ✨ 해결: 마우스(카메라)의 좌우 회전각(Yaw)만을 기준으로 오프셋 방향을 계산하여 즉각적으로 반응하게 만듦
+        Quaternion yawRotation = Quaternion.Euler(0, currentYaw, 0);
+        Vector3 focusPosition = target.position + (yawRotation * currentOffset);
+        //Vector3 focusPosition = target.position + (target.rotation * currentOffset);
+        // --------------------------
+
         Vector3 newPosition = focusPosition - (rotation * Vector3.forward * currentDistance);
 
         transform.position = newPosition;
@@ -154,8 +192,14 @@ public class TPSCameraController : MonoBehaviour
     public void SetAimState(bool isAiming)
     {
         // Top View 상태에서는 조준 줌인을 무시함
+        
         if (currentViewMode == CameraViewMode.TopView) return;
+
+        this.isAiming = isAiming; // 상태 저장
         targetDistance = isAiming ? aimDistance : normalDistance;
+
+        // 추가: 조준선 UI 켜고 끄기
+        if (crosshairUI != null) crosshairUI.SetActive(isAiming);
     }
 
     /// <summary>

@@ -508,6 +508,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b7a61fd1407cde4599edd8d623d816c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  normalOffset: {x: 0, y: 1.5, z: 0}
+  aimOffset: {x: 0.8, y: 1.5, z: 0}
+  crosshairUI: {fileID: 0}
   currentViewMode: 0
   topViewDistance: 30
   topViewPitch: 90

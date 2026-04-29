@@ -14,7 +14,7 @@ namespace Equipment.Weapon
 
             baseAD = 10f; // 기본 공격력
             baseAS = 5f;  // 기본 공격 속도 (초당 5회 발사 = 0.2초 쿨타임)
-            PS = 10f;     // 투사체 속도 (분할 레이캐스트의 움직임이 보이도록 적당히 느린 40 설정)
+            PS = 70f;     // 투사체 속도 (분할 레이캐스트의 움직임이 보이도록 적당히 느린 40 설정)
 
             // AR의 발사 방식을 Ballistics의 객체를 생성하는 것으로 결정
             ballistics = new SegmentRaycastBehaviour();

@@ -206,7 +206,8 @@ namespace EnemySystem
 
                 if (distance > attackRange + 1.2f) break;
 
-                // 실제 데미지 로직이 들어갈 자리
+                // 실제 데미지 로직이 들어갈 자
+                col.SendMessage("TakeDamage", AD, SendMessageOptions.DontRequireReceiver);
                 float speed = AS > 0 ? AS : 1f;
                 yield return new WaitForSeconds(1f / speed);
             }

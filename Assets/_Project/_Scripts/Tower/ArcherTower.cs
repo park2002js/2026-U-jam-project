@@ -15,7 +15,6 @@ namespace Building
         
         public GameObject projectilePrefab;
         public Transform firePoint;
-        public LayerMask enemyLayer;
 
         [Header("Debug / Test")]
         public bool isBattlePhase = true;
@@ -30,31 +29,33 @@ namespace Building
             {
                 FindClosestEnemy();
 
-                if (currentTarget != null)
+                // 타겟이 있고 쿨타임이 지났을 때 사격 (타워 회전 로직 제거)
+                if (currentTarget != null && Time.time >= lastFireTime + fireRate)
                 {
-                    transform.LookAt(currentTarget);
-
-                    if (Time.time >= lastFireTime + fireRate)
-                    {
-                        Shoot();
-                    }
+                    Shoot();
                 }
             }
         }
 
         private void FindClosestEnemy()
         {
-            Collider[] enemiesInRange = Physics.OverlapSphere(transform.position, attackRange, enemyLayer);
+            Collider[] hitColliders = Physics.OverlapSphere(transform.position, attackRange);
             float shortestDistance = Mathf.Infinity;
             Transform nearestEnemy = null;
 
-            foreach (Collider enemy in enemiesInRange)
+            foreach (var hitCollider in hitColliders)
             {
-                float distanceToEnemy = Vector3.Distance(transform.position, enemy.transform.position);
-                if (distanceToEnemy < shortestDistance)
+                Enemy enemy = hitCollider.GetComponentInParent<Enemy>();
+                if (enemy != null)
                 {
-                    shortestDistance = distanceToEnemy;
-                    nearestEnemy = enemy.transform;
+                    float distanceToEnemy = Vector3.Distance(transform.position, hitCollider.transform.position);
+                    
+                    // 3. 가장 가까운 적을 타겟으로 갱신
+                    if (distanceToEnemy < shortestDistance)
+                    {
+                        shortestDistance = distanceToEnemy;
+                        nearestEnemy = enemy.transform;
+                    }
                 }
             }
 
@@ -83,54 +84,55 @@ namespace Building
 
         private void Shoot()
         {
-            if (projectilePrefab != null && firePoint != null && currentTarget != null)
+            if (projectilePrefab == null || firePoint == null || currentTarget == null) return;
+
+
+            // 1. 타겟의 정확한 중심점(Collider Center) 계산
+            Collider targetCollider = currentTarget.GetComponent<Collider>();
+            Vector3 targetCenter = targetCollider != null ? targetCollider.bounds.center : currentTarget.position;
+            
+            // 2. 사격 방향 및 거리 계산
+            Vector3 direction = (targetCenter - firePoint.position).normalized;
+            float distance = Vector3.Distance(firePoint.position, targetCenter);
+            Debug.DrawRay(firePoint.position, direction * attackRange, Color.red, 2f);
+
+            // 3. 투사체 생성 (타겟 방향을 바라보도록 회전 설정)
+            GameObject projectileObj = Instantiate(projectilePrefab, firePoint.position, Quaternion.LookRotation(direction));
+            MeshProjectile projectileScript = projectileObj.GetComponent<MeshProjectile>();
+
+            // 4. 투사체 스크립트 설정 (명중 시간 예측 속도 적용)
+            if (projectileScript != null)
             {
-                Collider targetCollider = currentTarget.GetComponent<Collider>();
-                Vector3 targetCenter = targetCollider != null ? targetCollider.bounds.center : currentTarget.position;
-                Vector3 direction = (targetCenter - firePoint.position).normalized;
-                
-                // ✨ 1. 타워와 적 사이의 거리를 계산합니다.
-                float distance = Vector3.Distance(firePoint.position, targetCenter);
-                Debug.DrawRay(firePoint.position, direction * attackRange, Color.red, 2f);
-
-                if (Physics.Raycast(firePoint.position, direction, out RaycastHit hit, attackRange, enemyLayer))
+                projectileScript.SetTarget(currentTarget);
+                if (damageDelay > 0)
                 {
-                    Enemy targetEnemy = hit.collider.GetComponent<Enemy>();
-                    
-                    if (targetEnemy != null)
-                    {
-                        Debug.Log($"'{targetEnemy.name}' 공격, ({damageDelay}초 후 명중 예정)");
-                        GameObject projectileObj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
-                        MeshProjectile projectileScript = projectileObj.GetComponent<MeshProjectile>();
-
-                        if (projectileScript != null)
-                        {
-                            projectileScript.SetTarget(currentTarget);
-                            
-                            // ✨ 2. 속력 = 거리 / 시간 공식을 적용하여 투사체의 속도를 자동 조절합니다.
-                            // (만약 damageDelay가 0이라면 에러가 나므로, 0보다 클 때만 적용하도록 안전장치 추가)
-                            if (damageDelay > 0)
-                            {
-                                projectileScript.speed = distance / damageDelay;
-                            }
-                        }
-
-                        StartCoroutine(ApplyDamageAfterDelay(targetEnemy, damageDelay));
-                    }
+                    projectileScript.speed = distance / damageDelay;
                 }
-                
-                lastFireTime = Time.time;
             }
+
+            // 5. [핵심] 타워에서 투사체의 수명 주기(데미지 + 파괴)를 직접 관리
+            StartCoroutine(ApplyDamageAndCleanup(currentTarget.GetComponent<Enemy>(), projectileObj, damageDelay));
+            
+            lastFireTime = Time.time;
+
         }
 
-        private IEnumerator ApplyDamageAfterDelay(Enemy enemy, float delay)
+        private IEnumerator ApplyDamageAndCleanup(Enemy enemy, GameObject projectile, float delay)
         {
+            // 투사체가 날아가는 시간만큼 대기
             yield return new WaitForSeconds(delay);
 
+            // 적이 살아있다면 데미지 적용
             if (enemy != null)
             {
                 enemy.TakeDamage((int)attackDamage);
-                Debug.Log($"{delay}초 경과 데미지 적용 완료.");
+                Debug.Log($"[ArcherTower] {enemy.name}에게 {attackDamage} 데미지 적용.");
+            }
+
+            // [핵심] 타워가 생성한 투사체를 직접 파괴하여 정리
+            if (projectile != null)
+            {
+                Destroy(projectile);
             }
         }
 
