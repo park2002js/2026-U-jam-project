@@ -8,7 +8,7 @@ namespace Defense
         [Header("Turret Base Settings")]
         public float attackRange = 5f;
         public float fireRate = 1f;
-        public float attackDamage = 10f;
+        public int attackDamage = 10;
         public LayerMask enemyLayer;
 
         [Header("Debug / Test")]

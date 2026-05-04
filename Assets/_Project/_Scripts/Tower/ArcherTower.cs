@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using EnemySystem;
 
 namespace Defense
 {
@@ -55,7 +56,7 @@ namespace Defense
 
             if (enemy != null)
             {
-                enemy.takeDamage(attackDamage);
+                enemy.TakeDamage(attackDamage);
                 Debug.Log($"{delay}초 경과 데미지 적용 완료.");
             }
         }

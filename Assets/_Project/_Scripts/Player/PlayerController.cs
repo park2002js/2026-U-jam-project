@@ -104,9 +104,32 @@ public class PlayerController : MonoBehaviour
         RegisterInputCallbacks();
     }
 
-    private void OnEnable() => inputActions.Enable();
-    private void OnDisable() => inputActions.Disable();
+    private void Start()
+    {
+        // 게임이 시작되면 마우스를 숨기고 화면 중앙에 잠가서, 캐릭터가 정상적으로 움직이게 합니다!
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
+    }
 
+    // private void OnEnable() => inputActions.Enable();
+    // private void OnDisable() => inputActions.Disable();
+    private void OnEnable()
+    {
+        // 안전장치: 혹시라도 inputActions가 비어있다면 다시 채워줍니다.
+        if (inputActions == null)
+        {
+            inputActions = new PlayerInputActions();
+            RegisterInputCallbacks();
+        }
+        inputActions.Enable();
+    }
+    private void OnDisable()
+        {
+            if (inputActions != null)
+            {
+                inputActions.Disable();
+            }
+        }
     // 1단계: 하드웨어 이벤트를 받아 의도(Intent)만 캐싱하는 등록부
     private void RegisterInputCallbacks()
     {
@@ -135,6 +158,15 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        if (Cursor.lockState == CursorLockMode.None || Cursor.visible == true) 
+        {
+            // 의도(Intent) 버퍼를 강제로 비워버립니다. (카메라 회전, 이동 전부 멈춤)
+            intent.moveInput = Vector2.zero;
+            intent.lookInput = Vector2.zero;
+            intent.ResetTriggers();
+            return; 
+        }
+
         HandleStatePipeline(); // 2단계: 중앙 파이프라인에서 상태 처리
         HandleRotation();      // 3단계: 시각적 회전 처리
         intent.ResetTriggers(); // 4단계: 처리된 단발성 트리거 초기화
@@ -142,6 +174,11 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (Cursor.lockState == CursorLockMode.None || Cursor.visible == true) 
+        {
+            rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
+            return;
+        }
         HandleMovement();      // 5단계: 물리적 이동 처리
     }
 
