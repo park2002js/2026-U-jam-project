@@ -1,0 +1,84 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3836366971006362411
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1549092225746157198}
+  - component: {fileID: 2744096142073166453}
+  m_Layer: 0
+  m_Name: TempManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1549092225746157198
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3836366971006362411}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.23805463, y: 1.6759638, z: -0.6293771}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2744096142073166453
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3836366971006362411}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14ff056db80e28c4b96e08dcc6a1a2dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerObject: {fileID: 0}
+  testDamageAmount: 100
+  testInvincibleTime: 1.5
+  testBypassInvincibility: 0
+  fireDamageAction:
+    m_Name: Fire Damage
+    m_Type: 1
+    m_ExpectedControlType: Button
+    m_Id: e756370a-278b-4f2c-b3f3-e3ee3eb890b6
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: ac506d29-c0b4-43a1-89df-c18d643969c2
+      m_Path: <Keyboard>/t
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Fire Damage
+      m_Flags: 0
+    m_Flags: 0
+  togglePhaseAction:
+    m_Name: Toggle Phase
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: 1541ad37-3dbf-4ae6-9d83-0b6b4f83646f
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 0251aefc-df7d-4db3-9a8c-428b62273262
+      m_Path: <Keyboard>/y
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Toggle Phase
+      m_Flags: 0
+    m_Flags: 0
