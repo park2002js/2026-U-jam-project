@@ -27,8 +27,6 @@ namespace Defense
 
                 if (currentTarget != null)
                 {
-                    // 타겟을 바라보는 공통 로직
-                    transform.LookAt(currentTarget);
 
                     // 쿨타임 계산 공통 로직
                     if (Time.time >= lastFireTime + fireRate)

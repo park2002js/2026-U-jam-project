@@ -640,7 +640,7 @@ MonoBehaviour:
         m_MethodName: BuyTower
         m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 4638125286930920506, guid: 7626580afcd4df149a702466bd8cfafe, type: 3}
+          m_ObjectArgument: {fileID: 4226451685109696593, guid: e66ca83c9d20a5740a6d46c1e4613ad1, type: 3}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.GameObject, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
@@ -3302,7 +3302,7 @@ MonoBehaviour:
         m_MethodName: BuyTower
         m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 4638125286930920506, guid: 6b323433176758744802d7bdadee3356, type: 3}
+          m_ObjectArgument: {fileID: 4226451685109696593, guid: dc7f583fb8f63294f8172cc79ef08c63, type: 3}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.GameObject, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
@@ -4667,7 +4667,7 @@ MonoBehaviour:
         m_MethodName: BuyTower
         m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 4638125286930920506, guid: 22b0a3ef31f9dbf4ebce0ba90f658d4b, type: 3}
+          m_ObjectArgument: {fileID: 4226451685109696593, guid: a4597e79772429448977fbccad0bf91c, type: 3}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.GameObject, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
@@ -5074,7 +5074,7 @@ MonoBehaviour:
         m_MethodName: BuyTower
         m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 4638125286930920506, guid: da59ea78fe82d0e47863ad35bbc1ff86, type: 3}
+          m_ObjectArgument: {fileID: 4226451685109696593, guid: bd8f49ceb9d76d142b29012e90842524, type: 3}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.GameObject, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
@@ -5761,7 +5761,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01bede2eeb52d0445973a9a69ac7f366, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 1000
+  maxHealth: 10000000
   defense: 0
 --- !u!1 &1601072099
 GameObject:
@@ -6881,7 +6881,7 @@ MonoBehaviour:
         m_MethodName: BuyTower
         m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 4638125286930920506, guid: ae2c6772eaf796543879683d89c9974b, type: 3}
+          m_ObjectArgument: {fileID: 4226451685109696593, guid: c5b72f167d272e747a631fe7077d31e9, type: 3}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.GameObject, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0

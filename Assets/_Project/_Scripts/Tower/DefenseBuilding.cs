@@ -4,8 +4,6 @@ namespace Defense
 {
     public abstract class DefenseBuilding : MonoBehaviour
     {
-        public enum ElementType { None, Water, Lightning, Poison, Wind }
-
         [Header("Base Settings")]
         public string buildingName;
         public ElementType myElement;

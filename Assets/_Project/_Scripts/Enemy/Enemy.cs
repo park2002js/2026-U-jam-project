@@ -6,7 +6,7 @@ using Utility;
 
 namespace EnemySystem
 {
-    public abstract class Enemy : MonoBehaviour
+    public abstract class Enemy : MonoBehaviour, IDamageable
     {
         [Header("기본 능력치 (자식 클래스에서 설정됨)")]
         public float HP;
@@ -15,8 +15,10 @@ namespace EnemySystem
         public float AS;
 
         [Header("감지 사거리")]
+
         public float chaseRange = 10f;
         public float attackRange = 5f;
+        public List<ElementType> activeElements = new List<ElementType>();
 
         protected Transform target;
         protected Transform defaultTarget;
@@ -217,12 +219,67 @@ namespace EnemySystem
             UpdateTarget();
         }
 
+
+        public void TakeDamage(DamageInfo info)
+        {
+            if (isDead) return;
+
+            // 1. 실제 데미지 적용
+            HP -= info.Amount;
+            Debug.Log($"[피격] {gameObject.name}이 {info.Amount}의 데미지를 받음. 남은 체력: {HP}");
+
+            // 2. 속성 부여 로직 실행
+            if (info.Element != ElementType.None)
+            {
+                ApplyElement(info.Element);
+            }
+
+            if (HP <= 0) Die();
+        }
+
         public void TakeDamage(int damage)
         {
-            Debug.Log($"적 공격 받음, 남은 체력 {HP}");
-            if (isDead) return;
-            HP -= damage;
-            if (HP <= 0) Die();
+            TakeDamage(DamageInfo.Default((float)damage));
+        }
+
+        private void ApplyElement(ElementType incomingElement)
+        {
+            // [규칙 7] 리스트 꽉 참 검사
+            if (activeElements.Count >= 2)
+            {
+                Debug.LogWarning($"<color=red>[속성 거부]</color> {gameObject.name}: 이미 2개의 속성이 존재합니다! ({incomingElement} 무시됨)");
+                return; 
+            }
+
+            // [규칙 5] 속성 추가 및 부여 로그
+            activeElements.Add(incomingElement);
+            
+            // 🌟 [확실한 확인] 현재 적이 가진 모든 속성을 리스트 형태로 출력
+            // 예: "적 속성 상태: [ Poison, Wind ]"
+            string elementListStr = string.Join(", ", activeElements); 
+            Debug.Log($"<color=cyan>[속성 업데이트]</color> {gameObject.name}의 현재 속성: <b>[ {elementListStr} ]</b>");
+
+            // [규칙 6] 연계 확인
+            if (activeElements.Count == 2)
+            {
+                Debug.Log($"<color=yellow>[🔥 연계 발동!]</color> {activeElements[0]} + {activeElements[1]} 조합 성공!");
+            }
+        }
+
+        private void TriggerElementCombo()
+        {
+            ElementType first = activeElements[0];
+            ElementType second = activeElements[1];
+
+            // [규칙 6] 연계 디버그 메시지
+            Debug.Log($"<color=yellow>[🔥 속성 연계 발동!]</color> {first} + {second} 조합 폭발!!");
+
+            // TODO: 여기서 실제로 연계 데미지를 주거나 이펙트를 생성합니다.
+            // 예: if(first == ElementType.Poison && second == ElementType.Wind) { /* 확산 효과 */ }
+
+            // 연계 후 리스트를 비워줄지 말지는 기획에 따라 결정합니다. 
+            // 일단은 비워주는 처리를 넣어두었습니다.
+            // activeElements.Clear(); 
         }
 
         public virtual void Die()
