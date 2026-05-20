@@ -214,7 +214,7 @@ namespace EnemySystem
                 // 원본 projectilePrefab에 대입하지 않고 go라는 지역변수 사용
                 GameObject go = Instantiate(projectilePrefab, throwPoint.position, Quaternion.identity);
 
-                Projectile p = go.GetComponent<Projectile>();
+                Enemy_Projectile p = go.GetComponent<Enemy_Projectile>();
                 if (p != null) p.Launch(target, AD);
             }
             else

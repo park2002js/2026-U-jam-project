@@ -493,7 +493,11 @@ PrefabInstance:
     - target: {fileID: 4202994257096855954, guid: f8e325b1b5630b94eb8a5c950966c907, type: 3}
       propertyPath: projectilePrefab
       value: 
-      objectReference: {fileID: 5678318222913538731}
+      objectReference: {fileID: 6844351024898114979, guid: 20dd93b5d4cded245a1eb2542b4c9d9b, type: 3}
+    - target: {fileID: 6499968953517516160, guid: f8e325b1b5630b94eb8a5c950966c907, type: 3}
+      propertyPath: m_IsTrigger
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8171136718230634027, guid: f8e325b1b5630b94eb8a5c950966c907, type: 3}
       propertyPath: m_Name
       value: Archer
@@ -1143,84 +1147,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9dc488e362a4e8441a5d8eda495ffa3b, type: 3}
---- !u!1001 &5678318222913538730
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 2326279155279487720, guid: 20dd93b5d4cded245a1eb2542b4c9d9b, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -826.48364
-      objectReference: {fileID: 0}
-    - target: {fileID: 2326279155279487720, guid: 20dd93b5d4cded245a1eb2542b4c9d9b, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 435.13287
-      objectReference: {fileID: 0}
-    - target: {fileID: 2326279155279487720, guid: 20dd93b5d4cded245a1eb2542b4c9d9b, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 79.54363
-      objectReference: {fileID: 0}
-    - target: {fileID: 2326279155279487720, guid: 20dd93b5d4cded245a1eb2542b4c9d9b, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2326279155279487720, guid: 20dd93b5d4cded245a1eb2542b4c9d9b, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2326279155279487720, guid: 20dd93b5d4cded245a1eb2542b4c9d9b, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2326279155279487720, guid: 20dd93b5d4cded245a1eb2542b4c9d9b, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2326279155279487720, guid: 20dd93b5d4cded245a1eb2542b4c9d9b, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2326279155279487720, guid: 20dd93b5d4cded245a1eb2542b4c9d9b, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2326279155279487720, guid: 20dd93b5d4cded245a1eb2542b4c9d9b, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6844351024898114979, guid: 20dd93b5d4cded245a1eb2542b4c9d9b, type: 3}
-      propertyPath: m_Name
-      value: Projectile
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 6844351024898114979, guid: 20dd93b5d4cded245a1eb2542b4c9d9b, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 5678318222913538732}
-  m_SourcePrefab: {fileID: 100100000, guid: 20dd93b5d4cded245a1eb2542b4c9d9b, type: 3}
---- !u!1 &5678318222913538731 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6844351024898114979, guid: 20dd93b5d4cded245a1eb2542b4c9d9b, type: 3}
-  m_PrefabInstance: {fileID: 5678318222913538730}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &5678318222913538732
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5678318222913538731}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ae25a63dea57ae9469a3aa5271092786, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  speed: 15
 --- !u!1 &6171380684500688688 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1109111048479027950, guid: 9dc488e362a4e8441a5d8eda495ffa3b, type: 3}
@@ -1304,4 +1230,3 @@ SceneRoots:
   - {fileID: 2123567422848934019}
   - {fileID: 6878085027833319376}
   - {fileID: 151192358}
-  - {fileID: 5678318222913538730}
