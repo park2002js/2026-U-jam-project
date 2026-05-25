@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using Utility;
 
 namespace EnemySystem
@@ -22,6 +21,7 @@ namespace EnemySystem
 
         protected Transform target;
         protected Transform defaultTarget;
+        
         protected List<string> priorityTags = new List<string> { "Player", "Decoy" };
         protected HashSet<Transform> priorityInChaseRange = new HashSet<Transform>();
 
@@ -54,7 +54,9 @@ namespace EnemySystem
             GameObject go = new GameObject(type.ToString() + "Range");
             go.transform.SetParent(transform);
             go.transform.localPosition = Vector3.zero;
-
+              
+            go.layer = gameObject.layer;
+            
             var ds = go.AddComponent<DetectionSphere>();
             ds.type = type;
             ds.Init(this, radius);
