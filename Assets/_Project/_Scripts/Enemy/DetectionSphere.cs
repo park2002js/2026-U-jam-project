@@ -6,42 +6,45 @@ namespace Utility
 {
     public class DetectionSphere : MonoBehaviour
     {
-        // Ãß°İ¿ë ¹üÀ§ÀÎÁö, °ø°İ¿ë ¹üÀ§ÀÎÁö ±¸ºĞÇÏ±â À§ÇÑ ÀÌ¸§Ç¥
+        // ì¶”ê²©ìš© ë²”ìœ„ì¸ì§€, ê³µê²©ìš© ë²”ìœ„ì¸ì§€ êµ¬ë¶„í•˜ê¸° ìœ„í•œ ì´ë¦„í‘œ
         public enum RangeType { Chase, Attack }
         public RangeType type;
 
-        // ³ª¸¦ ¼ÒÈ¯ÇÑ ÁÖÀÎ(Àû)ÀÌ ´©±¸ÀÎÁö ÀúÀå
+        // ë‚˜ë¥¼ ì†Œí™˜í•œ ì£¼ì¸(ì )ì´ ëˆ„êµ¬ì¸ì§€ ì €ì¥
         private Enemy owner;
 
-        // ¹«¾ğ°¡ ¿ø ¾È¿¡ µé¾î¿À°Å³ª ³ª°¥ ¶§ ÁÖÀÎ¿¡°Ô º¸³¾ "¹®ÀÚ ¸Ş½ÃÁö" °°Àº ±â´É (ÀÌº¥Æ®)
+        // ë¬´ì–¸ê°€ ì› ì•ˆì— ë“¤ì–´ì˜¤ê±°ë‚˜ ë‚˜ê°ˆ ë•Œ ì£¼ì¸ì—ê²Œ ë³´ë‚¼ "ë¬¸ì ë©”ì‹œì§€" ê°™ì€ ê¸°ëŠ¥ (ì´ë²¤íŠ¸)
         public Action<Transform, RangeType> OnTargetEnter;
         public Action<Transform, RangeType> OnTargetExit;
 
-        // ¼¾¼­ ÃÊ±â ¼³Á¤ (ÁÖÀÎÀÌ ´©±¸ÀÎÁö, ¹İÁö¸§ÀÌ ¾ó¸¶ÀÎÁö)
+        // ì„¼ì„œ ì´ˆê¸° ì„¤ì • (ì£¼ì¸ì´ ëˆ„êµ¬ì¸ì§€, ë°˜ì§€ë¦„ì´ ì–¼ë§ˆì¸ì§€)
         public void Init(Enemy owner, float radius)
         {
             this.owner = owner;
 
-            // ¹°¸® Ãæµ¹À» °¨ÁöÇÒ ±¸Ã¼(Sphere) ÄÄÆ÷³ÍÆ®¸¦ °¡Á®¿À°Å³ª ¾øÀ¸¸é Ãß°¡ÇÔ
+            // ì½”ë“œë¡œ ì§ì ‘ ë ˆì´ì–´ë¥¼ "EnemySensor"ë¡œ ì„¤ì •
+            gameObject.layer = LayerMask.NameToLayer("EnemySensor");
+
+            // ë¬¼ë¦¬ ì¶©ëŒì„ ê°ì§€í•  êµ¬ì²´(Sphere) ì»´í¬ë„ŒíŠ¸ë¥¼ ê°€ì ¸ì˜¤ê±°ë‚˜ ì—†ìœ¼ë©´ ì¶”ê°€í•¨
             SphereCollider col = GetComponent<SphereCollider>();
             if (col == null) col = gameObject.AddComponent<SphereCollider>();
 
-            // ¹°Ã¼°¡ ºÎµúÇô Æ¨°Ü³ª°¡Áö ¾Ê°í ±×³É Åë°úÇÏ°Ô ¸¸µê (¼¾¼­ ¿ªÇÒ)
+            // ë¬¼ì²´ê°€ ë¶€ë”ªí˜€ íŠ•ê²¨ë‚˜ê°€ì§€ ì•Šê³  ê·¸ëƒ¥ í†µê³¼í•˜ê²Œ ë§Œë“¦ (ì„¼ì„œ ì—­í• )
             col.isTrigger = true;
             col.radius = radius;
         }
 
-        // ¼¾¼­ ¿µ¿ª(Trigger) ¾È¿¡ ¹«¾ğ°¡ µé¾î¿ÔÀ» ¶§ ½ÇÇàµÊ
+        // ì„¼ì„œ ì˜ì—­(Trigger) ì•ˆì— ë¬´ì–¸ê°€ ë“¤ì–´ì™”ì„ ë•Œ ì‹¤í–‰ë¨
         private void OnTriggerEnter(Collider other)
         {
-            // "ÁÖÀÎ´Ô! [¹«¾ğ°¡]°¡ [¾î¶² ¹üÀ§]¿¡ µé¾î¿Ô¾î¿ä!"¶ó°í ½ÅÈ£¸¦ º¸³¿
+            // "ì£¼ì¸ë‹˜! [ë¬´ì–¸ê°€]ê°€ [ì–´ë–¤ ë²”ìœ„]ì— ë“¤ì–´ì™”ì–´ìš”!"ë¼ê³  ì‹ í˜¸ë¥¼ ë³´ëƒ„
             OnTargetEnter?.Invoke(other.transform, type);
         }
 
-        // ¼¾¼­ ¿µ¿ª ¹ÛÀ¸·Î ¹«¾ğ°¡ ³ª°¬À» ¶§ ½ÇÇàµÊ
+        // ì„¼ì„œ ì˜ì—­ ë°–ìœ¼ë¡œ ë¬´ì–¸ê°€ ë‚˜ê°”ì„ ë•Œ ì‹¤í–‰ë¨
         private void OnTriggerExit(Collider other)
         {
-            // "ÁÖÀÎ´Ô! [¹«¾ğ°¡]°¡ ¹üÀ§¸¦ ¹ş¾î³µ¾î¿ä!"¶ó°í ¾Ë¸²
+            // "ì£¼ì¸ë‹˜! [ë¬´ì–¸ê°€]ê°€ ë²”ìœ„ë¥¼ ë²—ì–´ë‚¬ì–´ìš”!"ë¼ê³  ì•Œë¦¼
             OnTargetExit?.Invoke(other.transform, type);
         }
     }

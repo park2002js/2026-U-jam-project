@@ -17,6 +17,8 @@ public class PhaseManager : MonoBehaviour
     // 외부에서 현재 페이즈를 확인할 수 있는 프로퍼티
     public GamePhase CurrentPhase { get; private set; } = GamePhase.None;
 
+    [SerializeField] private EnemySpawner enemySpawner;
+
     // 페이즈 변경 시 외부 시스템(스포너, UI, 타워 등)에 알리기 위한 방송 채널
     public event Action<GamePhase> OnPhaseChanged;
 
@@ -70,6 +72,7 @@ public class PhaseManager : MonoBehaviour
                 break;
             case GamePhase.Combat:
                 HandleCombatPhase();
+
                 break;
         }
     }
@@ -101,6 +104,8 @@ public class PhaseManager : MonoBehaviour
         // TODO: [Enemy] 적 스포너에게 웨이브 시작(생성) 지시
         // TODO: [Tower] 모든 타워의 공격 활성화 지시
         // TODO: [UI] 전투 페이즈 UI(웨이브 진행도, 남은 적 수 등) 활성화 지시
+
+        enemySpawner.ActivateAllEnemies();
 
         // 전투 페이즈 시작 시 데미지 판정 잠금 해제
         if (PlayerStatManager.Instance != null)

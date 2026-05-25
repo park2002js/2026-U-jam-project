@@ -101,8 +101,16 @@ namespace EnemySystem
         {
             if (rb != null)
             {
-                rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
-                rb.angularVelocity = Vector3.zero;
+                MoveToTarget();
+            }
+            else
+            {
+                if (rb != null)
+                {
+                    rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
+                    rb.angularVelocity = Vector3.zero;
+                }
+                LookAtTarget();
             }
 
             Vector3 direction = (destination - transform.position).normalized;

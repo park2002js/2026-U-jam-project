@@ -13,6 +13,20 @@ public class PlayerDamageHandler : MonoBehaviour, IDamageable
     // 추후 PlayerVFXManager, PlayerAnimator 등이 구독할 피격 방송 채널
     public event Action<DamageInfo> OnTakeDamageEvent;
 
+    public void TakeDamage(int amount)
+    {
+        // 간단한 int 입력을 받아 내부 규격인 DamageInfo로 포장합니다. (피격 시 기본 무적 1초 부여)
+        DamageInfo info = new DamageInfo()
+        {
+            Amount = amount,
+            InvincibleTime = 1.0f,
+            BypassInvincibility = false
+        };
+
+        // 기존 로직(본체)으로 넘깁니다.
+        TakeDamage(info);
+    }
+
     public void TakeDamage(DamageInfo info)
     {
         // GameEndManager로 부터 데미지(Damage) 잠금 확인

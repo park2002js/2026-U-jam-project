@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-
+using EnemySystem;
 public class WaveEntry : MonoBehaviour
 {
     public GameObject enemyPrefab; // 생성할 적 프리팹
@@ -16,11 +16,6 @@ public class WaveEntry : MonoBehaviour
         if (BattleManager.Instance != null)
         {
             BattleManager.Instance.SetTotalEnemies(enemyCount);
-        }
-
-        if (spawner != null)
-        {
-            spawner.StartSpawning(enemyPrefab, enemyCount, spawnInterval);
         }
     }
 
