@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Utility;
+using Defense;
 
 namespace EnemySystem
 {
-    public abstract class Enemy : MonoBehaviour, IDamageable
+    public abstract class Enemy : MonoBehaviour, IDamageable, IStatReceiver
     {
         [Header("기본 능력치 (자식 클래스에서 설정됨)")]
         public float HP;
@@ -14,11 +15,20 @@ namespace EnemySystem
         public int AD;
         public float AS;
 
+        
+
         [Header("감지 사거리")]
 
         public float chaseRange = 10f;
         public float attackRange = 5f;
+
+        [Header("속성 시스템 관리")]
+        public float elementDuration = 5f; // 속성 유지 시간
+        public List<Element> allElementDatas;
         public List<ElementType> activeElements = new List<ElementType>();
+        private List<IStatusEffect<IStatReceiver>> activeEffects = new List<IStatusEffect<IStatReceiver>>();
+        public string currentElement = "None";
+        private Dictionary<ElementType, Coroutine> elementTimers = new Dictionary<ElementType, Coroutine>();
 
         protected Transform target;
         protected Transform defaultTarget;
@@ -67,6 +77,18 @@ namespace EnemySystem
         {
 
             if (isDead || target == null) return;
+            
+            for (int i = activeEffects.Count - 1; i >= 0; i--)
+            {
+                activeEffects[i].OnTick(this, Time.deltaTime);
+                
+                // Status가 "나 시간 다 됐어!" 라고 하면 지워줍니다.
+                if (activeEffects[i].IsFinished)
+                {
+                    activeEffects[i].OnRemove(this);
+                    activeEffects.RemoveAt(i);
+                }
+            }
 
             Vector3 myPos = transform.position;
             Vector3 destination = target.position;
@@ -237,35 +259,81 @@ namespace EnemySystem
             if (HP <= 0) Die();
         }
 
-        public void TakeDamage(int damage)
-        {
-            TakeDamage(DamageInfo.Default((float)damage));
-        }
 
         private void ApplyElement(ElementType incomingElement)
         {
-            // [규칙 7] 리스트 꽉 참 검사
-            if (activeElements.Count >= 2)
+            // 🌟 1. 이미 속성이 하나 걸려 있다면 연계 체크!
+            if (activeElements.Count > 0)
             {
-                Debug.LogWarning($"<color=red>[속성 거부]</color> {gameObject.name}: 이미 2개의 속성이 존재합니다! ({incomingElement} 무시됨)");
-                return; 
+                ElementType currentType = activeElements[0]; // 현재 걸려있는 속성
+
+                // 현재 속성의 SO 데이터를 찾습니다. (예: Fire SO)
+                Element currentElementData = allElementDatas.Find(x => x.elementType == currentType);
+
+                if (currentElementData != null)
+                {
+                    // SO에게 "방금 들어온 속성이랑 연계되는 거 있어?" 라고 물어봅니다.
+                    ComboData? combo = currentElementData.CheckCombo(incomingElement);
+
+                    if (combo.HasValue) // 기획자님이 SO에 연계를 만들어 뒀다면!
+                    {
+                        // 핵심 변경점: 옛날 변수들 대신 SO에 적어둔 comboEffectData를 통째로 가져옵니다!
+                        StatusData data = combo.Value.comboEffectData;
+                        
+                        if (data.skillPrefab != null)
+                        {
+                            Instantiate(data.skillPrefab, transform.position, Quaternion.identity);
+                        }
+                        // 가져온 데이터를 만능 Status에 넣어서 내 몸에 적용!
+                        AddEffect(new UniversalStatus(data.effectName, data.duration, data.targetStat, data.changeAmount, data.dotDamage));
+                        Debug.Log($"<color=yellow>[🔥 연계 발동!]</color> {data.effectName} 발생!");
+
+                        // 연계가 터졌으니 기존 속성과 타이머는 초기화
+                        activeElements.Clear();
+                        if (elementTimers.ContainsKey(currentType) && elementTimers[currentType] != null)
+                        {
+                            StopCoroutine(elementTimers[currentType]);
+                            elementTimers.Remove(currentType);
+                        }
+                        return; // 연계가 발동했으니 여기서 함수 종료
+                    }
+                }
             }
 
-            // [규칙 5] 속성 추가 및 부여 로그
+            // 🌟 2. 연계가 없거나 최초 부여일 때
             activeElements.Add(incomingElement);
-            
-            // 🌟 [확실한 확인] 현재 적이 가진 모든 속성을 리스트 형태로 출력
-            // 예: "적 속성 상태: [ Poison, Wind ]"
-            string elementListStr = string.Join(", ", activeElements); 
-            Debug.Log($"<color=cyan>[속성 업데이트]</color> {gameObject.name}의 현재 속성: <b>[ {elementListStr} ]</b>");
 
-            // [규칙 6] 연계 확인
-            if (activeElements.Count == 2)
+            // SO에서 '최초 부여 시의 기본 효과 데이터'를 가져와서 씌웁니다.
+            Element newElementData = allElementDatas.Find(x => x.elementType == incomingElement);
+            if (newElementData != null)
             {
-                Debug.Log($"<color=yellow>[🔥 연계 발동!]</color> {activeElements[0]} + {activeElements[1]} 조합 성공!");
+                StatusData baseData = newElementData.baseEffectData;
+                
+                // 도트딜이나 디버프가 세팅되어 있다면 만능 Status 발동!
+                AddEffect(new UniversalStatus(baseData.effectName, baseData.duration, baseData.targetStat, baseData.changeAmount, baseData.dotDamage));
             }
+
+            // 5초 타이머 시작 (기존 타이머가 있다면 끄고 새로 시작)
+            if (elementTimers.ContainsKey(incomingElement) && elementTimers[incomingElement] != null)
+            {
+                StopCoroutine(elementTimers[incomingElement]);
+            }
+            elementTimers[incomingElement] = StartCoroutine(RemoveElementAfterDelay(incomingElement, elementDuration));
+            Debug.Log($"<color=cyan>[속성 부여]</color> {incomingElement} 획득! 5초 타이머 시작.");
         }
 
+        // 5초 뒤에 자동으로 호출되어 속성을 지우는 예약 함수
+        private IEnumerator RemoveElementAfterDelay(ElementType element, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+
+            if (activeElements.Contains(element))
+            {
+                activeElements.Remove(element);
+                elementTimers.Remove(element); // 수첩에서도 지워줍니다.
+                Debug.Log($"<color=gray>[속성 소멸]</color> {element} 시간이 다 되어 사라졌습니다.");
+            }
+        }
         private void TriggerElementCombo()
         {
             ElementType first = activeElements[0];
@@ -308,6 +376,29 @@ namespace EnemySystem
         {
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(transform.position, attackRange);
+        }
+        public void ModifyStat(StatType type, float amount)
+        {
+            if (type == StatType.MoveSpeed) moveSpeed += amount;
+            else if (type == StatType.AttackCooldown) AS += amount;
+            else if (type == StatType.AttackPower) AD += (int)amount; // AD는 int니까 변환
+        }
+
+        // 🌟 [통로 2] Status가 "너 도트 데미지 달아!" 라고 던질 때 받는 곳 (기존 DamageInfo 함수와 별개로 추가)
+        public void TakeDamage(float amount)
+        {
+            if (isDead) return;
+            HP -= amount;
+            Debug.Log($"<color=red>[도트딜]</color> {gameObject.name}이 {amount} 피해를 입음! (남은 체력: {HP})");
+            
+            if (HP <= 0) Die();
+        }
+
+        // 🌟 [통로 3] 새로운 상태이상(Status)을 내 몸에 달아주는 함수
+        public void AddEffect(IStatusEffect<IStatReceiver> newEffect)
+        {
+            activeEffects.Add(newEffect);
+            newEffect.OnApply(this); // 달아주자마자 "적용해!" 라고 명령
         }
     }
 }

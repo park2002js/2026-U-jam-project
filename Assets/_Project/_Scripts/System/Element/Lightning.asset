@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4b2cd9a4b115dd44a4df6ea0ea1b1c1, type: 3}
+  m_Name: Lightning
+  m_EditorClassIdentifier: 
+  elementType: 2
+  baseEffectData:
+    effectName: "\uB77C\uC774\uD2B8\uB2DD"
+    duration: 0
+    targetStat: 0
+    changeAmount: 0
+    dotDamage: 0
+    skillPrefab: {fileID: 1228990570242522067, guid: 8430e01844dd7c140919bd1762d68daf, type: 3}
+  combos:
+  - meetElement: 2
+    comboEffectData:
+      effectName: "\uAC15\uD55C \uBC88\uAC1C"
+      duration: 0
+      targetStat: 0
+      changeAmount: 0
+      dotDamage: 0
+      skillPrefab: {fileID: 1228990570242522067, guid: 1a873623f74ec274b8356aa428ace186, type: 3}
+  - meetElement: 3
+    comboEffectData:
+      effectName: "\uD654\uC5FC \uBC88\uAC1C"
+      duration: 0
+      targetStat: 0
+      changeAmount: 0
+      dotDamage: 0
+      skillPrefab: {fileID: 1228990570242522067, guid: 7448b4e33645eb94783a5f64530b334e, type: 3}
+  - meetElement: 1
+    comboEffectData:
+      effectName: "\uC816\uC740 \uC0C1\uD0DC \uBC88\uAC1C"
+      duration: 0
+      targetStat: 0
+      changeAmount: 0
+      dotDamage: 0
+      skillPrefab: {fileID: 1228990570242522067, guid: 2f1ace6b41fb22644808cd9d08c37d29, type: 3}
+  - meetElement: 4
+    comboEffectData:
+      effectName: "\uD558\uB298\uC5D0\uC11C \uBC88\uAC1C"
+      duration: 0
+      targetStat: 0
+      changeAmount: 0
+      dotDamage: 0
+      skillPrefab: {fileID: 1228990570242522067, guid: 1a873623f74ec274b8356aa428ace186, type: 3}

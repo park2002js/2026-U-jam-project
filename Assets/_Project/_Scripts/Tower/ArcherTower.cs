@@ -50,14 +50,18 @@ namespace Defense
             }
         }
 
-        private IEnumerator ApplyDamageAfterDelay(Enemy enemy, float delay)
+        private IEnumerator ApplyDamageAfterDelay(IDamageable enemy, float delay)
         {
             yield return new WaitForSeconds(delay);
+            Debug.Log($"{delay}초 경과 데미지 적용 완료.");
 
             if (enemy != null)
             {
-                enemy.TakeDamage(attackDamage);
-                Debug.Log($"{delay}초 경과 데미지 적용 완료.");
+                // 🌟 핵심: 공격력과 내 속성(myElement)을 묶어서 info 보따리로 만듭니다.
+                DamageInfo info = DamageInfo.Default((float)attackDamage, 0f, myElement);
+                
+                // 🌟 보따리를 통째로 던집니다! (기존의 (int)attackDamage 이런 거 절대 쓰면 안 됩니다!)
+                enemy.TakeDamage(info); 
             }
         }
 
