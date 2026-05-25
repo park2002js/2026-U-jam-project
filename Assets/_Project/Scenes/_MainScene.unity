@@ -5587,9 +5587,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7b874ba8f1e15a747bcb72bd858bddd4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enemyPrefab: {fileID: 1109111048479027950, guid: 9dc488e362a4e8441a5d8eda495ffa3b, type: 3}
-  enemyCount: 5
-  spawnInterval: 0.5
+  waveData: {fileID: 11400000, guid: e9beeca7375671d468f7aa30568e466a, type: 2}
   spawner: {fileID: 1940440230}
 --- !u!4 &1512022559
 Transform:
