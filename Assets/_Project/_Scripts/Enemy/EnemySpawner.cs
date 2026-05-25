@@ -1,7 +1,9 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
+using UnityEngine.InputSystem;
 using System.Collections.Generic;
-using EnemySystem;
+using EnemySystem; // [추가] Enemy 스크립트가 속한 네임스페이스 연결
+
 /*
      EnemySpawer에 생성로직을 다음과 같이 변경 : 적의 종류와 그 갯수를 미리 할당하면, 그 숫자만큼 비동기로 동시에 생성
     -> 이후 전투 페이즈가 되면 생성한 적들을 모두 활성화 시킴. 적들의 위치는 Spawner가 할당받은 width에서 랜덤한 위치에 생성, (한 줄을 유지함) 
@@ -15,6 +17,9 @@ public class SpawnInfo
 
 public class EnemySpawner : MonoBehaviour
 {
+    // [추가] 외부(Enemy.cs 등)에서 스포너에 접근할 수 있도록 싱글톤 뼈대 배치
+    public static EnemySpawner Instance { get; private set; }
+
     [Header("Spawn Area Settings (3D Region)")]
     public float minXOffset;
     public float maxXOffset;
@@ -26,8 +31,18 @@ public class EnemySpawner : MonoBehaviour
     [Header("Gizmo Settings")]
     public Color gizmoColor = Color.cyan;
 
-    // [수정] Start()와 LaunchTest()를 제거했습니다. 
-    // 이제 외부(WaveEntry)에서 명령을 내릴 때만 적이 생성됩니다.
+    // [추가] 적 추적을 위한 카운팅 변수들
+    private int totalEnemiesToSpawn = 0; // 이번 웨이브에 소환해야 할 총 마리수
+    private int spawnedEnemyCount = 0;   // 현재까지 소환된 마리수
+    private int activeEnemyCount = 0;    // 현재 필드에 살아있는 마리수
+    private bool isAllSpawned = false;   // 소환이 모두 끝났는지 여부
+
+    private void Awake()
+    {
+        // 싱글톤 초기화
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+    }
 
 
     [Header("Wave Spawn Settings")]
@@ -39,11 +54,15 @@ public class EnemySpawner : MonoBehaviour
 
     private void OnEnable()
     {
-        if (waveSpawnList.Count > 0)
-        {
-            StopAllCoroutines();
-            StartCoroutine(PreSpawnAllRoutine());
-        }
+        StopAllCoroutines();
+
+        // [추가] 새로운 소환 명령이 내려올 때 카운팅 변수들 초기화
+        totalEnemiesToSpawn = count;
+        spawnedEnemyCount = 0;
+        activeEnemyCount = 0;
+        isAllSpawned = false;
+
+        StartCoroutine(SpawnRoutine(prefab, count, interval));
     }
 
     // // 1. 비동기 동시 생성 (대기 상태로 스폰)
@@ -87,7 +106,18 @@ public class EnemySpawner : MonoBehaviour
         {
             if (info.enemyPrefab == null || info.spawnCount <= 0) continue;
 
-            for (int i = 0; i < info.spawnCount; i++)
+            // [추가] 적이 생성될 때 카운트 증가 및 스포너 등록
+            spawnedEnemyCount++;
+            activeEnemyCount++;
+
+            Enemy enemyScript = enemy.GetComponent<Enemy>();
+            if (enemyScript != null)
+            {
+                enemyScript.SetSpawner(this); // 적에게 "내가 너희 스포너야"라고 알려줌
+            }
+
+            // EnemyController가 있다면 활성화 (기존 로직 유지)
+            if (enemy.TryGetComponent(out EnemyController controller))
             {
                 Vector3 spawnPosition = GetRandomPositionInLine();
                 GameObject enemy = Instantiate(info.enemyPrefab, spawnPosition, Quaternion.identity);
@@ -104,7 +134,32 @@ public class EnemySpawner : MonoBehaviour
             }
         }
 
-        Debug.Log($"[Spawner] 총 {totalSpawned}마리 사전 생성 완료. 전투 페이즈 대기 중...");
+        // [추가] 루프가 끝나면 소환 자체는 완전히 끝났다고 플래그를 세웁니다.
+        isAllSpawned = true;
+        Debug.Log("[Spawner] 모든 적 생성 완료. 남은 적들을 소탕해야 합니다.");
+    }
+
+    /// <summary>
+    /// [추가] 적이 죽을 때 (Enemy.cs의 Die() 함수에서) 실시간으로 호출해 줄 함수
+    /// </summary>
+    public void OnEnemyDestroyed()
+    {
+        activeEnemyCount--;
+        Debug.Log($"<color=green>[Spawner]</color> 적 처치됨! 필드에 남은 적: {activeEnemyCount} / {totalEnemiesToSpawn}");
+
+        // [핵심 체크] 데이터상으로 모든 소환이 끝났고, 필드에 남은 고블린/아처가 0마리라면?
+        if (isAllSpawned && activeEnemyCount <= 0)
+        {
+            ClearStage();
+        }
+    }
+
+    private void ClearStage()
+    {
+        Debug.Log("<color=yellow>[Spawner] 필드의 모든 적이 소멸되었습니다! 스테이지 클리어!</color>");
+
+        // GameEndManager를 깨워서 스테이지 클리어 시퀀스 발동!
+        GameEndManager.Instance.TriggerGameEnd(GameEndReason.StageCleared);
     }
 
 
@@ -179,5 +234,37 @@ public class EnemySpawner : MonoBehaviour
         Gizmos.DrawWireCube(localCenter, size);
         Gizmos.color = new Color(gizmoColor.r, gizmoColor.g, gizmoColor.b, 0.2f);
         Gizmos.DrawCube(localCenter, size);
+    }
+
+    //테스트용 적 전부 죽이는 함수
+    private void Update()
+    {
+        if(Keyboard.current != null && Keyboard.current.kKey.wasPressedThisFrame)
+        {
+            KillAllEnemiesCheat();
+        }
+    }
+
+    private void KillAllEnemiesCheat()
+    {
+        // 씬에 존재하는 모든 Enemy(부모 클래스)를 찾아서 배열로 가져옵니다.
+        EnemySystem.Enemy[] allEnemies = FindObjectsByType<EnemySystem.Enemy>(FindObjectsSortMode.None);
+
+        if (allEnemies.Length == 0)
+        {
+            Debug.Log("<color=yellow>[Cheat]</color> 필드에 죽일 적이 없습니다.");
+            return;
+        }
+
+        Debug.Log($"<color=red>[Cheat]</color> 치트키 발동! 필드의 모든 적({allEnemies.Length}마리)을 처치합니다.");
+
+        // 찾은 적들을 하나씩 순회하며 Die() 함수를 강제로 실행시킵니다.
+        foreach (EnemySystem.Enemy enemy in allEnemies)
+        {
+            if (enemy != null)
+            {
+                enemy.Die();
+            }
+        }
     }
 }
