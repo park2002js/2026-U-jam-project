@@ -5,25 +5,23 @@ using Utility;
 
 namespace EnemySystem
 {
-    public abstract class Enemy : MonoBehaviour
+    public abstract class Enemy : MonoBehaviour, IDamageable
     {
-        [Header("기본 능력치")]
+        [Header("기본 능력치 (자식 클래스에서 설정됨)")]
         public float HP;
         public float moveSpeed;
         public int AD;
         public float AS;
 
         [Header("감지 사거리")]
+
         public float chaseRange = 10f;
         public float attackRange = 5f;
-
-        [Header("원거리 공격 설정")]
-        public GameObject projectilePrefab;
-        public Transform throwPoint;
+        public List<ElementType> activeElements = new List<ElementType>();
 
         protected Transform target;
         protected Transform defaultTarget;
-
+        
         protected List<string> priorityTags = new List<string> { "Player", "Decoy" };
         protected HashSet<Transform> priorityInChaseRange = new HashSet<Transform>();
 
@@ -31,17 +29,22 @@ namespace EnemySystem
         protected bool isAttacking = false;
         protected Rigidbody rb;
 
+        // 자식 클래스에서 반드시 구현해야 하는 능력치 설정 함수
         protected abstract void InitStatus();
 
         public virtual void Start()
         {
             rb = GetComponent<Rigidbody>();
+
+            // 1. 자식 클래스의 능력치 설정 호출
             InitStatus();
 
+            // 2. 기본 타겟(성벽) 설정
             GameObject baseObj = GameObject.FindGameObjectWithTag("Base");
             if (baseObj != null) defaultTarget = baseObj.transform;
             target = defaultTarget;
 
+            // 3. 센서 구체 생성
             CreateDetectionSphere(chaseRange, DetectionSphere.RangeType.Chase);
             CreateDetectionSphere(attackRange, DetectionSphere.RangeType.Attack);
         }
@@ -51,9 +54,9 @@ namespace EnemySystem
             GameObject go = new GameObject(type.ToString() + "Range");
             go.transform.SetParent(transform);
             go.transform.localPosition = Vector3.zero;
-
+              
             go.layer = gameObject.layer;
-
+            
             var ds = go.AddComponent<DetectionSphere>();
             ds.type = type;
             ds.Init(this, radius);
@@ -64,6 +67,7 @@ namespace EnemySystem
 
         protected virtual void Update()
         {
+
             if (isDead || target == null) return;
 
             Vector3 myPos = transform.position;
@@ -72,40 +76,35 @@ namespace EnemySystem
             Collider targetCol = target.GetComponent<Collider>();
             if (targetCol != null) destination = targetCol.ClosestPoint(myPos);
 
+            // 실제 3D 거리 계산 (Y축 포함)
             float distanceToTarget = Vector3.Distance(myPos, destination);
 
             if (distanceToTarget > attackRange * 0.9f)
             {
-                MoveToTarget(destination);
+                MoveToTarget();
             }
             else
             {
-                StopAndLookAt(destination);
+                if (rb != null)
+                {
+                    rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
+                    rb.angularVelocity = Vector3.zero;
+                }
+                LookAtTarget();
             }
         }
 
-        protected virtual void MoveToTarget(Vector3 destination)
+        private void LookAtTarget()
         {
-            Vector3 direction = (destination - transform.position).normalized;
-            direction.y = 0;
+            if (target == null) return;
 
-            if (rb != null) rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
+            Vector3 myPos = transform.position;
+            Vector3 lookDest = target.position;
 
-            transform.position += direction * moveSpeed * Time.deltaTime;
+            Collider col = target.GetComponent<Collider>();
+            if (col != null) lookDest = col.ClosestPoint(myPos);
 
-            if (direction != Vector3.zero)
-                transform.forward = direction;
-        }
-
-        private void StopAndLookAt(Vector3 destination)
-        {
-            if (rb != null)
-            {
-                rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
-                rb.angularVelocity = Vector3.zero;
-            }
-
-            Vector3 direction = (destination - transform.position).normalized;
+            Vector3 direction = (lookDest - myPos).normalized;
             direction.y = 0;
 
             if (direction != Vector3.zero)
@@ -170,9 +169,36 @@ namespace EnemySystem
             }
         }
 
+        protected virtual void MoveToTarget()
+        {
+            if (target == null) return;
+
+            Vector3 destination = target.position;
+            if (target.CompareTag("Base"))
+            {
+                Collider col = target.GetComponent<Collider>();
+                if (col != null) destination = col.ClosestPoint(transform.position);
+            }
+
+            Vector3 direction = (destination - transform.position).normalized;
+            direction.y = 0;
+
+            // 리지드바디가 있다면 X, Z 속도만 초기화 (중력 Y는 유지)
+            if (rb != null) rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
+
+            // X, Z 축 이동 (Y값은 보존하여 중력 작동 허용)
+            Vector3 nextPos = transform.position + (direction * moveSpeed * Time.deltaTime);
+            transform.position = nextPos;
+
+            if (direction != Vector3.zero)
+                transform.forward = direction;
+        }
+
         IEnumerator AttackRoutine()
         {
             isAttacking = true;
+            Debug.Log($"{gameObject.name}: 공격 시작");
+
             while (target != null && !isDead)
             {
                 Vector3 myPos = transform.position;
@@ -182,54 +208,80 @@ namespace EnemySystem
 
                 float distance = Vector3.Distance(myPos, targetPos);
 
-                if (distance > attackRange + 1.5f) break;
+                if (distance > attackRange + 1.2f) break;
 
-                PerformAttack();
-
+                // 실제 데미지 로직이 들어갈 자
+                col.SendMessage("TakeDamage", AD, SendMessageOptions.DontRequireReceiver);
                 float speed = AS > 0 ? AS : 1f;
                 yield return new WaitForSeconds(1f / speed);
             }
 
             isAttacking = false;
+            Debug.Log($"{gameObject.name}: 공격 종료");
             UpdateTarget();
         }
 
-        protected virtual void PerformAttack()
-        {
-            Debug.Log($"<color=cyan>[Attack]</color> {gameObject.name} 공격 실행");
 
-            if (attackRange > 5f)
-            {
-                ThrowProjectile();
-            }
-            else
-            {
-                if (target != null)
-                    target.SendMessage("takeDamage", AD, SendMessageOptions.DontRequireReceiver);
-            }
-        }
-
-        private void ThrowProjectile()
-        {
-            if (projectilePrefab != null && throwPoint != null)
-            {
-                // 원본 projectilePrefab에 대입하지 않고 go라는 지역변수 사용
-                GameObject go = Instantiate(projectilePrefab, throwPoint.position, Quaternion.identity);
-
-                Enemy_Projectile p = go.GetComponent<Enemy_Projectile>();
-                if (p != null) p.Launch(target, AD);
-            }
-            else
-            {
-                Debug.LogError($"{gameObject.name}: 프리팹 또는 발사위치가 비어있음!");
-            }
-        }
-
-        public void takeDamage(float damage)
+        public void TakeDamage(DamageInfo info)
         {
             if (isDead) return;
-            HP -= damage;
+
+            // 1. 실제 데미지 적용
+            HP -= info.Amount;
+            Debug.Log($"[피격] {gameObject.name}이 {info.Amount}의 데미지를 받음. 남은 체력: {HP}");
+
+            // 2. 속성 부여 로직 실행
+            if (info.Element != ElementType.None)
+            {
+                ApplyElement(info.Element);
+            }
+
             if (HP <= 0) Die();
+        }
+
+        public void TakeDamage(int damage)
+        {
+            TakeDamage(DamageInfo.Default((float)damage));
+        }
+
+        private void ApplyElement(ElementType incomingElement)
+        {
+            // [규칙 7] 리스트 꽉 참 검사
+            if (activeElements.Count >= 2)
+            {
+                Debug.LogWarning($"<color=red>[속성 거부]</color> {gameObject.name}: 이미 2개의 속성이 존재합니다! ({incomingElement} 무시됨)");
+                return; 
+            }
+
+            // [규칙 5] 속성 추가 및 부여 로그
+            activeElements.Add(incomingElement);
+            
+            // 🌟 [확실한 확인] 현재 적이 가진 모든 속성을 리스트 형태로 출력
+            // 예: "적 속성 상태: [ Poison, Wind ]"
+            string elementListStr = string.Join(", ", activeElements); 
+            Debug.Log($"<color=cyan>[속성 업데이트]</color> {gameObject.name}의 현재 속성: <b>[ {elementListStr} ]</b>");
+
+            // [규칙 6] 연계 확인
+            if (activeElements.Count == 2)
+            {
+                Debug.Log($"<color=yellow>[🔥 연계 발동!]</color> {activeElements[0]} + {activeElements[1]} 조합 성공!");
+            }
+        }
+
+        private void TriggerElementCombo()
+        {
+            ElementType first = activeElements[0];
+            ElementType second = activeElements[1];
+
+            // [규칙 6] 연계 디버그 메시지
+            Debug.Log($"<color=yellow>[🔥 속성 연계 발동!]</color> {first} + {second} 조합 폭발!!");
+
+            // TODO: 여기서 실제로 연계 데미지를 주거나 이펙트를 생성합니다.
+            // 예: if(first == ElementType.Poison && second == ElementType.Wind) { /* 확산 효과 */ }
+
+            // 연계 후 리스트를 비워줄지 말지는 기획에 따라 결정합니다. 
+            // 일단은 비워주는 처리를 넣어두었습니다.
+            // activeElements.Clear(); 
         }
 
         public virtual void Die()
@@ -239,16 +291,7 @@ namespace EnemySystem
             StopAllCoroutines();
             if (rb != null) rb.isKinematic = true;
             GetComponent<Collider>().enabled = false;
-
-            if (enemySpawner != null) enemySpawner.OnEnemyDestroyed();
             StartCoroutine(DeathAnimation());
-        }
-
-        private EnemySpawner enemySpawner;
-
-        public void SetSpawner(EnemySpawner spawner)
-        {
-            enemySpawner = spawner;
         }
 
         IEnumerator DeathAnimation()
@@ -261,6 +304,12 @@ namespace EnemySystem
                 yield return null;
             }
             Destroy(gameObject);
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(transform.position, attackRange);
         }
     }
 }

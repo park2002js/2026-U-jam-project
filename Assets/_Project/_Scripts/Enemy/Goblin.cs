@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using EnemySystem;
-
 public class Goblin : Enemy
 {
     protected override void InitStatus()

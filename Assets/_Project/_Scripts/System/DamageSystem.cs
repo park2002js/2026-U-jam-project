@@ -5,7 +5,7 @@ using UnityEngine;
 
 public enum HitReactionType { None, Flinch, Knockdown }
 public enum DamageType { Normal, Pierce, Fire }
-
+public enum ElementType { None, Water, Lightning, Poison, Wind }
 /// <summary>
 /// 이 인터페이스를 가진 객체는 범용적인 데미지 시스템의 대상이 됩니다. (플레이어, 적, 거점 등)
 /// </summary>
@@ -27,11 +27,12 @@ public struct DamageInfo
     public DamageType Type;
     public HitReactionType Reaction;
     public GameObject Instigator;
+    public ElementType Element;
 
     /// <summary>
     /// 필수 값만 넣으면 나머지는 기본값으로 채워주는 팩토리 메서드
     /// </summary>
-    public static DamageInfo Default(float amount = 0f, float invincibleTime = 0f)
+    public static DamageInfo Default(float amount = 0f, float invincibleTime = 0f, ElementType element = ElementType.None)
     {
         return new DamageInfo
         {
@@ -40,7 +41,8 @@ public struct DamageInfo
             BypassInvincibility = false,
             Type = DamageType.Normal,
             Reaction = HitReactionType.None,
-            Instigator = null
+            Instigator = null,
+            Element = element
         };
     }
 }
