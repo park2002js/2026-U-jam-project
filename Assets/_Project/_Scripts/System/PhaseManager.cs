@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 // [ 추가됨 ] 게임의 주요 페이즈(정비, 전투) 흐름을 관리하는 매니저
 public enum GamePhase { None, Preparation, Combat }
@@ -18,6 +19,7 @@ public class PhaseManager : MonoBehaviour
     public GamePhase CurrentPhase { get; private set; } = GamePhase.None;
 
     [SerializeField] private EnemySpawner enemySpawner;
+    [SerializeField] private GameObject startCombatButton;
 
     // 페이즈 변경 시 외부 시스템(스포너, UI, 타워 등)에 알리기 위한 방송 채널
     public event Action<GamePhase> OnPhaseChanged;
@@ -55,6 +57,35 @@ public class PhaseManager : MonoBehaviour
     }
 
     #endregion
+    private void Update()
+    {
+        // Q키를 누를 때마다 마우스 상태를 반전(토글)시킵니다.
+        if (CurrentPhase == GamePhase.Preparation)
+        {
+            if (Keyboard.current != null && Keyboard.current.qKey.wasPressedThisFrame)
+            {
+                ToggleMouseCursor();
+            }
+        }
+    }
+
+    private void ToggleMouseCursor()
+    {
+        if (Cursor.visible)
+        {
+            // 마우스가 보이고 있다면 -> 다시 숨기고 화면 중앙에 고정 (원래 전투 상태로 복귀)
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
+            Debug.Log("[PhaseManager] 마우스 숨김 (전투 집중)");
+        }
+        else
+        {
+            // 마우스가 숨겨져 있다면 -> 화면에 보이게 하고 고정 해제 (UI 클릭 가능 상태)
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+            Debug.Log("[PhaseManager] 마우스 표시 (UI 조작 가능)");
+        }
+    }
 
     private void ChangePhase(GamePhase newPhase)
     {
@@ -82,6 +113,9 @@ public class PhaseManager : MonoBehaviour
         // TODO: [Camera] 카메라 시점을 Top View로 변경 지시
         // TODO: [Tower] 모든 타워의 공격 중지 지시
         // TODO: [UI] 정비 페이즈 UI(상점, 타워 배치 등) 활성화 지시
+
+        // 정비 페이즈가 시작되면 전투 시작 버튼을 다시 활성화
+        if (startCombatButton != null) startCombatButton.SetActive(true);
         
         if (PlayerStatManager.Instance != null)
         {
@@ -105,11 +139,18 @@ public class PhaseManager : MonoBehaviour
         // TODO: [Tower] 모든 타워의 공격 활성화 지시
         // TODO: [UI] 전투 페이즈 UI(웨이브 진행도, 남은 적 수 등) 활성화 지시
 
+
+        if (startCombatButton != null) startCombatButton.SetActive(false);
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
+        
         enemySpawner.ActivateAllEnemies();
 
         // 전투 페이즈 시작 시 데미지 판정 잠금 해제
         if (PlayerStatManager.Instance != null)
         {
+            // 전투 페이즈가 시작되면 전투 시작 버튼을 비활성화(숨김)
+            if (startCombatButton != null) startCombatButton.SetActive(false);
             PlayerStatManager.Instance.RemoveLock(this);
             Debug.Log("[PhaseManager] 전투 페이즈 돌입: 플레이어 데미지 판정 잠금 해제.");
         }

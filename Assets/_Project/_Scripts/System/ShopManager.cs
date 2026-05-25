@@ -27,8 +27,10 @@ public class ShopManager : MonoBehaviour
     void Update()
     {
         if (Keyboard.current == null || Mouse.current == null) return;
+        bool isPrepPhase = PhaseManager.Instance.CurrentPhase == GamePhase.Preparation;
 
-        if (Keyboard.current.fKey.wasPressedThisFrame && !isPlacingMode)
+
+        if (Keyboard.current.fKey.wasPressedThisFrame && !isPlacingMode && isPrepPhase)
         {
             ToggleShop();
         }
