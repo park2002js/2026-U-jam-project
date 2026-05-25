@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using Utility;
 using Defense;
 
@@ -9,7 +8,7 @@ namespace EnemySystem
 {
     public abstract class Enemy : MonoBehaviour, IDamageable, IStatReceiver
     {
-        [Header("기본 능력치 (자식 클래스에서 설정됨)")]
+        [Header("기본 능력치")]
         public float HP;
         public float moveSpeed;
         public int AD;
@@ -29,9 +28,14 @@ namespace EnemySystem
         private List<IStatusEffect<IStatReceiver>> activeEffects = new List<IStatusEffect<IStatReceiver>>();
         public string currentElement = "None";
         private Dictionary<ElementType, Coroutine> elementTimers = new Dictionary<ElementType, Coroutine>();
+        
+        [Header("원거리 공격 설정")]
+        public GameObject projectilePrefab;
+        public Transform throwPoint;
 
         protected Transform target;
         protected Transform defaultTarget;
+
         protected List<string> priorityTags = new List<string> { "Player", "Decoy" };
         protected HashSet<Transform> priorityInChaseRange = new HashSet<Transform>();
 
@@ -39,22 +43,17 @@ namespace EnemySystem
         protected bool isAttacking = false;
         protected Rigidbody rb;
 
-        // 자식 클래스에서 반드시 구현해야 하는 능력치 설정 함수
         protected abstract void InitStatus();
 
         public virtual void Start()
         {
             rb = GetComponent<Rigidbody>();
-
-            // 1. 자식 클래스의 능력치 설정 호출
             InitStatus();
 
-            // 2. 기본 타겟(성벽) 설정
             GameObject baseObj = GameObject.FindGameObjectWithTag("Base");
             if (baseObj != null) defaultTarget = baseObj.transform;
             target = defaultTarget;
 
-            // 3. 센서 구체 생성
             CreateDetectionSphere(chaseRange, DetectionSphere.RangeType.Chase);
             CreateDetectionSphere(attackRange, DetectionSphere.RangeType.Attack);
         }
@@ -64,6 +63,8 @@ namespace EnemySystem
             GameObject go = new GameObject(type.ToString() + "Range");
             go.transform.SetParent(transform);
             go.transform.localPosition = Vector3.zero;
+
+            go.layer = gameObject.layer;
 
             var ds = go.AddComponent<DetectionSphere>();
             ds.type = type;
@@ -75,7 +76,6 @@ namespace EnemySystem
 
         protected virtual void Update()
         {
-
             if (isDead || target == null) return;
             
             for (int i = activeEffects.Count - 1; i >= 0; i--)
@@ -96,10 +96,34 @@ namespace EnemySystem
             Collider targetCol = target.GetComponent<Collider>();
             if (targetCol != null) destination = targetCol.ClosestPoint(myPos);
 
-            // 실제 3D 거리 계산 (Y축 포함)
             float distanceToTarget = Vector3.Distance(myPos, destination);
 
             if (distanceToTarget > attackRange * 0.9f)
+            {
+                MoveToTarget(destination);
+            }
+            else
+            {
+                StopAndLookAt(destination);
+            }
+        }
+
+        protected virtual void MoveToTarget(Vector3 destination)
+        {
+            Vector3 direction = (destination - transform.position).normalized;
+            direction.y = 0;
+
+            if (rb != null) rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
+
+            transform.position += direction * moveSpeed * Time.deltaTime;
+
+            if (direction != Vector3.zero)
+                transform.forward = direction;
+        }
+
+        private void StopAndLookAt(Vector3 destination)
+        {
+            if (rb != null)
             {
                 MoveToTarget();
             }
@@ -112,19 +136,8 @@ namespace EnemySystem
                 }
                 LookAtTarget();
             }
-        }
 
-        private void LookAtTarget()
-        {
-            if (target == null) return;
-
-            Vector3 myPos = transform.position;
-            Vector3 lookDest = target.position;
-
-            Collider col = target.GetComponent<Collider>();
-            if (col != null) lookDest = col.ClosestPoint(myPos);
-
-            Vector3 direction = (lookDest - myPos).normalized;
+            Vector3 direction = (destination - transform.position).normalized;
             direction.y = 0;
 
             if (direction != Vector3.zero)
@@ -189,36 +202,9 @@ namespace EnemySystem
             }
         }
 
-        protected virtual void MoveToTarget()
-        {
-            if (target == null) return;
-
-            Vector3 destination = target.position;
-            if (target.CompareTag("Base"))
-            {
-                Collider col = target.GetComponent<Collider>();
-                if (col != null) destination = col.ClosestPoint(transform.position);
-            }
-
-            Vector3 direction = (destination - transform.position).normalized;
-            direction.y = 0;
-
-            // 리지드바디가 있다면 X, Z 속도만 초기화 (중력 Y는 유지)
-            if (rb != null) rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
-
-            // X, Z 축 이동 (Y값은 보존하여 중력 작동 허용)
-            Vector3 nextPos = transform.position + (direction * moveSpeed * Time.deltaTime);
-            transform.position = nextPos;
-
-            if (direction != Vector3.zero)
-                transform.forward = direction;
-        }
-
         IEnumerator AttackRoutine()
         {
             isAttacking = true;
-            Debug.Log($"{gameObject.name}: 공격 시작");
-
             while (target != null && !isDead)
             {
                 Vector3 myPos = transform.position;
@@ -228,21 +214,50 @@ namespace EnemySystem
 
                 float distance = Vector3.Distance(myPos, targetPos);
 
-                if (distance > attackRange + 1.2f) break;
+                if (distance > attackRange + 1.5f) break;
 
-                // 실제 데미지 로직이 들어갈 자
-                col.SendMessage("TakeDamage", AD, SendMessageOptions.DontRequireReceiver);
+                PerformAttack();
+
                 float speed = AS > 0 ? AS : 1f;
                 yield return new WaitForSeconds(1f / speed);
             }
 
             isAttacking = false;
-            Debug.Log($"{gameObject.name}: 공격 종료");
             UpdateTarget();
         }
 
+        protected virtual void PerformAttack()
+        {
+            Debug.Log($"<color=cyan>[Attack]</color> {gameObject.name} 공격 실행");
 
-        public void TakeDamage(DamageInfo info)
+            if (attackRange > 5f)
+            {
+                ThrowProjectile();
+            }
+            else
+            {
+                if (target != null)
+                    target.SendMessage("takeDamage", AD, SendMessageOptions.DontRequireReceiver);
+            }
+        }
+
+        private void ThrowProjectile()
+        {
+            if (projectilePrefab != null && throwPoint != null)
+            {
+                // 원본 projectilePrefab에 대입하지 않고 go라는 지역변수 사용
+                GameObject go = Instantiate(projectilePrefab, throwPoint.position, Quaternion.identity);
+
+                Enemy_Projectile p = go.GetComponent<Enemy_Projectile>();
+                if (p != null) p.Launch(target, AD);
+            }
+            else
+            {
+                Debug.LogError($"{gameObject.name}: 프리팹 또는 발사위치가 비어있음!");
+            }
+        }
+
+        public void takeDamage(float damage)
         {
             if (isDead) return;
 
@@ -357,7 +372,16 @@ namespace EnemySystem
             StopAllCoroutines();
             if (rb != null) rb.isKinematic = true;
             GetComponent<Collider>().enabled = false;
+
+            if (enemySpawner != null) enemySpawner.OnEnemyDestroyed();
             StartCoroutine(DeathAnimation());
+        }
+
+        private EnemySpawner enemySpawner;
+
+        public void SetSpawner(EnemySpawner spawner)
+        {
+            enemySpawner = spawner;
         }
 
         IEnumerator DeathAnimation()

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using EnemySystem;
 public class Goblin : Enemy
 {
