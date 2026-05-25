@@ -5,7 +5,6 @@ using UnityEngine;
 
 public enum HitReactionType { None, Flinch, Knockdown }
 public enum DamageType { Normal, Pierce, Fire }
-public enum ElementType { None, Water, Lightning, Fire, Wind, Ground }
 /// <summary>
 /// 이 인터페이스를 가진 객체는 범용적인 데미지 시스템의 대상이 됩니다. (플레이어, 적, 거점 등)
 /// </summary>
@@ -27,12 +26,12 @@ public struct DamageInfo
     public DamageType Type;
     public HitReactionType Reaction;
     public GameObject Instigator;
-    public ElementType Element;
+    public Element Element;
 
     /// <summary>
     /// 필수 값만 넣으면 나머지는 기본값으로 채워주는 팩토리 메서드
     /// </summary>
-    public static DamageInfo Default(float amount = 0f, float invincibleTime = 0f, ElementType element = ElementType.None)
+    public static DamageInfo Default(float amount = 0f, float invincibleTime = 0f, Element element = null)
     {
         return new DamageInfo
         {
@@ -50,5 +49,24 @@ public struct DamageInfo
 
 public class DamageSystem
 {
+    public static void ApplyDamage(GameObject targetObj, DamageInfo info)
+    {
+        // 1. 순수 물리 데미지 처리 (Enemy.cs의 TakeDamage 호출)
+        EnemySystem.Enemy enemy = targetObj.GetComponent<EnemySystem.Enemy>();
+        if (enemy != null && info.Amount > 0)
+        {
+            enemy.TakeDamage(info.Amount);
+        }
+
+        // 2. 속성 부여 처리 (ElementReceiver 호출)
+        if (info.Element != null)
+        {
+            ElementReceiver receiver = targetObj.GetComponent<ElementReceiver>();
+            if (receiver != null)
+            {
+                receiver.ApplyElement(info);
+            }
+        }
+    }
     
 }

@@ -10,6 +10,7 @@ namespace Defense
         public float damageDelay = 0.5f; 
         public GameObject projectilePrefab;
         public Transform firePoint;
+        public Element myElementData;
 
         // 부모 클래스의 추상 함수인 Shoot을 이 타워만의 방식으로 구체화합니다.
         protected override void Shoot()
@@ -56,8 +57,16 @@ namespace Defense
 
             if (enemy != null)
             {
-                enemy.TakeDamage(attackDamage);
-                Debug.Log($"{delay}초 경과 데미지 적용 완료.");
+                // 1. 택배 상자 포장: 타워 공격력과 타워의 속성(myElementData)을 담습니다.
+                // (myElementData는 타워 스크립트 상단에 public Element myElementData; 로 선언되어 있어야 합니다)
+                DamageInfo info = DamageInfo.Default(attackDamage, 0f, myElementData);
+                info.Instigator = this.gameObject; 
+
+                // 2. 옛날 방식인 enemy.TakeDamage(attackDamage); 를 지우고,
+                // ✨ 반드시 중앙 통제실(DamageSystem)을 거쳐서 공격하게 만듭니다!
+                DamageSystem.ApplyDamage(enemy.gameObject, info);
+
+                Debug.Log("0.5초 경과 데미지 및 속성 적용 완료.");
             }
         }
 
