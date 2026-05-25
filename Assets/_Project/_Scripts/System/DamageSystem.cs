@@ -5,7 +5,7 @@ using UnityEngine;
 
 public enum HitReactionType { None, Flinch, Knockdown }
 public enum DamageType { Normal, Pierce, Fire }
-public enum ElementType { None, Water, Lightning, Poison, Wind }
+public enum ElementType { None, Water, Lightning, Fire, Wind, Ground }
 /// <summary>
 /// 이 인터페이스를 가진 객체는 범용적인 데미지 시스템의 대상이 됩니다. (플레이어, 적, 거점 등)
 /// </summary>
