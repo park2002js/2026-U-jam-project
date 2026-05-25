@@ -34,20 +34,43 @@ public class GameEndManager : MonoBehaviour
         // 중복 실행 방지
         if (IsGameEnded) return;
 
-        IsGameEnded = true;
+        // ──────────────────────────────────────────────────────────────
+        // 🎯 1. 스테이지 클리어 (다음 정비 단계로 전환) 분기 처리
+        // ──────────────────────────────────────────────────────────────
+        if (reason == GameEndReason.StageCleared)
+        {
+            Debug.Log("<color=lime><b>[GameEndManager]</b></color> 스테이지 클리어! 다음 정비 단계로 전환합니다.");
+
+            if (PhaseManager.Instance != null)
+            {
+                // 진짜 게임오버(IsGameEnded) 플래그를 건드리지 않고 페이즈만 빽 시킵니다!
+                PhaseManager.Instance.StartPreparationPhase();
+            }
+            else
+            {
+                Debug.LogError("[GameEndManager] PhaseManager Instance를 찾을 수 없습니다!");
+            }
+
+            return; // ◀ 중요: 진짜 게임이 끝난 게 아니므로 여기서 함수를 탈출합니다!
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // 💀 2. 진짜 게임오버 시퀀스 (플레이어 사망 / 거점 파괴 등)
+        // ──────────────────────────────────────────────────────────────
+        IsGameEnded = true; // 여기서 진짜 게임을 끝냅니다.
         CurrentEndReason = reason;
-        Debug.Log($"<color=red><b>[GameEndManager]</b></color> 최종 게임 종료 접수됨! 원인: {reason}");
+        Debug.Log($"<color=red><b>[GameEndManager]</b></color> 최종 게임 오버 접수됨! 원인: {reason}");
 
         // 게임 종료 시 플레이어에게 전역 잠금을 겁니다.
-        // 마우스 시점 허용 여부에 따라 Look 비트를 추가하거나 뺍니다.
         PlayerLockFlags flagsToLock = PlayerLockFlags.Move | PlayerLockFlags.Action | PlayerLockFlags.Damage;
         if (!allowLookOnGameEnd) flagsToLock |= PlayerLockFlags.Look;
 
-        // this(GameEndManager)를 출처로 하여 잠금을 등록합니다.
-        PlayerStatManager.Instance.AddLock(this, flagsToLock);
-        
+        if (PlayerStatManager.Instance != null)
+        {
+            PlayerStatManager.Instance.AddLock(this, flagsToLock);
+        }
 
-        // 종료 원인별 시퀀스 분기
+        // 종료 원인별 시퀀스 분기 (Cleared가 빠졌으므로 패배 조건만 남음)
         switch (reason)
         {
             case GameEndReason.PlayerDeath:
@@ -55,11 +78,6 @@ public class GameEndManager : MonoBehaviour
                 break;
             case GameEndReason.NexusDestroyed:
                 // TODO: [Sequence] 거점 파괴 연출 (카메라 워크 등)
-                // TODO: [UI] UIManager.Instance.ShowGameEndUI(reason)
-                break;
-            case GameEndReason.StageCleared:
-                // TODO: [Sequence] 게임 클리어 연출 (승리 팡파레 등)
-                // TODO: [UI] UIManager.Instance.ShowGameEndUI(reason)
                 break;
         }
     }
