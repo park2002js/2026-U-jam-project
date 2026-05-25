@@ -11,14 +11,22 @@ public class SimpleUIManager : MonoBehaviour
 
     [Header("게임 오버 UI (Panel)")]
     public GameObject gameOverPanel;
+    [Header("게임 클리어 UI (Panel)")]
+    public GameObject stageClearPanel;
+
     public Text gameOverReasonText;
+    public Text stageClearText;
 
     private void Start()
     {
         // 시작할 때 게임오버 화면은 숨겨둡니다.
-        if (gameOverPanel != null) 
+        if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(false);
+        }
+        if (stageClearPanel != null)
+        {
+            stageClearPanel.SetActive(false);
         }
     }
 
@@ -41,7 +49,7 @@ public class SimpleUIManager : MonoBehaviour
         if (phaseText != null && PhaseManager.Instance != null)
         {
             // Preparation 또는 Combat 문자열이 출력됨
-            if("Combat" == PhaseManager.Instance.CurrentPhase.ToString())
+            if ("Combat" == PhaseManager.Instance.CurrentPhase.ToString())
             {
                 phaseText.text = "Phase : 전투 단계";
             }
@@ -52,19 +60,36 @@ public class SimpleUIManager : MonoBehaviour
         }
 
         // 4. 게임 오버 UI 팝업 (GameEndManager 활용)
+        // 4. 게임 종료 UI 팝업 (가장 확실한 팩트만 체크)
         if (GameEndManager.Instance != null && GameEndManager.Instance.IsGameEnded)
         {
-            if (gameOverPanel != null && !gameOverPanel.activeSelf)
+            // 오직 GameEndManager가 승인한 "진짜 원인" 하나만 보고 패널을 제어합니다.
+            if (GameEndManager.Instance.CurrentEndReason == GameEndReason.StageCleared)
             {
-                gameOverPanel.SetActive(true); // 게임 오버 창 띄우기
+                // [완벽한 승리] 패배 패널은 철저히 끄고, 승리 패널만 활성화!
+                if (gameOverPanel != null) gameOverPanel.SetActive(false);
 
-                if (gameOverReasonText != null)
+                if (stageClearPanel != null && !stageClearPanel.activeSelf)
                 {
-                    // 체력이 0이하라면 플레이어 사망, 아니면 거점 파괴
-                    if (PlayerStatManager.Instance != null && PlayerStatManager.Instance.CurrentHealth <= 0)
-                        gameOverReasonText.text = "플레이어 사망!";
-                    else
-                        gameOverReasonText.text = "거점 파괴됨!";
+                    stageClearPanel.SetActive(true);
+                    if (stageClearText != null) stageClearText.text = "스테이지 클리어 성공!";
+                }
+            }
+            else
+            {
+                // [완벽한 패배 - 플레이어 사망 또는 거점 파괴] 승리 패널은 철저히 끄고, 패배 패널만 활성화!
+                if (stageClearPanel != null) stageClearPanel.SetActive(false);
+
+                if (gameOverPanel != null && !gameOverPanel.activeSelf)
+                {
+                    gameOverPanel.SetActive(true);
+                    if (gameOverReasonText != null)
+                    {
+                        if (GameEndManager.Instance.CurrentEndReason == GameEndReason.PlayerDeath)
+                            gameOverReasonText.text = "플레이어 사망!";
+                        else
+                            gameOverReasonText.text = "거점 파괴됨!";
+                    }
                 }
             }
         }

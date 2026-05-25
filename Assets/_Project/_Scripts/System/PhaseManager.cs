@@ -98,6 +98,8 @@ public class PhaseManager : MonoBehaviour
         }
     }
 
+    [SerializeField]private WaveEntry CurrentWaveEntry;
+
     private void HandleCombatPhase()
     {
         // TODO: [Camera] 카메라 시점을 TPS View로 변경 지시
@@ -105,8 +107,15 @@ public class PhaseManager : MonoBehaviour
         // TODO: [Tower] 모든 타워의 공격 활성화 지시
         // TODO: [UI] 전투 페이즈 UI(웨이브 진행도, 남은 적 수 등) 활성화 지시
 
-        enemySpawner.ActivateAllEnemies();
-
+        if (CurrentWaveEntry != null)
+        {
+            CurrentWaveEntry.StartWave();
+        }
+        else
+        {
+            Debug.LogError("[PhaseManager] 현재 실행할 WaveEntry가 지정되지 않았습니다!");
+        }   
+        
         // 전투 페이즈 시작 시 데미지 판정 잠금 해제
         if (PlayerStatManager.Instance != null)
         {

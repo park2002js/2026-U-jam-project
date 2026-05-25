@@ -24,6 +24,8 @@ public class GameEndManager : MonoBehaviour
         else Destroy(gameObject);
     }
 
+    public GameEndReason CurrentEndReason { get; private set; }
+
     /// <summary>
     /// 조건이 충족되었을 때(체력 0, 거점 파괴 등) 외부에서 호출하여 게임을 종료시킵니다.
     /// </summary>
@@ -33,7 +35,8 @@ public class GameEndManager : MonoBehaviour
         if (IsGameEnded) return;
 
         IsGameEnded = true;
-        Debug.Log($"[GameEndManager] 게임 종료! 원인: {reason}");
+        CurrentEndReason = reason;
+        Debug.Log($"<color=red><b>[GameEndManager]</b></color> 최종 게임 종료 접수됨! 원인: {reason}");
 
         // 게임 종료 시 플레이어에게 전역 잠금을 겁니다.
         // 마우스 시점 허용 여부에 따라 Look 비트를 추가하거나 뺍니다.
