@@ -381,7 +381,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyPrefab: {fileID: 6171380684500688688}
-  enemyCount: 5
+  enemyCount: 1
   spawnInterval: 0.1
   spawner: {fileID: 115865226}
 --- !u!114 &115865226
@@ -550,7 +550,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyPrefab: {fileID: 6171380685406428064}
-  enemyCount: 5
+  enemyCount: 0
   spawnInterval: 0.1
   spawner: {fileID: 377025542}
 --- !u!114 &377025542
@@ -819,7 +819,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyPrefab: {fileID: 6171380684500688688}
-  enemyCount: 5
+  enemyCount: 0
   spawnInterval: 0.1
   spawner: {fileID: 1189446451}
 --- !u!1 &1214582876
@@ -961,7 +961,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyPrefab: {fileID: 6171380684500688688}
-  enemyCount: 5
+  enemyCount: 0
   spawnInterval: 0.1
   spawner: {fileID: 1334385837}
 --- !u!114 &1334385837
@@ -1085,6 +1085,52 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1667369693
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1667369695}
+  - component: {fileID: 1667369694}
+  m_Layer: 0
+  m_Name: GameEndManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1667369694
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1667369693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb8d683d691a00442ae2882980a13eb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  allowLookOnGameEnd: 1
+  deathUIWaitTime: 3
+--- !u!4 &1667369695
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1667369693}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -827.3466, y: 435.40076, z: 96.301994}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1230,3 +1276,4 @@ SceneRoots:
   - {fileID: 2123567422848934019}
   - {fileID: 6878085027833319376}
   - {fileID: 151192358}
+  - {fileID: 1667369695}

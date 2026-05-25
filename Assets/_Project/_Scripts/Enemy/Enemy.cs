@@ -52,6 +52,8 @@ namespace EnemySystem
             go.transform.SetParent(transform);
             go.transform.localPosition = Vector3.zero;
 
+            go.layer = gameObject.layer;
+
             var ds = go.AddComponent<DetectionSphere>();
             ds.type = type;
             ds.Init(this, radius);
@@ -237,7 +239,16 @@ namespace EnemySystem
             StopAllCoroutines();
             if (rb != null) rb.isKinematic = true;
             GetComponent<Collider>().enabled = false;
+
+            if (enemySpawner != null) enemySpawner.OnEnemyDestroyed();
             StartCoroutine(DeathAnimation());
+        }
+
+        private EnemySpawner enemySpawner;
+
+        public void SetSpawner(EnemySpawner spawner)
+        {
+            enemySpawner = spawner;
         }
 
         IEnumerator DeathAnimation()

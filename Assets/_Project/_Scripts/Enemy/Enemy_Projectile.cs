@@ -2,7 +2,7 @@
 
 public class Enemy_Projectile : MonoBehaviour
 {
-    public float speed = 15f;
+    public float speed;
     private Transform target;
     private int damage;
     private bool isHit = false;
