@@ -62,7 +62,7 @@ public class EnemySpawner : MonoBehaviour
         isAllSpawned = false;
 
         // 2. 에러 수정: 옛날 함수 대신 비동기 소환 루틴을 실행합니다.
-        StartCoroutine(PreSpawnAllRoutine());
+        StartCoroutine(SpawnRoutine(prefab, count, interval));
     }
 
     private IEnumerator SpawnRoutine(GameObject prefab, int count, float interval)

@@ -154,7 +154,6 @@ public class PhaseManager : MonoBehaviour
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
         
-        enemySpawner.ActivateAllEnemies();
 
         // 전투 페이즈 시작 시 데미지 판정 잠금 해제
         if (PlayerStatManager.Instance != null)

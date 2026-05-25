@@ -169,6 +169,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1940440230}
     - target: {fileID: 506849031583576203, guid: 026ff2ae77cc9674ca34173cd7e8b22c, type: 3}
+      propertyPath: CurrentWaveEntry
+      value: 
+      objectReference: {fileID: 1512022558}
+    - target: {fileID: 506849031583576203, guid: 026ff2ae77cc9674ca34173cd7e8b22c, type: 3}
       propertyPath: startCombatButton
       value: 
       objectReference: {fileID: 1831848956}
@@ -4152,7 +4156,6 @@ RectTransform:
   - {fileID: 1364062075}
   - {fileID: 1610472897}
   - {fileID: 1099435334}
-  - {fileID: 1835375625}
   - {fileID: 1755278538}
   - {fileID: 550666290}
   - {fileID: 1831848957}
@@ -4179,7 +4182,9 @@ MonoBehaviour:
   enemyCountText: {fileID: 1364062073}
   phaseText: {fileID: 1610472895}
   gameOverPanel: {fileID: 1099435333}
+  stageClearPanel: {fileID: 0}
   gameOverReasonText: {fileID: 1904800063}
+  stageClearText: {fileID: 0}
 --- !u!114 &1000569475 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 506849031583576203, guid: 026ff2ae77cc9674ca34173cd7e8b22c, type: 3}
@@ -6207,7 +6212,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1835375625}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -7773,3 +7778,4 @@ SceneRoots:
   - {fileID: 658456067}
   - {fileID: 348176359}
   - {fileID: 1512022559}
+  - {fileID: 1625737137}
