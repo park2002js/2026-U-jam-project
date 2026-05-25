@@ -47,6 +47,7 @@ public class PlayerController : MonoBehaviour
 
     #region [ Components & References ]
     private Rigidbody rb;
+    private Animator animator; // 애니메이터 컨트롤러 참조를 위해 필요
     
     [Header("카메라 시스템")]
     [Tooltip("이동 기준이 될 카메라 Transform")]
@@ -93,6 +94,8 @@ public class PlayerController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
+
+        animator = GetComponent<Animator>(); // Animation 적용을 위해 필요한 파라미터를 가져와서 변수에 저장
 
         if (cameraTransform == null && Camera.main != null)
             cameraTransform = Camera.main.transform;
@@ -169,6 +172,9 @@ public class PlayerController : MonoBehaviour
 
         HandleStatePipeline(); // 2단계: 중앙 파이프라인에서 상태 처리
         HandleRotation();      // 3단계: 시각적 회전 처리
+
+        HandleAnimation();     // 3.5단계: 애니메이션 파라미터 적용
+
         intent.ResetTriggers(); // 4단계: 처리된 단발성 트리거 초기화
     }
 
@@ -299,6 +305,21 @@ public class PlayerController : MonoBehaviour
                 playerEquipments.ExecuteAttack();
             }
         }
+    }
+
+    // animation 적용을 실시하는 API
+    private void HandleAnimation()
+    {
+        if (animator == null) return;
+
+        // 1. Idle -> Walk (Blend Tree용 Float)
+        float currentSpeed = intent.moveInput.magnitude;
+        animator.SetFloat("Speed", currentSpeed);
+
+        // 2. Walk -> Run (Bool)
+        // PlayerStatManager에서 대쉬 상태를 가져와 그대로 애니메이터에 전달합니다.
+        bool isRunning = PlayerStatManager.Instance.IsDashing;
+        animator.SetBool("IsRunning", isRunning);
     }
 
     #region [ Action Executors ]
