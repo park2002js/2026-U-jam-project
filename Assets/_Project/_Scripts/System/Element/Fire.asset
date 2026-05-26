@@ -13,17 +13,18 @@ MonoBehaviour:
   m_Name: Fire
   m_EditorClassIdentifier: 
   elementType: 1
-  description: "\uB3C4\uD2B8\uB380"
-  baseEffectPrefab: {fileID: 7251879486380165639, guid: c2f6a8962aac3814aa56cb9647c93470, type: 3}
-  duration: 5
   damagePerSecond: 3
-  speedMultiplier: 1
-  isStunned: 0
+  duration: 5
+  baseEffectPrefab: {fileID: 7251879486380165639, guid: c2f6a8962aac3814aa56cb9647c93470, type: 3}
   chainCount: 0
   chainRadius: 5
   chainDamageRatio: 0.5
   comboReactions:
   - incomingElement: 1
+    comboType: 2
+    indicatorPrefab: {fileID: 0}
     comboEffectPrefab: {fileID: 4380918445339287248, guid: 4b38b1b3e38ed7e499c047067beb6122, type: 3}
     comboDamage: 30
     comboRadius: 0
+    delayTime: 0
+    extraTargetCount: 0

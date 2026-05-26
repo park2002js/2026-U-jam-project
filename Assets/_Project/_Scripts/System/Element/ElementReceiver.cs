@@ -2,7 +2,6 @@ using UnityEngine;
 using System.Collections.Generic;
 using EnemySystem;
 
-// ✨ 문제의 'namespace Defense' 울타리를 제거했습니다!
 public class ElementReceiver : MonoBehaviour
 {
     private Enemy enemyScript;
@@ -13,6 +12,7 @@ public class ElementReceiver : MonoBehaviour
         public Element data;
         public float timeLeft;
         public float dotTimer;
+        public float customDotDmg = 0f; // 도트 증폭용
     }
 
     private List<ActiveElement> activeElements = new List<ActiveElement>();
@@ -20,12 +20,7 @@ public class ElementReceiver : MonoBehaviour
     private void Awake()
     {
         enemyScript = GetComponent<Enemy>();
-        
         enemyCollider = GetComponent<Collider>();
-        if (enemyCollider == null)
-        {
-            Debug.LogWarning($"[{gameObject.name}]에게 Collider가 없습니다! 이펙트 크기 조절이 안 됩니다.");
-        }
     }
 
     private void Update()
@@ -35,22 +30,18 @@ public class ElementReceiver : MonoBehaviour
             ActiveElement active = activeElements[i];
             active.timeLeft -= Time.deltaTime;
 
-            if (active.data.damagePerSecond > 0 && enemyScript != null)
+            float currentDot = active.customDotDmg > 0 ? active.customDotDmg : active.data.damagePerSecond;
+
+            if (currentDot > 0 && enemyScript != null)
             {
                 active.dotTimer += Time.deltaTime;
                 if (active.dotTimer >= 1f)
                 {
-                    enemyScript.TakeDamage(active.data.damagePerSecond);
+                    enemyScript.TakeDamage(currentDot);
                     active.dotTimer -= 1f;
-
-                    Debug.Log($"<color=red>♨️ [{active.data.elementType}] 도트 데미지 {active.data.damagePerSecond} 틱 적용됨!</color>");
                 }
             }
-
-            if (active.timeLeft <= 0f)
-            {
-                activeElements.RemoveAt(i);
-            }
+            if (active.timeLeft <= 0f) activeElements.RemoveAt(i);
         }
     }
 
@@ -59,39 +50,23 @@ public class ElementReceiver : MonoBehaviour
         Element incomingElement = info.Element;
         if (incomingElement == null) return;
 
-        if (incomingElement.elementType == ElementType.Lightning && incomingElement.chainCount > 0)
-        {
-            ExecuteChainLightning(info, incomingElement);
-        }
-
         if (incomingElement.baseEffectPrefab != null)
         {
             Vector3 effectPos = transform.position + new Vector3(0, 0.5f, 0); 
             GameObject effect = Instantiate(incomingElement.baseEffectPrefab, effectPos, Quaternion.identity);
-            
             effect.transform.SetParent(this.transform); 
             AdjustEffectSize(effect); 
         }
 
         if (activeElements.Count >= 2) return; 
 
-        activeElements.Add(new ActiveElement 
-        { 
-            data = incomingElement, 
-            timeLeft = incomingElement.duration, 
-            dotTimer = 0f 
-        });
+        activeElements.Add(new ActiveElement { data = incomingElement, timeLeft = incomingElement.duration, dotTimer = 0f });
 
         string slot1 = activeElements.Count > 0 ? activeElements[0].data.elementType.ToString() : "";
         string slot2 = activeElements.Count > 1 ? activeElements[1].data.elementType.ToString() : "";
         string listStatus = $"[{slot1} + {slot2}]";
 
-        if (activeElements.Count == 1)
-        {
-            string dotMsg = incomingElement.damagePerSecond > 0 ? $" -> {incomingElement.damagePerSecond} 도트뎀 부여" : "";
-            Debug.Log($"<color=cyan>{listStatus} {incomingElement.elementType} 속성이 부여됨{dotMsg}</color>");
-        }
-        else if (activeElements.Count == 2)
+        if (activeElements.Count == 2)
         {
             CheckAndTriggerCombo(listStatus);
         }
@@ -104,35 +79,76 @@ public class ElementReceiver : MonoBehaviour
 
         if (first.TryGetComboReaction(second.elementType, out ComboReaction reaction))
         {
-            TriggerCombo(reaction, listStatus);
+            ExecuteComboByType(first, reaction, listStatus);
         }
         else if (second.TryGetComboReaction(first.elementType, out ComboReaction reverseReaction))
         {
-            TriggerCombo(reverseReaction, listStatus);
+            ExecuteComboByType(second, reverseReaction, listStatus);
         }
         else
         {
-            Debug.Log($"<color=grey>{listStatus} 속성 연계 실패! 첫 번째 속성({first.elementType}) 제거됨.</color>");
             activeElements.RemoveAt(0); 
         }
     }
 
-    private void TriggerCombo(ComboReaction reaction, string listStatus)
+    // ✨ [핵심 함수] SO의 콤보 타입에 따라 스위치를 켭니다!
+    private void ExecuteComboByType(Element originalElement, ComboReaction reaction, string listStatus)
     {
-        string dmgMsg = reaction.comboDamage > 0 ? $" -> {reaction.comboDamage} 즉발 콤보 데미지!" : "";
-        Debug.Log($"<color=orange>{listStatus} 속성 연계 발동!{dmgMsg}</color>");
-        
-        if (reaction.comboEffectPrefab != null)
-        {
-            Vector3 comboPos = transform.position + new Vector3(0, 0.5f, 0); 
-            GameObject comboEffect = Instantiate(reaction.comboEffectPrefab, comboPos, Quaternion.identity);
-            
-            comboEffect.transform.SetParent(this.transform);
-            AdjustEffectSize(comboEffect); 
-        }
+        Debug.Log($"<color=orange>{listStatus} 연계 발동! 타입: {reaction.comboType}</color>");
 
-        if (enemyScript != null && reaction.comboDamage > 0)
-            enemyScript.TakeDamage(reaction.comboDamage);
+        switch (reaction.comboType)
+        {
+            case ComboType.Instant:
+                if (reaction.comboEffectPrefab != null) Instantiate(reaction.comboEffectPrefab, transform.position, Quaternion.identity);
+                if (enemyScript != null) enemyScript.TakeDamage(reaction.comboDamage);
+                break;
+
+            case ComboType.DelayedAoE:
+                // 적이 죽어도 폭발은 남아야 하므로, 허공에 빈 게임오브젝트를 만들고 범용 콤보 매니저를 붙입니다.
+                GameObject handlerObj = new GameObject("DelayedAoE_Handler");
+                handlerObj.transform.position = transform.position;
+                
+                // ✨ 이 부분을 ComboHandler로 변경했습니다!
+                ComboHandler handler = handlerObj.AddComponent<ComboHandler>(); 
+                
+                handler.Setup(reaction); 
+                break;
+
+            case ComboType.DoT_Amplify:
+                // 도트뎀 2배 증폭
+                activeElements.Clear();
+                activeElements.Add(new ActiveElement { data = originalElement, timeLeft = originalElement.duration, customDotDmg = originalElement.damagePerSecond * 2f });
+                return; // 도트 증폭은 리스트를 다르게 갱신하므로 밑의 Clear를 무시하고 리턴
+
+            case ComboType.ChainAttack:
+                // 1. 화려한 100만 볼트 이펙트 생성
+                if (reaction.comboEffectPrefab != null)
+                {
+                    Instantiate(reaction.comboEffectPrefab, transform.position, Quaternion.identity);
+                }
+
+                // 2. 인스펙터에 적은 어마어마한 범위(comboRadius)로 적들을 탐색
+                Collider[] chainHits = Physics.OverlapSphere(transform.position, reaction.comboRadius, LayerMask.GetMask("Enemy"));
+                int chainedCount = 0;
+
+                foreach (Collider hit in chainHits)
+                {
+                    if (hit.gameObject == this.gameObject) continue; // 자기 자신은 제외
+
+                    Enemy targetEnemy = hit.GetComponent<Enemy>();
+                    if (targetEnemy != null)
+                    {
+                        // 3. 인스펙터에 적은 강력한 데미지(comboDamage)를 입힘
+                        DamageInfo chainInfo = DamageInfo.Default(reaction.comboDamage, 0f, null);
+                        DamageSystem.ApplyDamage(targetEnemy.gameObject, chainInfo);
+                        
+                        chainedCount++;
+                        // 4. 인스펙터에 적은 최대 타겟 수(extraTargetCount)만큼만 튕김
+                        if (chainedCount >= reaction.extraTargetCount) break;
+                    }
+                }
+                break;
+        }
 
         activeElements.Clear();
     }
@@ -140,28 +156,7 @@ public class ElementReceiver : MonoBehaviour
     private void AdjustEffectSize(GameObject effectObj)
     {
         if (enemyCollider == null) return;
-
         float enemyVisualSize = Mathf.Max(enemyCollider.bounds.size.x, enemyCollider.bounds.size.y, enemyCollider.bounds.size.z);
         effectObj.transform.localScale = new Vector3(enemyVisualSize, enemyVisualSize, enemyVisualSize);
-    }
-
-    private void ExecuteChainLightning(DamageInfo originalInfo, Element lightningData)
-    {
-        Collider[] hits = Physics.OverlapSphere(transform.position, lightningData.chainRadius, LayerMask.GetMask("Enemy"));
-        int chainedCount = 0;
-        float chainDamage = originalInfo.Amount * lightningData.chainDamageRatio;
-
-        foreach (Collider hitCol in hits)
-        {
-            if (hitCol.gameObject == this.gameObject) continue;
-
-            Enemy targetEnemy = hitCol.GetComponent<Enemy>();
-            if (targetEnemy != null)
-            {
-                targetEnemy.TakeDamage(chainDamage);
-                chainedCount++;
-                if (chainedCount >= lightningData.chainCount) break;
-            }
-        }
     }
 }
