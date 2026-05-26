@@ -9,7 +9,8 @@ public enum ComboType
     Instant,       // 즉발기 (기본 데미지 쾅!)
     DelayedAoE,    // 텀 공격 / 장판기 (예고 후 폭발)
     DoT_Amplify,   // 도트딜 증폭 (불+불)
-    ChainAttack    // 연쇄 공격 (번개+번개)
+    ChainAttack,    // 연쇄 공격 (번개+번개)
+    AreaDoT,
 }
 
 [System.Serializable]
@@ -43,6 +44,7 @@ public class Element : ScriptableObject
     public int chainCount;
     public float chainRadius;
     public float chainDamageRatio;
+    public GameObject chainBeamPrefab;
 
     [Header("Combo Reactions")]
     public List<ComboReaction> comboReactions;

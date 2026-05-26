@@ -13,18 +13,27 @@ MonoBehaviour:
   m_Name: Lightning
   m_EditorClassIdentifier: 
   elementType: 5
-  damagePerSecond: 0
-  duration: 3
+  damagePerSecond: 20
+  duration: 1
   baseEffectPrefab: {fileID: 0}
   chainCount: 3
   chainRadius: 3
   chainDamageRatio: 1
+  chainBeamPrefab: {fileID: 2375589281258290619, guid: cb43bc7dd87fa344893f5e6e3286eed1, type: 3}
   comboReactions:
   - incomingElement: 5
     comboType: 3
     indicatorPrefab: {fileID: 0}
-    comboEffectPrefab: {fileID: 0}
-    comboDamage: 100
+    comboEffectPrefab: {fileID: 2375589281258290619, guid: cb43bc7dd87fa344893f5e6e3286eed1, type: 3}
+    comboDamage: 40
     comboRadius: 6
     delayTime: 0
     extraTargetCount: 5
+  - incomingElement: 2
+    comboType: 0
+    indicatorPrefab: {fileID: 0}
+    comboEffectPrefab: {fileID: 2375589281258290619, guid: cb43bc7dd87fa344893f5e6e3286eed1, type: 3}
+    comboDamage: 150
+    comboRadius: 1
+    delayTime: 0
+    extraTargetCount: 0

@@ -19,6 +19,7 @@ MonoBehaviour:
   chainCount: 0
   chainRadius: 5
   chainDamageRatio: 0.5
+  chainBeamPrefab: {fileID: 0}
   comboReactions:
   - incomingElement: 1
     comboType: 2
@@ -28,3 +29,11 @@ MonoBehaviour:
     comboRadius: 0
     delayTime: 0
     extraTargetCount: 0
+  - incomingElement: 5
+    comboType: 3
+    indicatorPrefab: {fileID: 0}
+    comboEffectPrefab: {fileID: 2375589281258290619, guid: cb43bc7dd87fa344893f5e6e3286eed1, type: 3}
+    comboDamage: 15
+    comboRadius: 3
+    delayTime: 0
+    extraTargetCount: 3
