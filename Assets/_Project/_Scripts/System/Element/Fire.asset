@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   elementType: 1
   description: "\uB3C4\uD2B8\uB380"
-  baseEffectPrefab: {fileID: 0}
+  baseEffectPrefab: {fileID: 7251879486380165639, guid: c2f6a8962aac3814aa56cb9647c93470, type: 3}
   duration: 5
   damagePerSecond: 3
   speedMultiplier: 1
@@ -24,6 +24,6 @@ MonoBehaviour:
   chainDamageRatio: 0.5
   comboReactions:
   - incomingElement: 1
-    comboEffectPrefab: {fileID: 0}
+    comboEffectPrefab: {fileID: 4380918445339287248, guid: 4b38b1b3e38ed7e499c047067beb6122, type: 3}
     comboDamage: 30
     comboRadius: 0
