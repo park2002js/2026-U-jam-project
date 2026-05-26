@@ -13,12 +13,18 @@ MonoBehaviour:
   m_Name: Wave01
   m_EditorClassIdentifier: 
   spawnList:
-  - enemyPrefab: {fileID: 1109111048479027950, guid: 9dc488e362a4e8441a5d8eda495ffa3b, type: 3}
+  - enemyPrefab: {fileID: 1047937616987057439, guid: f1e050525ed713a4c9af66a553b9fa17, type: 3}
     spawnInterval: 0.5
     startDelay: 0.3
     spawnOffset:
-    - {x: 10, y: 0, z: 2}
-    - {x: 10, y: 0, z: 2}
-    - {x: 10, y: 0, z: 30}
-    - {x: 20, y: 0, z: 10}
-    - {x: 40, y: 0, z: 2}
+    - {x: 0, y: 2, z: -10}
+    - {x: 8, y: 2, z: -10}
+    - {x: -10, y: 2, z: -10}
+    - {x: 4, y: 2, z: 0}
+    - {x: -12, y: 2, z: 0}
+  - enemyPrefab: {fileID: 1109111048479027950, guid: 9dc488e362a4e8441a5d8eda495ffa3b, type: 3}
+    spawnInterval: 0.1
+    startDelay: 0.2
+    spawnOffset:
+    - {x: 2, y: 2, z: -12}
+    - {x: -15, y: 2, z: -12}
