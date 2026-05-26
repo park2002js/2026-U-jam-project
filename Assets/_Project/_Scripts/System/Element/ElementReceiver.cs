@@ -2,9 +2,11 @@ using UnityEngine;
 using System.Collections.Generic;
 using EnemySystem;
 
+// ✨ 문제의 'namespace Defense' 울타리를 제거했습니다!
 public class ElementReceiver : MonoBehaviour
 {
     private Enemy enemyScript;
+    private Collider enemyCollider; 
 
     private class ActiveElement
     {
@@ -18,6 +20,12 @@ public class ElementReceiver : MonoBehaviour
     private void Awake()
     {
         enemyScript = GetComponent<Enemy>();
+        
+        enemyCollider = GetComponent<Collider>();
+        if (enemyCollider == null)
+        {
+            Debug.LogWarning($"[{gameObject.name}]에게 Collider가 없습니다! 이펙트 크기 조절이 안 됩니다.");
+        }
     }
 
     private void Update()
@@ -35,7 +43,6 @@ public class ElementReceiver : MonoBehaviour
                     enemyScript.TakeDamage(active.data.damagePerSecond);
                     active.dotTimer -= 1f;
 
-                    // 도트 데미지 디버그 메시지
                     Debug.Log($"<color=red>♨️ [{active.data.elementType}] 도트 데미지 {active.data.damagePerSecond} 틱 적용됨!</color>");
                 }
             }
@@ -59,7 +66,11 @@ public class ElementReceiver : MonoBehaviour
 
         if (incomingElement.baseEffectPrefab != null)
         {
-            Instantiate(incomingElement.baseEffectPrefab, transform.position, Quaternion.identity);
+            Vector3 effectPos = transform.position + new Vector3(0, 0.5f, 0); 
+            GameObject effect = Instantiate(incomingElement.baseEffectPrefab, effectPos, Quaternion.identity);
+            
+            effect.transform.SetParent(this.transform); 
+            AdjustEffectSize(effect); 
         }
 
         if (activeElements.Count >= 2) return; 
@@ -112,13 +123,26 @@ public class ElementReceiver : MonoBehaviour
         Debug.Log($"<color=orange>{listStatus} 속성 연계 발동!{dmgMsg}</color>");
         
         if (reaction.comboEffectPrefab != null)
-            Instantiate(reaction.comboEffectPrefab, transform.position, Quaternion.identity);
+        {
+            Vector3 comboPos = transform.position + new Vector3(0, 0.5f, 0); 
+            GameObject comboEffect = Instantiate(reaction.comboEffectPrefab, comboPos, Quaternion.identity);
+            
+            comboEffect.transform.SetParent(this.transform);
+            AdjustEffectSize(comboEffect); 
+        }
 
         if (enemyScript != null && reaction.comboDamage > 0)
             enemyScript.TakeDamage(reaction.comboDamage);
 
-        // ✨ 콤보 데미지를 주고 나서 리스트를 깔끔하게 비움! (진화 로직 삭제)
         activeElements.Clear();
+    }
+
+    private void AdjustEffectSize(GameObject effectObj)
+    {
+        if (enemyCollider == null) return;
+
+        float enemyVisualSize = Mathf.Max(enemyCollider.bounds.size.x, enemyCollider.bounds.size.y, enemyCollider.bounds.size.z);
+        effectObj.transform.localScale = new Vector3(enemyVisualSize, enemyVisualSize, enemyVisualSize);
     }
 
     private void ExecuteChainLightning(DamageInfo originalInfo, Element lightningData)
