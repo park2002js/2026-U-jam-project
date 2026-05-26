@@ -41,6 +41,7 @@ namespace EnemySystem
 
             GameObject baseObj = GameObject.FindGameObjectWithTag("Base");
             if (baseObj != null) defaultTarget = baseObj.transform;
+            else Debug.Log("베이스 건물이 없어");
             target = defaultTarget;
 
             CreateDetectionSphere(chaseRange, DetectionSphere.RangeType.Chase);
