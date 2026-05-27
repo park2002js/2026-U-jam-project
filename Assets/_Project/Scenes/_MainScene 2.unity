@@ -7338,6 +7338,10 @@ PrefabInstance:
       propertyPath: PS
       value: 90
       objectReference: {fileID: 0}
+    - target: {fileID: 5344919839639587311, guid: c939a5e6620a38c41a83b6fe35e7b840, type: 3}
+      propertyPath: muzzleFlashPrefab
+      value: 
+      objectReference: {fileID: 3524130997257135631, guid: 04820717a9f40fa4a94bd6c18682e4c7, type: 3}
     - target: {fileID: 8781627979810380184, guid: c939a5e6620a38c41a83b6fe35e7b840, type: 3}
       propertyPath: m_Data.m_SourceObjects.m_Length
       value: 1

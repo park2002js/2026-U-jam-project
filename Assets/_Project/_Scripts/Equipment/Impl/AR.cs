@@ -29,8 +29,19 @@ namespace Equipment.Weapon
         {
             // Ranged의 기본 Shoot(목표점 계산 등)을 수행
             base.Shoot();
+
+            // Muzzle Flash 
+            if (muzzleFlashPrefab != null && firePoint != null)
+            {
+                // 총구 위치와 회전값에 맞춰 이펙트 생성
+                GameObject flash = Instantiate(muzzleFlashPrefab, firePoint.position, firePoint.rotation);
+                // 총구를 따라가도록 부모 설정 (움직이면서 쏠 때 자연스럽게)
+                flash.transform.SetParent(firePoint);
+                // 0.1초 뒤 자동 삭제
+                Destroy(flash, 0.1f);
+            }
             
-            // TODO: 탄환 발사 로직 외에, AR에만 존재하는 고유 연출 (반동, 사운드, Muzzle Flash 등) 추가
+            // TODO: 탄환 발사 로직 외에, AR에만 존재하는 고유 연출 (반동, 사운드) 추가
             Debug.Log("[AR] 사격 실행!");
         }
     }

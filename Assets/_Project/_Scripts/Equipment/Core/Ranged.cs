@@ -9,6 +9,9 @@ namespace Equipment.Weapon
         [Header("Ranged Settings")]
         [Tooltip("발사될 투사체 프리팹 (껍데기용)")]
         public GameObject projectilePrefab;
+
+        [Tooltip("총구 이펙트 (Muzzle Flash)")]
+        public GameObject muzzleFlashPrefab;
         
         [Tooltip("투사체의 날아가는 속도")]
         public float PS;
