@@ -122,6 +122,7 @@ public class EnemySpawner : MonoBehaviour
                 if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, 20f, groundLayer))
                 {
                     finalSpawnPosition = hit.point;
+                    finalSpawnPosition.y += info.spawnOffset[i].y + 1f;
                 }
 
                 // 🎯 [교정 3] 계산한 고유 좌표(finalSpawnPosition)를 그대로 집어넣어 소환!

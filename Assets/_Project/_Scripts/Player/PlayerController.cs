@@ -1,5 +1,6 @@
 using System.Collections; // 코루틴 사용
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody))]
@@ -44,10 +45,22 @@ public class PlayerController : MonoBehaviour
     private InputAction manualAttackAction;
     #endregion
 
+    #region [ Animation Rigging ]
+    [Header("Animation Settings")]
+
+    [SerializeField] private Animator animator; // 애니메이터 컨트롤러 참조를 위해 필요
+    [SerializeField] private UnityEngine.Animations.Rigging.RigBuilder rigBuilder;
+
+    private UnityEngine.Animations.Rigging.Rig bodyRig;
+    private UnityEngine.Animations.Rigging.Rig aimingRig;
+    
+    [Header("Rigging Settings")]
+    [Tooltip("조준 시 Rig Weight가 0에서 1로 차오르는 속도 (숫자가 클수록 빠름)")]
+    [SerializeField] private float rigTransitionSpeed = 15f; 
+    #endregion
 
     #region [ Components & References ]
     private Rigidbody rb;
-    private Animator animator; // 애니메이터 컨트롤러 참조를 위해 필요
     
     [Header("카메라 시스템")]
     [Tooltip("이동 기준이 될 카메라 Transform")]
@@ -77,6 +90,8 @@ public class PlayerController : MonoBehaviour
     private Vector3 rollDirection;
     #endregion
 
+    
+
     // Input Action System 파일을 아예 연동시켰기에 제거
     // #region [ Input Actions ]
     // [Header("입력 설정 (New Input System)")]
@@ -95,7 +110,21 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
 
-        animator = GetComponent<Animator>(); // Animation 적용을 위해 필요한 파라미터를 가져와서 변수에 저장
+        // 2. RigBuilder가 있고, 레이어가 3개 이상 있다면 3번째(인덱스 2) Rig를 캐싱
+        if (rigBuilder != null && rigBuilder.layers.Count >= 3)
+        {
+            aimingRig = rigBuilder.layers[2].rig;
+            aimingRig.weight = 0f; // 시작할 때는 0으로 초기화
+
+            bodyRig = rigBuilder.layers[0].rig;
+            bodyRig.weight = 0f;
+        }
+        else
+        {
+            Debug.LogWarning("RigBuilder를 찾을 수 없거나 Rig Layer가 3개 미만입니다!");
+        }
+
+        //animator = GetComponent<Animator>(); // Animation 적용을 위해 필요한 파라미터를 가져와서 변수에 저장
 
         if (cameraTransform == null && Camera.main != null)
             cameraTransform = Camera.main.transform;
@@ -161,6 +190,20 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        if (Keyboard.current.backquoteKey.wasPressedThisFrame)
+        {
+            if (Cursor.lockState == CursorLockMode.Locked)
+            {
+                Cursor.visible = true;
+                Cursor.lockState = CursorLockMode.None; // 커서 잠금 해제
+            }
+            else
+            {
+                Cursor.visible = false;
+                Cursor.lockState = CursorLockMode.Locked; // 커서 다시 잠금
+            }
+        }
+        
         if (Cursor.lockState == CursorLockMode.None || Cursor.visible == true) 
         {
             // 의도(Intent) 버퍼를 강제로 비워버립니다. (카메라 회전, 이동 전부 멈춤)
@@ -174,6 +217,8 @@ public class PlayerController : MonoBehaviour
         HandleRotation();      // 3단계: 시각적 회전 처리
 
         HandleAnimation();     // 3.5단계: 애니메이션 파라미터 적용
+
+        HandleRigWeight();      // 3.7단계 : Rig Weight 조정
 
         intent.ResetTriggers(); // 4단계: 처리된 단발성 트리거 초기화
     }
@@ -320,6 +365,28 @@ public class PlayerController : MonoBehaviour
         // PlayerStatManager에서 대쉬 상태를 가져와 그대로 애니메이터에 전달합니다.
         bool isRunning = PlayerStatManager.Instance.IsDashing;
         animator.SetBool("IsRunning", isRunning);
+
+        // 3. 조준 상태 적용 (Bool)
+        // PlayerStatManager에서 조준 상태를 가져와서 애니메이터에 그대로 전달
+        bool isAiming = PlayerStatManager.Instance.IsAiming;
+        animator.SetBool("IsAiming", isAiming);
+    }
+
+    // Rig Weight를 조정하는 함수 - 현재로써는 무조건 3번째 칸(2번인덱스)에 Aiming 관련 Animation Rig가 있음을 알고 이렇게 하는 것
+    private void HandleRigWeight()
+    {
+        if (aimingRig == null || bodyRig == null) return;
+
+        // PlayerStatManager 등에서 현재 조준 상태를 가져옴
+        // (만약 Manager를 안 쓴다면 intent.aimHeld 같은 변수로 대체 가능)
+        bool isAiming = PlayerStatManager.Instance.IsAiming;
+        
+        // 목표 가중치: 조준 중이면 1.0, 아니면 0.0
+        float targetWeight = isAiming ? 1.0f : 0.0f;
+
+        // Mathf.MoveTowards를 사용하면 지정한 속도(rigTransitionSpeed)로 아주 빠르고 '선형적'으로 목표값에 도달함
+        // Body Rig과 Aim Rig 둘 다 변경되도록 함
+        bodyRig.weight = aimingRig.weight = Mathf.MoveTowards(aimingRig.weight, targetWeight, Time.deltaTime * rigTransitionSpeed);
     }
 
     #region [ Action Executors ]
