@@ -7,7 +7,7 @@ namespace Ballistics
     {
         private float lifeTime = 5f; // 허공으로 날아갔을 때 메모리 누수를 막기 위한 최대 생존 시간
 
-        public void Execute(Transform firePoint, Vector3 direction, float damage, float projectileSpeed, GameObject projectilePrefab)
+        public void Execute(Transform firePoint, Vector3 direction, float damage, float projectileSpeed, GameObject projectilePrefab, Element element = null)
         {
             if (projectilePrefab == null)
             {
@@ -43,6 +43,7 @@ namespace Ballistics
                 reporter = projectile.AddComponent<ProjectileTrigger>();
             }
             reporter.damage = damage; // 무기의 공격력을 투사체에 전달
+            reporter.element = element;
 
             // 5. 물리적인 힘(속도)을 가하여 발사 (유니티 최신 linearVelocity 사용)
             rb.linearVelocity = direction * projectileSpeed;

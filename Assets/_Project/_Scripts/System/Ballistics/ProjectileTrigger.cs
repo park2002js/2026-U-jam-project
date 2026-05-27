@@ -1,4 +1,5 @@
 using UnityEngine;
+using EnemySystem;
 
 namespace Ballistics
 {
@@ -6,14 +7,19 @@ namespace Ballistics
     public class ProjectileTrigger : MonoBehaviour
     {
         [HideInInspector] public float damage; // ProjectileBehaviour가 생성 직후 주입해 줄 데미지
-
+        public Element element;
         private void OnTriggerEnter(Collider other)
         {
             // 발사하자마자 플레이어 자신의 콜라이더에 맞는 것을 방지
             if (other.CompareTag("Player")) return;
 
-            // 맞은 객체에게 데미지 전달 (Hitscan과 동일한 규격)
-            other.SendMessage("TakeDamage", (int)damage, SendMessageOptions.DontRequireReceiver);
+            Enemy targetEnemy = other.GetComponentInParent<Enemy>();
+            if (targetEnemy != null)
+            {
+                DamageInfo info = DamageInfo.Default(damage, 0f, element);
+                info.Instigator = gameObject;
+                DamageSystem.ApplyDamage(targetEnemy.gameObject, info);
+            }
             
             Debug.Log($"[Projectile] 적중! 대상: {other.name}, 데미지: {(int)damage}");
 

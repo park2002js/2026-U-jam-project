@@ -19,6 +19,10 @@ namespace Equipment.Weapon
         [Tooltip("투사체가 생성될 총구의 위치")]
         public Transform firePoint;
 
+        [Header("Element Settings")]
+        [Tooltip("이 무기에 부여할 속성 (없으면 비워둠)")]
+        public Element weaponElement;
+
         protected Camera mainCamera;
 
         protected IBallisticsBehaviour ballistics; // 발사 로직 인터페이스 참조
@@ -64,7 +68,7 @@ namespace Equipment.Weapon
             }
 
             // TODO: 추후 구현될 3가지 탄환 발사 로직 중 하나에 shootDirection과 PS, currentAD를 전달하여 실행할 예정
-            ballistics.Execute(firePoint, shootDirection, currentAD, PS, projectilePrefab);
+            ballistics.Execute(firePoint, shootDirection, currentAD, PS, projectilePrefab, weaponElement);
 
             Debug.Log($"[Ranged] 방향 산출 완료. 총구 위치: {firePoint.position}, 방향 벡터: {shootDirection}");
         }

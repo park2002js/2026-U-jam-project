@@ -5,7 +5,7 @@ namespace Ballistics
     // 중앙 통제형 일반 투사체 발사 로직
     public class SegmentRaycastBehaviour : IBallisticsBehaviour
     {
-        public void Execute(Transform firePoint, Vector3 direction, float damage, float projectileSpeed, GameObject projectilePrefab)
+        public void Execute(Transform firePoint, Vector3 direction, float damage, float projectileSpeed, GameObject projectilePrefab, Element element = null)
         {
             if (projectilePrefab == null)
             {
@@ -24,7 +24,7 @@ namespace Ballistics
             }
 
             // 3. 방향, 속도, 데미지 데이터를 넘겨주어 발사 시작
-            segment.Init(direction, projectileSpeed, damage);
+            segment.Init(direction, projectileSpeed, damage, element);
         }
     }
 }

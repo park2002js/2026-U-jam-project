@@ -1,4 +1,5 @@
 using UnityEngine;
+using EnemySystem;
 
 namespace Ballistics
 {
@@ -10,20 +11,41 @@ namespace Ballistics
         private float damage;
         private float lifeTime = 5f; // 허공으로 날아갔을 때 파괴될 시간
         private bool isInitialized = false;
+        private Element element;
 
         // 투사체 생성 직후 데이터를 주입받는 초기화 함수
-        public void Init(Vector3 dir, float spd, float dmg)
+        public void Init(Vector3 dir, float spd, float dmg, Element element)
         {
             direction = dir.normalized;
             speed = spd;
             damage = dmg;
             isInitialized = true;
+            this.element = element;
             
             // 메모리 누수 방지
             Destroy(gameObject, lifeTime);
 
             // 생성 직후, 이미 적의 몸통(Collider) 내부에 파고들어 스폰되었는지 1차 검사
             CheckPointBlankHit();
+        }
+
+        // [추가됨] 데미지와 속성을 안전하게 전달하는 공통 함수
+        private void ApplyDamageToTarget(Collider targetCol)
+        {
+            // 자식 콜라이더(팔, 다리)에 맞았을 경우를 대비해 최상위 부모의 Enemy 컴포넌트를 찾음
+            Enemy targetEnemy = targetCol.GetComponentInParent<Enemy>();
+            
+            if (targetEnemy != null)
+            {
+                if(HitFeedbackUI.Instance != null) HitFeedbackUI.Instance.ShowHitmarker();
+                // 타워와 동일하게 명세서(DamageInfo)에 데미지와 속성을 담아 포장!
+                DamageInfo info = DamageInfo.Default(damage, 0f, element);
+                info.Instigator = this.gameObject;
+                
+                // DamageSystem을 통해 전달 (알아서 ElementReceiver로 넘어감)
+                DamageSystem.ApplyDamage(targetEnemy.gameObject, info);
+                Debug.Log($"[Segment] 적중! 대상: {targetEnemy.name}, 속성 적용됨");
+            }
         }
 
         private void CheckPointBlankHit()
@@ -34,8 +56,7 @@ namespace Ballistics
             {
                 if (!col.CompareTag("Player"))
                 {
-                    // SendMessageUpwards로 변경하여 적의 자식 객체에 맞아도 본체로 데미지가 올라가도록 처리
-                    col.SendMessageUpwards("TakeDamage", (int)damage, SendMessageOptions.DontRequireReceiver);
+                    ApplyDamageToTarget(col); // [수정됨] SendMessage 대체
                     Debug.Log($"[Segment 초근접] 적중! 대상: {col.name}, 데미지: {(int)damage}");
                     Destroy(gameObject);
                     return;
@@ -56,9 +77,9 @@ namespace Ballistics
             {
                 // 플레이어 본인을 맞춘 게 아니라면 타격 처리
                 if (!hit.collider.CompareTag("Player"))
-                {
+                {   
                     // 대상에게 데미지 전달
-                    hit.collider.SendMessageUpwards("TakeDamage", (int)damage, SendMessageOptions.DontRequireReceiver);
+                    ApplyDamageToTarget(hit.collider); // [수정됨] SendMessage 대체
                     Debug.Log($"[Segment] 적중! 대상: {hit.collider.name}, 데미지: {(int)damage}");
                     
                     // 타격 완료 후 투사체 파괴

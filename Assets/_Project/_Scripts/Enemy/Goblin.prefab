@@ -12,8 +12,9 @@ GameObject:
   - component: {fileID: 6681792300059737354}
   - component: {fileID: 7295709235378588888}
   - component: {fileID: 2308007362907222288}
-  - component: {fileID: 4950347624944623469}
   - component: {fileID: 5628454321756207872}
+  - component: {fileID: 4950347624944623469}
+  - component: {fileID: 7260340097795493447}
   m_Layer: 6
   m_Name: Goblin
   m_TagString: Untagged
@@ -110,24 +111,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &4950347624944623469
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1109111048479027950}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d1d6399ba92c1844f872aa72876bbbde, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  HP: 0
-  moveSpeed: 0
-  AD: 0
-  AS: 0
-  chaseRange: 10
-  attackRange: 5
 --- !u!54 &5628454321756207872
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -155,3 +138,37 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 112
   m_CollisionDetection: 0
+--- !u!114 &4950347624944623469
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109111048479027950}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1d6399ba92c1844f872aa72876bbbde, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  HP: 0
+  moveSpeed: 0
+  AD: 0
+  AS: 0
+  chaseRange: 10
+  attackRange: 5
+  projectilePrefab: {fileID: 0}
+  throwPoint: {fileID: 0}
+--- !u!114 &7260340097795493447
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109111048479027950}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a136f6a52ddd4c4387fce94abfeb2bf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  testElements: []
+  isDummy: 0

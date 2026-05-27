@@ -1,4 +1,5 @@
 using UnityEngine;
+using EnemySystem;
 
 namespace Ballistics
 {
@@ -8,7 +9,7 @@ namespace Ballistics
         // 탄환 최대 거리
         private float maxRange = 1000f;
 
-        public void Execute(Transform firePoint, Vector3 direction, float damage, float projectileSpeed, GameObject projectilePrefab)
+        public void Execute(Transform firePoint, Vector3 direction, float damage, float projectileSpeed, GameObject projectilePrefab, Element element = null)
         {
             // 목적지 지점 저장
             Vector3 endPoint;
@@ -17,11 +18,12 @@ namespace Ballistics
             if (Physics.Raycast(firePoint.position, direction, out RaycastHit hit, maxRange))
             {
                 endPoint = hit.point; // 맞은 지점
-
-                // 맞은 객체에게 데미지 전달 (요청하신 대로 TakeDamage(int) 통일 규격 사용)
-                // MVP 단계에서 가장 범용적으로 쓸 수 있는 SendMessage를 활용해 인터페이스 없이도 함수를 강제 호출합니다.
-                hit.collider.SendMessage("TakeDamage", (int)damage, SendMessageOptions.DontRequireReceiver);
-                
+                Enemy targetEnemy = hit.collider.GetComponentInParent<Enemy>();
+                if (targetEnemy != null)
+                {
+                    DamageInfo info = DamageInfo.Default(damage, 0f, element);
+                    DamageSystem.ApplyDamage(targetEnemy.gameObject, info);
+                }
                 Debug.Log($"[Hitscan] 적중! 대상: {hit.collider.name}, 데미지: {(int)damage}");
             }
             else

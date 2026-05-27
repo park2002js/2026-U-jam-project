@@ -197,7 +197,22 @@ public class ShopManager : MonoBehaviour
     {
         if (selectedTowerPrefab != null)
         {
-            Instantiate(selectedTowerPrefab, pendingPlacePosition, Quaternion.identity);
+            // 1. 타워를 지정된 위치에 생성
+            GameObject newTower = Instantiate(selectedTowerPrefab, pendingPlacePosition, Quaternion.identity);
+
+            // 2. 타워에 부착된 콜라이더를 찾아 높이를 보정
+            Collider towerCollider = newTower.GetComponentInChildren<Collider>();
+            if (towerCollider != null)
+            {
+                // 타워의 가장 아랫부분(min.y)과 현재 기준점(pivot)의 차이를 구합니다.
+                float bottomOffset = towerCollider.bounds.min.y - newTower.transform.position.y;
+                
+                // 타워의 위치를 그 차이만큼 위로 끌어올려 바닥에 정확히 안착시킵니다.
+                Vector3 correctedPosition = pendingPlacePosition;
+                correctedPosition.y -= bottomOffset+0.1f; 
+                newTower.transform.position = correctedPosition;
+            }
+
             gridManager.MarkPositionOccupied(pendingPlacePosition);
         }
 
