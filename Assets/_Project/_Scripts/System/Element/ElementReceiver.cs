@@ -1,11 +1,20 @@
 using UnityEngine;
 using System.Collections.Generic;
 using EnemySystem;
+using UnityEngine.InputSystem;
 
 public class ElementReceiver : MonoBehaviour
 {
     private Enemy enemyScript;
     private Collider enemyCollider; 
+    public Element[] testElements;
+
+    [Header("Debug")]
+    public bool isDummy = false;    // 샌드백 모드 스위치
+    private Vector3 lockedPos;      // 처음 태어난 위치를 기억할 변수
+    private GameObject currentIndicatorObj;
+    
+
 
     private class ActiveElement
     {
@@ -21,10 +30,28 @@ public class ElementReceiver : MonoBehaviour
     {
         enemyScript = GetComponent<Enemy>();
         enemyCollider = GetComponent<Collider>();
+        // ✨ [추가] 태어난 위치를 기억합니다.
+        lockedPos = transform.position;
+    }
+    private void LateUpdate()
+    {
+        if (isDummy)
+        {
+            transform.position = lockedPos;
+        }
     }
 
     private void Update()
     {
+        if (Keyboard.current != null)
+        {
+            if (Keyboard.current.digit1Key.wasPressedThisFrame) ApplyDebugElement(0); 
+            if (Keyboard.current.digit2Key.wasPressedThisFrame) ApplyDebugElement(1); 
+            if (Keyboard.current.digit3Key.wasPressedThisFrame) ApplyDebugElement(2); 
+            if (Keyboard.current.digit4Key.wasPressedThisFrame) ApplyDebugElement(3); 
+            if (Keyboard.current.digit5Key.wasPressedThisFrame) ApplyDebugElement(4); 
+        }
+        
         for (int i = activeElements.Count - 1; i >= 0; i--)
         {
             ActiveElement active = activeElements[i];
@@ -44,7 +71,17 @@ public class ElementReceiver : MonoBehaviour
             if (active.timeLeft <= 0f) activeElements.RemoveAt(i);
         }
     }
+    private void ApplyDebugElement(int index)
+    {
+        // 바구니가 비어있거나 장부가 없으면 무시
+        if (testElements == null || index >= testElements.Length || testElements[index] == null) return;
 
+        // 10의 깡딜과 함께 장부(속성)를 포장해서 '나 자신'에게 투하!
+        DamageInfo debugInfo = DamageInfo.Default(10f, 0f, testElements[index]);
+        DamageSystem.ApplyDamage(this.gameObject, debugInfo);
+        
+        Debug.Log($"[테스트] {gameObject.name}에게 {testElements[index].name} 속성 쾅!");
+    }
     public void ApplyElement(DamageInfo info)
     {
         Element incomingElement = info.Element;
@@ -52,10 +89,21 @@ public class ElementReceiver : MonoBehaviour
 
         if (incomingElement.baseEffectPrefab != null)
         {
+            // ✨ [추가됨] 기존에 붙어있던 이펙트가 있다면 먼저 청소합니다!
+            if (currentIndicatorObj != null) Destroy(currentIndicatorObj);
+
             Vector3 effectPos = transform.position + new Vector3(0, 0.5f, 0); 
-            GameObject effect = Instantiate(incomingElement.baseEffectPrefab, effectPos, Quaternion.identity);
-            effect.transform.SetParent(this.transform); 
-            AdjustEffectSize(effect); 
+            
+            // ✨ [수정됨] 그냥 effect가 아니라, 나중에 지울 수 있게 currentIndicatorObj 바구니에 담아둡니다!
+            currentIndicatorObj = Instantiate(incomingElement.baseEffectPrefab, effectPos, Quaternion.identity);
+            currentIndicatorObj.transform.SetParent(this.transform); 
+            AdjustEffectSize(currentIndicatorObj); 
+        }
+
+        // ✨ [추가됨] 평타인데 연쇄 번개(Chain Count) 설정이 있다면 지그재그 번개 발사
+        if (incomingElement.chainCount > 0)
+        {
+            ExecuteChainLightning(info, incomingElement);
         }
 
         if (activeElements.Count >= 2) return; 
@@ -91,10 +139,15 @@ public class ElementReceiver : MonoBehaviour
         }
     }
 
-    // ✨ [핵심 함수] SO의 콤보 타입에 따라 스위치를 켭니다!
     private void ExecuteComboByType(Element originalElement, ComboReaction reaction, string listStatus)
     {
         Debug.Log($"<color=orange>{listStatus} 연계 발동! 타입: {reaction.comboType}</color>");
+
+        // ✨ [추가됨] 콤보가 발동되는 순간, 몸에 붙어있던 기본 속성 이펙트를 강제로 지워버립니다!
+        if (currentIndicatorObj != null)
+        {
+            Destroy(currentIndicatorObj);
+        }
 
         switch (reaction.comboType)
         {
@@ -104,46 +157,52 @@ public class ElementReceiver : MonoBehaviour
                 break;
 
             case ComboType.DelayedAoE:
-                // 적이 죽어도 폭발은 남아야 하므로, 허공에 빈 게임오브젝트를 만들고 범용 콤보 매니저를 붙입니다.
-                GameObject handlerObj = new GameObject("DelayedAoE_Handler");
-                handlerObj.transform.position = transform.position;
+            case ComboType.AreaDoT:
+                GameObject handlerObj = new GameObject("ComboAoE_Handler");
                 
-                // ✨ 이 부분을 ComboHandler로 변경했습니다!
+                Vector3 groundPos = transform.position;
+                int layerMask = ~LayerMask.GetMask("Enemy"); 
+                
+                // ✨ [수정됨] out RaycastHit hit -> out RaycastHit groundHit 으로 이름 변경!
+                if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit groundHit, 5f, layerMask))
+                {
+                    // ✨ [수정됨] hit.point -> groundHit.point 로 이름 변경!
+                    groundPos = groundHit.point + new Vector3(0, 0.05f, 0); 
+                }
+                
+                handlerObj.transform.position = groundPos; 
+                
                 ComboHandler handler = handlerObj.AddComponent<ComboHandler>(); 
-                
                 handler.Setup(reaction); 
                 break;
 
             case ComboType.DoT_Amplify:
-                // 도트뎀 2배 증폭
+                // ✨ [추가된 부분] 콤보 장부에 이펙트가 있다면 펑! 하고 터뜨려줍니다!
+                if (reaction.comboEffectPrefab != null) Instantiate(reaction.comboEffectPrefab, transform.position, Quaternion.identity);
+
                 activeElements.Clear();
                 activeElements.Add(new ActiveElement { data = originalElement, timeLeft = originalElement.duration, customDotDmg = originalElement.damagePerSecond * 2f });
-                return; // 도트 증폭은 리스트를 다르게 갱신하므로 밑의 Clear를 무시하고 리턴
+                return;
 
             case ComboType.ChainAttack:
-                // 1. 화려한 100만 볼트 이펙트 생성
                 if (reaction.comboEffectPrefab != null)
                 {
                     Instantiate(reaction.comboEffectPrefab, transform.position, Quaternion.identity);
                 }
 
-                // 2. 인스펙터에 적은 어마어마한 범위(comboRadius)로 적들을 탐색
                 Collider[] chainHits = Physics.OverlapSphere(transform.position, reaction.comboRadius, LayerMask.GetMask("Enemy"));
                 int chainedCount = 0;
 
                 foreach (Collider hit in chainHits)
                 {
-                    if (hit.gameObject == this.gameObject) continue; // 자기 자신은 제외
+                    if (hit.gameObject == this.gameObject) continue; 
 
                     Enemy targetEnemy = hit.GetComponent<Enemy>();
                     if (targetEnemy != null)
                     {
-                        // 3. 인스펙터에 적은 강력한 데미지(comboDamage)를 입힘
-                        DamageInfo chainInfo = DamageInfo.Default(reaction.comboDamage, 0f, null);
+                        DamageInfo chainInfo = DamageInfo.Default(reaction.comboDamage, 0f, originalElement); 
                         DamageSystem.ApplyDamage(targetEnemy.gameObject, chainInfo);
-                        
                         chainedCount++;
-                        // 4. 인스펙터에 적은 최대 타겟 수(extraTargetCount)만큼만 튕김
                         if (chainedCount >= reaction.extraTargetCount) break;
                     }
                 }
@@ -158,5 +217,42 @@ public class ElementReceiver : MonoBehaviour
         if (enemyCollider == null) return;
         float enemyVisualSize = Mathf.Max(enemyCollider.bounds.size.x, enemyCollider.bounds.size.y, enemyCollider.bounds.size.z);
         effectObj.transform.localScale = new Vector3(enemyVisualSize, enemyVisualSize, enemyVisualSize);
+    }
+
+    // ✨ [추가됨] 평타 체인 라이트닝 + 번개 줄기(Lightning) 생성 로직
+    private void ExecuteChainLightning(DamageInfo originalInfo, Element lightningData)
+    {
+        Collider[] hits = Physics.OverlapSphere(transform.position, lightningData.chainRadius, LayerMask.GetMask("Enemy"));
+        int chainedCount = 0;
+        float chainDamage = originalInfo.Amount * lightningData.chainDamageRatio;
+
+        Vector3 currentStartPos = transform.position;
+
+        foreach (Collider hitCol in hits)
+        {
+            if (hitCol.gameObject == this.gameObject) continue;
+
+            Enemy targetEnemy = hitCol.GetComponent<Enemy>();
+            if (targetEnemy != null)
+            {
+                targetEnemy.TakeDamage(chainDamage);
+
+                // 인스펙터에 번개 줄기 프리팹이 등록되어 있다면 생성
+                if (lightningData.chainBeamPrefab != null)
+                {
+                    GameObject beamObj = Instantiate(lightningData.chainBeamPrefab, currentStartPos, Quaternion.identity);
+                    Lightning beamScript = beamObj.GetComponent<Lightning>();
+                    if (beamScript != null)
+                    {
+                        beamScript.Setup(currentStartPos, targetEnemy.transform.position);
+                    }
+                }
+
+                currentStartPos = targetEnemy.transform.position;
+
+                chainedCount++;
+                if (chainedCount >= lightningData.chainCount) break;
+            }
+        }
     }
 }

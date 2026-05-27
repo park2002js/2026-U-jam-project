@@ -19,6 +19,7 @@ MonoBehaviour:
   chainCount: 0
   chainRadius: 5
   chainDamageRatio: 0.5
+  chainBeamPrefab: {fileID: 0}
   comboReactions:
   - incomingElement: 1
     comboType: 2
@@ -27,4 +28,20 @@ MonoBehaviour:
     comboDamage: 30
     comboRadius: 0
     delayTime: 0
+    extraTargetCount: 0
+  - incomingElement: 5
+    comboType: 3
+    indicatorPrefab: {fileID: 0}
+    comboEffectPrefab: {fileID: 2375589281258290619, guid: cb43bc7dd87fa344893f5e6e3286eed1, type: 3}
+    comboDamage: 15
+    comboRadius: 3
+    delayTime: 0
+    extraTargetCount: 3
+  - incomingElement: 3
+    comboType: 4
+    indicatorPrefab: {fileID: 3261088568597131734, guid: 7aa831c36ee5b0b45a439b11e6bf386c, type: 3}
+    comboEffectPrefab: {fileID: 1582275357731197809, guid: 5334360cd0cfad84bbf6855beaf10de4, type: 3}
+    comboDamage: 10
+    comboRadius: 6
+    delayTime: 5
     extraTargetCount: 0

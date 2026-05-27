@@ -12,11 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e4b2cd9a4b115dd44a4df6ea0ea1b1c1, type: 3}
   m_Name: Ground
   m_EditorClassIdentifier: 
-  elementType: 0
-  description: "\uC5EC\uAE30\uC5D0 \uB3C5+\uBC14\uB78C \uC5F0\uACC4 \uC2DC \uC77C\uC5B4\uB0A0
-    \uD6A8\uACFC \uB4F1\uC758 \uB370\uC774\uD130\uB97C \uAD00\uB9AC\uD560 \uC608\uC815"
-  duration: 3
+  elementType: 3
   damagePerSecond: 0
-  speedMultiplier: 1
-  isStunned: 0
+  duration: 3
+  baseEffectPrefab: {fileID: 0}
+  chainCount: 0
+  chainRadius: 0
+  chainDamageRatio: 0
+  chainBeamPrefab: {fileID: 0}
   comboReactions: []
