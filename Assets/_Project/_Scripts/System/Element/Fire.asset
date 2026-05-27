@@ -37,3 +37,11 @@ MonoBehaviour:
     comboRadius: 3
     delayTime: 0
     extraTargetCount: 3
+  - incomingElement: 3
+    comboType: 4
+    indicatorPrefab: {fileID: 3261088568597131734, guid: 7aa831c36ee5b0b45a439b11e6bf386c, type: 3}
+    comboEffectPrefab: {fileID: 1582275357731197809, guid: 5334360cd0cfad84bbf6855beaf10de4, type: 3}
+    comboDamage: 10
+    comboRadius: 6
+    delayTime: 5
+    extraTargetCount: 0

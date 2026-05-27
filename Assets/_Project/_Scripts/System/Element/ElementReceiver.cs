@@ -12,6 +12,7 @@ public class ElementReceiver : MonoBehaviour
     [Header("Debug")]
     public bool isDummy = false;    // 샌드백 모드 스위치
     private Vector3 lockedPos;      // 처음 태어난 위치를 기억할 변수
+    private GameObject currentIndicatorObj;
     
 
 
@@ -88,10 +89,15 @@ public class ElementReceiver : MonoBehaviour
 
         if (incomingElement.baseEffectPrefab != null)
         {
+            // ✨ [추가됨] 기존에 붙어있던 이펙트가 있다면 먼저 청소합니다!
+            if (currentIndicatorObj != null) Destroy(currentIndicatorObj);
+
             Vector3 effectPos = transform.position + new Vector3(0, 0.5f, 0); 
-            GameObject effect = Instantiate(incomingElement.baseEffectPrefab, effectPos, Quaternion.identity);
-            effect.transform.SetParent(this.transform); 
-            AdjustEffectSize(effect); 
+            
+            // ✨ [수정됨] 그냥 effect가 아니라, 나중에 지울 수 있게 currentIndicatorObj 바구니에 담아둡니다!
+            currentIndicatorObj = Instantiate(incomingElement.baseEffectPrefab, effectPos, Quaternion.identity);
+            currentIndicatorObj.transform.SetParent(this.transform); 
+            AdjustEffectSize(currentIndicatorObj); 
         }
 
         // ✨ [추가됨] 평타인데 연쇄 번개(Chain Count) 설정이 있다면 지그재그 번개 발사
@@ -137,6 +143,12 @@ public class ElementReceiver : MonoBehaviour
     {
         Debug.Log($"<color=orange>{listStatus} 연계 발동! 타입: {reaction.comboType}</color>");
 
+        // ✨ [추가됨] 콤보가 발동되는 순간, 몸에 붙어있던 기본 속성 이펙트를 강제로 지워버립니다!
+        if (currentIndicatorObj != null)
+        {
+            Destroy(currentIndicatorObj);
+        }
+
         switch (reaction.comboType)
         {
             case ComboType.Instant:
@@ -146,16 +158,31 @@ public class ElementReceiver : MonoBehaviour
 
             case ComboType.DelayedAoE:
             case ComboType.AreaDoT:
-                GameObject handlerObj = new GameObject("DelayedAoE_Handler");
-                handlerObj.transform.position = transform.position + new Vector3(0, -0.5f, 0);
+                GameObject handlerObj = new GameObject("ComboAoE_Handler");
+                
+                Vector3 groundPos = transform.position;
+                int layerMask = ~LayerMask.GetMask("Enemy"); 
+                
+                // ✨ [수정됨] out RaycastHit hit -> out RaycastHit groundHit 으로 이름 변경!
+                if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit groundHit, 5f, layerMask))
+                {
+                    // ✨ [수정됨] hit.point -> groundHit.point 로 이름 변경!
+                    groundPos = groundHit.point + new Vector3(0, 0.05f, 0); 
+                }
+                
+                handlerObj.transform.position = groundPos; 
+                
                 ComboHandler handler = handlerObj.AddComponent<ComboHandler>(); 
                 handler.Setup(reaction); 
                 break;
 
             case ComboType.DoT_Amplify:
+                // ✨ [추가된 부분] 콤보 장부에 이펙트가 있다면 펑! 하고 터뜨려줍니다!
+                if (reaction.comboEffectPrefab != null) Instantiate(reaction.comboEffectPrefab, transform.position, Quaternion.identity);
+
                 activeElements.Clear();
                 activeElements.Add(new ActiveElement { data = originalElement, timeLeft = originalElement.duration, customDotDmg = originalElement.damagePerSecond * 2f });
-                return; 
+                return;
 
             case ComboType.ChainAttack:
                 if (reaction.comboEffectPrefab != null)
