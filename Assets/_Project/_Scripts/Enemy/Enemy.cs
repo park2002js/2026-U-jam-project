@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Pathfinding; // A* Pathfinding 사용
+using Pathfinding;
 using Utility;
 
 namespace EnemySystem
@@ -23,12 +23,23 @@ namespace EnemySystem
         public Transform throwPoint;
 
         [Header("타겟 설정")]
-        [SerializeField] protected Transform defaultTarget; // ✨ 인스펙터에서 직접 tem_base 할당 가능
+        [SerializeField] protected Transform defaultTarget;
         protected Transform target;
 
-        // ✨ [추가] BarricadeBreaker가 설정하는 강제 목표 (있으면 최우선)
         [HideInInspector] public Transform forcedTarget;
         protected Transform ActiveTarget => forcedTarget != null ? forcedTarget : target;
+
+        // 바리케이드 공략: 이동 목표(벽 앞 칸) + 공격 거리 기준(벽 칸)
+        [HideInInspector] public Vector3 forcedPoint;        // 이동 목표 (서는 곳)
+        [HideInInspector] public Vector3 forcedAttackPoint;  // 공격 거리 기준 (벽 칸)
+        [HideInInspector] public bool hasForcedPoint = false;
+        public void SetForcedPoint(Vector3 stand, Vector3 wall)
+        {
+            forcedPoint = stand;
+            forcedAttackPoint = wall;
+            hasForcedPoint = true;
+        }
+        public void ClearForcedPoint() { hasForcedPoint = false; }
 
         protected List<string> priorityTags = new List<string> { "Player", "Decoy" };
         protected HashSet<Transform> priorityInChaseRange = new HashSet<Transform>();
@@ -37,7 +48,7 @@ namespace EnemySystem
         protected bool isAttacking = false;
         protected Rigidbody rb;
 
-        protected AIPath aiPath; // ✨ A* 컴포넌트
+        protected AIPath aiPath;
         private EnemySpawner enemySpawner;
 
         protected abstract void InitStatus();
@@ -55,7 +66,6 @@ namespace EnemySystem
                 aiPath.canMove = true;
             }
 
-            // ✨ 인스펙터에 타겟이 안 비어있으면 우선 사용, 비어있으면 태그로 찾기
             if (defaultTarget == null)
             {
                 GameObject baseObj = GameObject.FindGameObjectWithTag("Base");
@@ -77,29 +87,29 @@ namespace EnemySystem
             var ds = go.AddComponent<DetectionSphere>();
             ds.type = type;
             ds.Init(this, radius);
-
             ds.OnTargetEnter = HandleTargetEnter;
             ds.OnTargetExit = HandleTargetExit;
         }
 
-        // ✨ [수정] ActiveTarget(강제 목표 우선)을 사용하도록 변경
         protected virtual void Update()
         {
             if (isDead) return;
+
+            // 바리케이드 공략 중: 이동은 벽 앞 칸으로, 멈춤 판정은 벽 칸 기준 attackRange
+            if (hasForcedPoint)
+            {
+                float distToWall = Vector3.Distance(transform.position, forcedAttackPoint);
+                if (distToWall > attackRange) MoveToTarget(forcedPoint);
+                else StopAndLookAt(forcedPoint);
+                return;
+            }
+
             Transform t = ActiveTarget;
             if (t == null) return;
 
-            // 복잡한 표면 계산 로직 끄기! 무조건 타겟의 정중앙 좌표 사용
             float distanceToTarget = Vector3.Distance(transform.position, t.position);
-
-            if (distanceToTarget > attackRange)
-            {
-                MoveToTarget(t.position);
-            }
-            else
-            {
-                StopAndLookAt(t.position);
-            }
+            if (distanceToTarget > attackRange) MoveToTarget(t.position);
+            else StopAndLookAt(t.position);
         }
 
         protected virtual void MoveToTarget(Vector3 destination)
@@ -107,14 +117,9 @@ namespace EnemySystem
             if (aiPath != null)
             {
                 aiPath.canMove = true;
-
-                // 목적지가 바뀌었을 때만 갱신
                 if (Vector3.Distance(aiPath.destination, destination) > 0.1f)
-                {
                     aiPath.destination = destination;
-                }
 
-                // 이동 방향을 향해 부드럽게 시선 회전
                 if (aiPath.velocity.sqrMagnitude > 0.01f)
                 {
                     Vector3 moveDir = aiPath.velocity.normalized;
@@ -124,7 +129,6 @@ namespace EnemySystem
             }
             else
             {
-                // AIPath가 없을 때의 예외 처리 (고전적 이동)
                 Vector3 direction = (destination - transform.position).normalized;
                 direction.y = 0;
                 if (rb != null) rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
@@ -136,19 +140,15 @@ namespace EnemySystem
         private void StopAndLookAt(Vector3 destination)
         {
             if (aiPath != null) aiPath.canMove = false;
-
             if (rb != null)
             {
                 rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
                 rb.angularVelocity = Vector3.zero;
             }
-
             Vector3 direction = (destination - transform.position).normalized;
             direction.y = 0;
             if (direction != Vector3.zero)
-            {
                 transform.forward = Vector3.Lerp(transform.forward, direction, Time.deltaTime * 10f);
-            }
         }
 
         private void HandleTargetEnter(Transform other, DetectionSphere.RangeType type)
@@ -163,8 +163,8 @@ namespace EnemySystem
             }
             if (type == DetectionSphere.RangeType.Attack)
             {
-                // ✨ [수정] 바리케이드 공략 중(forcedTarget 있음)엔 베이스 공격 트리거 차단
-                if (forcedTarget == null && (other == target || other.CompareTag("Base")))
+                if (forcedTarget == null && !hasForcedPoint &&
+                    (other == target || other.CompareTag("Base")))
                 {
                     if (!isAttacking) StartCoroutine(AttackRoutine());
                 }
@@ -183,8 +183,7 @@ namespace EnemySystem
         private void UpdateTarget()
         {
             if (isAttacking) return;
-            // ✨ [추가] 바리케이드 공략 중엔 우선순위 타겟 시스템 무시
-            if (forcedTarget != null) return;
+            if (forcedTarget != null || hasForcedPoint) return;
 
             if (priorityInChaseRange.Count > 0)
             {
@@ -194,18 +193,11 @@ namespace EnemySystem
                 {
                     if (p == null) continue;
                     float dist = Vector3.Distance(transform.position, p.position);
-                    if (dist < closestDist)
-                    {
-                        closestDist = dist;
-                        bestTarget = p;
-                    }
+                    if (dist < closestDist) { closestDist = dist; bestTarget = p; }
                 }
                 target = bestTarget;
             }
-            else
-            {
-                target = defaultTarget;
-            }
+            else target = defaultTarget;
         }
 
         IEnumerator AttackRoutine()
@@ -224,7 +216,6 @@ namespace EnemySystem
                 if (distance > attackRange + 1.5f) break;
 
                 PerformAttack();
-
                 float speed = AS > 0 ? AS : 1f;
                 yield return new WaitForSeconds(1f / speed);
             }
@@ -235,8 +226,6 @@ namespace EnemySystem
 
         protected virtual void PerformAttack()
         {
-            Debug.Log($"<color=cyan>[Attack]</color> {gameObject.name} 공격 실행");
-
             if (attackRange > 5f) ThrowProjectile();
             else if (target != null) target.SendMessage("TakeDamage", (float)AD, SendMessageOptions.DontRequireReceiver);
         }
@@ -258,22 +247,17 @@ namespace EnemySystem
             if (HP <= 0) Die();
         }
 
-        public void SetSpawner(EnemySpawner spawner)
-        {
-            enemySpawner = spawner;
-        }
+        public void SetSpawner(EnemySpawner spawner) { enemySpawner = spawner; }
 
         public virtual void Die()
         {
             if (isDead) return;
             isDead = true;
             StopAllCoroutines();
-
             if (aiPath != null) aiPath.canMove = false;
             if (rb != null) rb.isKinematic = true;
             Collider col = GetComponent<Collider>();
             if (col != null) col.enabled = false;
-
             if (enemySpawner != null) enemySpawner.OnEnemyDestroyed();
             StartCoroutine(DeathAnimation());
         }
