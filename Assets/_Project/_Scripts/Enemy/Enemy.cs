@@ -98,7 +98,11 @@ namespace EnemySystem
             // 바리케이드 공략 중: 이동은 벽 앞 칸으로, 멈춤 판정은 벽 칸 기준 attackRange
             if (hasForcedPoint)
             {
-                float distToWall = Vector3.Distance(transform.position, forcedAttackPoint);
+                // Y축(높이) 오차 때문에 사거리가 닿지 않는 버그를 막기 위해 평면 거리만 잽니다.
+                Vector3 myPos2D = new Vector3(transform.position.x, 0, transform.position.z);
+                Vector3 attackPos2D = new Vector3(forcedAttackPoint.x, 0, forcedAttackPoint.z);
+                float distToWall = Vector3.Distance(myPos2D, attackPos2D);
+
                 if (distToWall > attackRange) MoveToTarget(forcedPoint);
                 else StopAndLookAt(forcedPoint);
                 return;

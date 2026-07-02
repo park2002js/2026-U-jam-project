@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI; // 기본 UI 텍스트 사용
 using EnemySystem;
+using Equipment.Weapon;
 
 public class SimpleUIManager : MonoBehaviour
 {
@@ -16,6 +17,40 @@ public class SimpleUIManager : MonoBehaviour
 
     public Text gameOverReasonText;
     public Text stageClearText;
+
+
+    [Header("무기 스위칭 UI (Image)")]
+    public Image singleTargetImage; // 단일 공격 (저격총) 아이콘
+    public Image aoeImage;          // 범위 공격 아이콘
+
+    private void OnEnable()
+    {
+        // 무기 스위칭 이벤트 구독
+        PlayerTurret.OnWeaponModeChanged += UpdateWeaponUI;
+    }
+
+    private void OnDisable()
+    {
+        PlayerTurret.OnWeaponModeChanged -= UpdateWeaponUI;
+    }
+
+    private void UpdateWeaponUI(PlayerTurret.WeaponMode mode)
+    {
+        Color activeColor = Color.white;                                 // 선택됨: 밝은 원래 색상
+        Color inactiveColor = new Color(0.3f, 0.3f, 0.3f, 1f); // 선택 안 됨: 어두운 회색
+
+        if (mode == PlayerTurret.WeaponMode.SingleTarget)
+        {
+            if (singleTargetImage != null) singleTargetImage.color = activeColor;
+            if (aoeImage != null) aoeImage.color = inactiveColor;
+        }
+        else
+        {
+            if (singleTargetImage != null) singleTargetImage.color = inactiveColor;
+            if (aoeImage != null) aoeImage.color = activeColor;
+        }
+    }
+
 
     private void Start()
     {
@@ -55,7 +90,7 @@ public class SimpleUIManager : MonoBehaviour
             }
             else
             {
-                phaseText.text = "Phase : 정비 단계";
+                phaseText.text = "Phase : 전투 단계";//"Phase : 정비 단계";
             }
         }
 

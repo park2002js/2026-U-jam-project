@@ -31,6 +31,8 @@ namespace Ballistics
             {
                 rb = projectile.AddComponent<Rigidbody>();
             }
+
+            
             
             rb.useGravity = false; // 기획서: "낙차 없이 날아감"
             rb.isKinematic = false; // 물리 연산을 통해 날아가야 하므로 false

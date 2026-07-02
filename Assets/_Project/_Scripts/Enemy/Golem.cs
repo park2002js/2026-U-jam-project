@@ -6,7 +6,7 @@ public class Golem : Enemy
     {
         // 덩치가 크니까 체력과 공격력을 높게 설정
         HP = 500f;
-        moveSpeed = 3f;
+        moveSpeed = 4.5f;
         AD = 50;
         AS = 0.5f; // 공격은 느림
 
