@@ -67,6 +67,6 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "unity.slnx",
+    "dotnet.defaultSolution": "2026-U-jam-project.slnx",
     "dotnet.enableWorkspaceBasedDevelopment": false
 }
