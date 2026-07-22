@@ -7,65 +7,43 @@ namespace UJam.Integration.UI
 {
     public sealed class RuntimeUiStateBridge : MonoBehaviour
     {
-        // 명시적으로 주입된 PhaseSystem 보관
+        // 현재 Phase 조회 대상
         private PhaseSystem _phaseSystem;
 
-        // 명시적으로 주입된 Wallet 보관
+        // 현재 재화 조회 대상
         private Wallet _wallet;
 
-        // 명시적으로 주입된 PlayerRuntimeBinder 보관
-        private PlayerRuntimeBinder _playerBinder;
+        // 현재 Player 행동 권한 조회 대상
+        private PlayerStatus _playerStatus;
 
-        // 현재 Runtime 상태 Snapshot 조회
+        // UI가 현재 런타임 값을 한 번에 조회할 Snapshot
         public RuntimeUiSnapshot State
         {
             get
             {
-                // PhaseSystem 연결 여부 확인
-                bool hasPhaseSystem = _phaseSystem != null;
+                // 연결된 Phase 또는 안전한 기본 Phase
+                PhaseState phase = _phaseSystem != null
+                    ? _phaseSystem.CurrentState
+                    : PhaseState.Preparation;
+                // 연결된 Wallet 또는 0 재화
+                long currency = _wallet != null ? _wallet.Currency : 0L;
+                // 연결된 Player의 현재 공격 권한
+                bool canAttack = _playerStatus != null && _playerStatus.CanAttack;
 
-                // Wallet 연결 여부 확인
-                bool hasWallet = _wallet != null;
-
-                // Player 연결 여부 확인
-                bool hasPlayer = _playerBinder != null;
-
-                // 연결된 Phase 값 결정
-                PhaseState phase = hasPhaseSystem ? _phaseSystem.CurrentState : default(PhaseState);
-
-                // 연결된 잔액 결정
-                long balance = hasWallet ? _wallet.Balance.Value : 0L;
-
-                // 연결된 Player 상태 결정
-                PlayerRuntimeState playerState = hasPlayer
-                    ? _playerBinder.State
-                    : default(PlayerRuntimeState);
-
-                // 현재 값만 담은 Snapshot 반환
-                return new RuntimeUiSnapshot(
-                    phase,
-                    hasPhaseSystem,
-                    balance,
-                    hasWallet,
-                    playerState,
-                    hasPlayer);
+                // 현재 값 Snapshot 반환
+                return new RuntimeUiSnapshot(phase, currency, canAttack);
             }
         }
 
-        // UI 읽기 Provider를 명시적으로 주입
-        public void Configure(
-            PhaseSystem phaseSystem,
-            Wallet wallet,
-            PlayerRuntimeBinder playerBinder)
+        // UI 조회에 필요한 런타임 대상 연결
+        public void Configure(PhaseSystem phaseSystem, Wallet wallet, PlayerStatus playerStatus)
         {
-            // PhaseSystem 연결 저장
+            // Phase 조회 대상 저장
             _phaseSystem = phaseSystem;
-
-            // Wallet 연결 저장
+            // Wallet 조회 대상 저장
             _wallet = wallet;
-
-            // PlayerRuntimeBinder 연결 저장
-            _playerBinder = playerBinder;
+            // Player 상태 조회 대상 저장
+            _playerStatus = playerStatus;
         }
     }
 }

@@ -1,0 +1,17 @@
+// Unity 컴파일에서 제외한 이전 Combat 구현
+using System;
+
+namespace UJam.Runtime.Combat
+{
+    public readonly struct HitZone
+    {
+        public HitZone(string id)
+        {
+            Id = id;
+        }
+
+        public string Id { get; }
+
+        public bool IsEmpty => string.IsNullOrEmpty(Id);
+    }
+}

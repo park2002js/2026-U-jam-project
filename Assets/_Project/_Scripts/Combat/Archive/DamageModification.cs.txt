@@ -1,0 +1,32 @@
+// Unity 컴파일에서 제외한 이전 Combat 구현
+namespace UJam.Runtime.Combat
+{
+    public readonly struct DamageModification
+    {
+        // 보정된 피해량과 차단 상태를 저장
+        public DamageModification(float damage, bool blocked)
+        {
+            // 음수 피해를 허용하지 않도록 보정
+            _damage = damage < 0f ? 0f : damage;
+
+            // Modifier가 판단한 차단 상태 저장
+            Blocked = blocked;
+        }
+
+        // 다음 Modifier로 전달할 피해량
+        public float Damage
+        {
+            get
+            {
+                // 보정된 피해량 반환
+                return _damage;
+            }
+        }
+
+        // 보정된 피해량을 저장하는 내부 값
+        private readonly float _damage;
+
+        // 이번 Modifier가 피해를 차단했는지 여부
+        public bool Blocked { get; }
+    }
+}

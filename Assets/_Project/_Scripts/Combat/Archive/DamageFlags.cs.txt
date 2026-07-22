@@ -1,0 +1,13 @@
+// Unity 컴파일에서 제외한 이전 Combat 구현
+using System;
+
+namespace UJam.Runtime.Combat
+{
+    [Flags]
+    public enum DamageFlags
+    {
+        None = 0,
+        Critical = 1 << 0,
+        IgnoreDefense = 1 << 1
+    }
+}

@@ -1,54 +1,27 @@
 using UJam.Runtime.Phase;
-using UJam.Runtime.Player;
 
 namespace UJam.Integration.UI
 {
     public readonly struct RuntimeUiSnapshot
     {
-        // 현재 Phase 값 보관
+        // 현재 Phase 값
         public PhaseState Phase { get; }
 
-        // PhaseSystem 연결 여부 보관
-        public bool HasPhaseSystem { get; }
+        // 현재 Wallet 재화
+        public long Currency { get; }
 
-        // 현재 잔액 보관
-        public long Balance { get; }
+        // 현재 Player 공격 가능 여부
+        public bool CanAttack { get; }
 
-        // Wallet 연결 여부 보관
-        public bool HasWallet { get; }
-
-        // 현재 Player 상태 보관
-        public PlayerRuntimeState PlayerState { get; }
-
-        // Player 연결 여부 보관
-        public bool HasPlayer { get; }
-
-        // UI 읽기 전용 Snapshot 구성
-        public RuntimeUiSnapshot(
-            PhaseState phase,
-            bool hasPhaseSystem,
-            long balance,
-            bool hasWallet,
-            PlayerRuntimeState playerState,
-            bool hasPlayer)
+        // UI Snapshot 생성
+        public RuntimeUiSnapshot(PhaseState phase, long currency, bool canAttack)
         {
-            // 전달된 Phase 값 저장
+            // 현재 Phase 저장
             Phase = phase;
-
-            // PhaseSystem 연결 상태 저장
-            HasPhaseSystem = hasPhaseSystem;
-
-            // 전달된 잔액 저장
-            Balance = balance;
-
-            // Wallet 연결 상태 저장
-            HasWallet = hasWallet;
-
-            // 전달된 Player 상태 저장
-            PlayerState = playerState;
-
-            // Player 연결 상태 저장
-            HasPlayer = hasPlayer;
+            // 현재 재화 저장
+            Currency = currency;
+            // 현재 공격 가능 여부 저장
+            CanAttack = canAttack;
         }
     }
 }

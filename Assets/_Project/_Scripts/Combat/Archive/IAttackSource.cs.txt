@@ -1,0 +1,10 @@
+// Unity 컴파일에서 제외한 이전 Combat 구현
+namespace UJam.Runtime.Combat
+{
+    public interface IAttackSource
+    {
+        Faction Faction { get; }
+
+        AttackId AttackId { get; }
+    }
+}

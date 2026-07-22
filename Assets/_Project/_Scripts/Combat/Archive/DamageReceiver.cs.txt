@@ -1,0 +1,179 @@
+// Unity 컴파일에서 제외한 이전 Combat 구현
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace UJam.Runtime.Combat
+{
+    public sealed class DamageReceiver : MonoBehaviour, IDamageable
+    {
+        // 피해를 적용할 Health Component
+        [SerializeField] private Health _health;
+
+        // Inspector에서 구성하는 피해 Modifier 목록
+        [SerializeField] private DamageModifier[] _modifiers = new DamageModifier[0];
+
+        // 속성 수신 Port를 담는 명시적 Component 참조
+        [SerializeField] private MonoBehaviour _elementPort;
+
+        // DamageInfo를 보정하고 Health에 실제 피해를 적용
+        public DamageResult TakeDamage(DamageInfo info)
+        {
+            // 결과에 유지할 입력 피격 부위
+            HitZone hitZone = info.HitContext.Zone;
+
+            // Health 참조가 없으면 NullReference 없이 차단 결과 반환
+            if (_health == null)
+            {
+                // 필수 Health 누락을 차단 결과로 반환
+                return new DamageResult(0f, true, false, hitZone);
+            }
+
+            // 입력 피격 부위가 비어 있는지 확인
+            if (hitZone.IsEmpty)
+            {
+                // 유효하지 않은 피격 부위를 차단 결과로 반환
+                return new DamageResult(0f, true, false, hitZone);
+            }
+
+            // 이미 사망한 대상인지 확인
+            if (_health.IsDead)
+            {
+                // 사망 대상의 중복 피해를 차단 결과로 반환
+                return new DamageResult(0f, true, false, hitZone);
+            }
+
+            // Modifier에 전달할 현재 피해량
+            float currentDamage = info.RawDamage;
+
+            // RawDamage 0은 차단과 구분되는 빈 피해로 처리
+            if (currentDamage <= 0f)
+            {
+                // 0 피해 결과 반환
+                return new DamageResult(0f, false, false, hitZone);
+            }
+
+            // Inspector 배열 순서를 보존한 정렬 Modifier 목록
+            List<DamageModifier> orderedModifiers = GetOrderedModifiers();
+
+            // 정렬된 Modifier를 차례로 적용
+            for (int index = 0; index < orderedModifiers.Count; index++)
+            {
+                // 현재 순서의 Modifier 참조
+                DamageModifier modifier = orderedModifiers[index];
+
+                // 유효하지 않은 Modifier는 건너뜀
+                if (modifier == null)
+                {
+                    // 누락된 Modifier 다음 항목으로 이동
+                    continue;
+                }
+
+                // 현재 피해량에 Modifier 보정 적용
+                DamageModification modification = modifier.Modify(info, currentDamage);
+
+                // Modifier가 반환한 원본 피해량 저장
+                float modifiedDamage = modification.Damage;
+
+                // Modifier 결과가 유한 값인지 확인
+                if (float.IsNaN(modifiedDamage) || float.IsInfinity(modifiedDamage))
+                {
+                    // 유효하지 않은 Modifier 결과를 차단 상태로 반환
+                    return new DamageResult(0f, true, false, hitZone);
+                }
+
+                // 다음 단계 피해량을 0 이상으로 제한
+                currentDamage = Mathf.Max(0f, modifiedDamage);
+
+                // Modifier가 명시적으로 차단했는지 확인
+                if (modification.Blocked)
+                {
+                    // Modifier 차단은 사망이 아닌 차단 결과로 반환
+                    return new DamageResult(0f, true, false, hitZone);
+                }
+            }
+
+            // Modifier 적용 결과가 유한 값인지 확인
+            if (float.IsNaN(currentDamage) || float.IsInfinity(currentDamage))
+            {
+                // 유효하지 않은 피해 결과를 차단 상태로 반환
+                return new DamageResult(0f, true, false, hitZone);
+            }
+
+            // Health 적용 전 체력 저장
+            float previousHealth = _health.CurrentHealth;
+
+            // 보정된 피해량을 Health에 한 번만 전달
+            bool damageApplied = _health.ApplyDamage(currentDamage);
+
+            // Health가 실제로 줄어든 양 계산
+            float actualDamage = previousHealth - _health.CurrentHealth;
+
+            // 실제 피해가 없으면 속성 Port를 호출하지 않음
+            if (!damageApplied || actualDamage <= 0f)
+            {
+                // 보정 결과가 적용되지 않았음을 반환
+                return new DamageResult(0f, false, false, hitZone);
+            }
+
+            // Health의 사망 전환 상태 저장
+            bool killed = _health.IsDead;
+
+            // Element Payload가 있고 유효한 Port가 있을 때만 전달
+            IElementPayloadReceiver elementReceiver = _elementPort as IElementPayloadReceiver;
+
+            // 실제 피해 이후 속성 Payload를 한 번 전달
+            if (info.Element.HasValue && elementReceiver != null)
+            {
+                // 속성 Payload와 원본 피해 정보를 Port에 전달
+                elementReceiver.ReceiveElement(info.Element.Value, info);
+            }
+
+            // 실제 피해와 사망 결과 반환
+            return new DamageResult(actualDamage, false, killed, hitZone);
+        }
+
+        // Modifier를 Order 오름차순으로 정렬하고 같은 Order의 배열 순서를 유지
+        private List<DamageModifier> GetOrderedModifiers()
+        {
+            // 유효한 Modifier를 담을 정렬 목록
+            List<DamageModifier> orderedModifiers = new List<DamageModifier>();
+
+            // Modifier 배열이 비어 있거나 연결되지 않았는지 확인
+            if (_modifiers == null)
+            {
+                // 빈 정렬 목록 반환
+                return orderedModifiers;
+            }
+
+            // Inspector 배열을 원래 순서대로 순회
+            for (int index = 0; index < _modifiers.Length; index++)
+            {
+                // 현재 Inspector 위치의 Modifier 참조
+                DamageModifier modifier = _modifiers[index];
+
+                // null Modifier는 실행 목록에서 제외
+                if (modifier == null)
+                {
+                    // 다음 Inspector 항목으로 이동
+                    continue;
+                }
+
+                // 현재 Modifier를 삽입할 위치
+                int insertIndex = orderedModifiers.Count;
+
+                // 더 작은 Order 앞에 삽입하고 같은 Order는 기존 순서 유지
+                while (insertIndex > 0 && orderedModifiers[insertIndex - 1].Order > modifier.Order)
+                {
+                    // 앞 항목을 한 칸 뒤로 이동
+                    insertIndex--;
+                }
+
+                // 계산된 위치에 현재 Modifier 삽입
+                orderedModifiers.Insert(insertIndex, modifier);
+            }
+
+            // 정렬된 Modifier 목록 반환
+            return orderedModifiers;
+        }
+    }
+}
