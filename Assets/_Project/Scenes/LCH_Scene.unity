@@ -602,11 +602,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 263628648}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 42228a68548351547b66129be10d79ee, type: 3}
+  m_Script: {fileID: 11500000, guid: 8b352bc6f66ddc648a2545ba7a409dad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  reachThreshold: 2
-  recalcCooldown: 0
+  enemyId: goblin
+  retryInterval: 0.5
 --- !u!1 &483286985
 GameObject:
   m_ObjectHideFlags: 0
@@ -1488,7 +1488,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1387474805173220008, guid: 9dc488e362a4e8441a5d8eda495ffa3b, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -30
+      value: -23.2
       objectReference: {fileID: 0}
     - target: {fileID: 1387474805173220008, guid: 9dc488e362a4e8441a5d8eda495ffa3b, type: 3}
       propertyPath: m_LocalPosition.y
@@ -1496,7 +1496,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1387474805173220008, guid: 9dc488e362a4e8441a5d8eda495ffa3b, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -26.2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1387474805173220008, guid: 9dc488e362a4e8441a5d8eda495ffa3b, type: 3}
       propertyPath: m_LocalRotation.w
@@ -2302,11 +2302,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 1082222559}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 42228a68548351547b66129be10d79ee, type: 3}
+  m_Script: {fileID: 11500000, guid: 8b352bc6f66ddc648a2545ba7a409dad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  reachThreshold: 2
-  recalcCooldown: 0
+  enemyId: goblin
+  retryInterval: 0.5
 --- !u!1 &1093606972
 GameObject:
   m_ObjectHideFlags: 0
@@ -2573,6 +2573,66 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1126726353}
   m_CullTransparentMesh: 1
+--- !u!1 &1152915608
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1152915611}
+  - component: {fileID: 1152915610}
+  - component: {fileID: 1152915609}
+  m_Layer: 0
+  m_Name: s
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1152915609
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1152915608}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93588ebcf9c850e478a0145883793f13, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  routes: []
+  penaltyPerEnemy: 8000
+  reachThreshold: 2
+--- !u!114 &1152915610
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1152915608}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3184b4919023324cab613f01bb54ce0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &1152915611
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1152915608}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 3.6164584, y: 6.5569115, z: 20.979923}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1163645609
 GameObject:
   m_ObjectHideFlags: 0
@@ -3487,7 +3547,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1387474805173220008, guid: 9dc488e362a4e8441a5d8eda495ffa3b, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -30
+      value: -35.5
       objectReference: {fileID: 0}
     - target: {fileID: 1387474805173220008, guid: 9dc488e362a4e8441a5d8eda495ffa3b, type: 3}
       propertyPath: m_LocalPosition.y
@@ -3495,7 +3555,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1387474805173220008, guid: 9dc488e362a4e8441a5d8eda495ffa3b, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 20.6
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1387474805173220008, guid: 9dc488e362a4e8441a5d8eda495ffa3b, type: 3}
       propertyPath: m_LocalRotation.w
@@ -4175,11 +4235,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 1677469441}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 42228a68548351547b66129be10d79ee, type: 3}
+  m_Script: {fileID: 11500000, guid: 8b352bc6f66ddc648a2545ba7a409dad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  reachThreshold: 2
-  recalcCooldown: 0
+  enemyId: goblin
+  retryInterval: 0.5
 --- !u!1 &1700543598
 GameObject:
   m_ObjectHideFlags: 0
@@ -6296,3 +6356,4 @@ SceneRoots:
   - {fileID: 2000812090}
   - {fileID: 1525568213}
   - {fileID: 1595681888}
+  - {fileID: 1152915611}

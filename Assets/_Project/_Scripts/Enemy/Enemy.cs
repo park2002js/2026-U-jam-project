@@ -18,6 +18,8 @@ namespace EnemySystem
         public float chaseRange = 10f;
         public float attackRange = 5f;
 
+        [HideInInspector] public bool usingAssignedPath = false;
+
         [Header("원거리 공격 설정")]
         public GameObject projectilePrefab;
         public Transform throwPoint;
@@ -94,6 +96,8 @@ namespace EnemySystem
         protected virtual void Update()
         {
             if (isDead) return;
+
+            if (usingAssignedPath) return;
 
             // 바리케이드 공략 중: 이동은 벽 앞 칸으로, 멈춤 판정은 벽 칸 기준 attackRange
             if (hasForcedPoint)
