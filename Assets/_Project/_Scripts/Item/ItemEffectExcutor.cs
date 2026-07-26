@@ -2,6 +2,7 @@
 // 아이템 내부에 정의된 여러 효과들을 모두 발동시킵니다. (피가 10 증가하고 힘이 10 증가합니다.. 등)
 // 이 객체로 Apply하는 것은 단 하나의 아이템에 대해서만 가능합니다.
 using UnityEngine;
+using System.Collections.Generic;
 namespace UJam.Runtime.Item
 {
     public sealed class ItemEffectExecutor : MonoBehaviour
