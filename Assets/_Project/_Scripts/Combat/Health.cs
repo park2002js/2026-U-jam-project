@@ -6,7 +6,8 @@ namespace UJam.Runtime.Combat
     public sealed class Health : MonoBehaviour
     {
         // 대상이 가질 수 있는 최대 체력
-        [SerializeField, Min(0.0001f)] private float _maxHealth = 100f;
+        [SerializeField, Min(0.0001f)]
+        private float _maxHealth = 100f;
 
         // 현재 체력 상태
         private float _currentHealth;
@@ -17,38 +18,20 @@ namespace UJam.Runtime.Combat
         // 실제로 적용된 피해량을 알리는 이벤트
         public event Action<float> DamageApplied;
 
-        // 생존에서 사망으로 처음 전환될 때 알리는 이벤트
+        // 생존에서 사망으로 처음 전환될 때 알리는 이벤트 (UI, 소유중인 객체 용)
         public event Action Died;
 
+        // 외부에게 체력 변경을 알리는 이벤트 (현재 체력, 최대 체력) (UI 용)
+        public event Action<float, float> OnHealthChanged;
+
         // 외부에서 읽는 최대 체력
-        public float MaxHealth
-        {
-            get
-            {
-                // 현재 설정된 최대 체력 반환
-                return _maxHealth;
-            }
-        }
+        public float MaxHealth { get { return _maxHealth; } }  // 현재 설정된 최대 체력 반환
 
         // 외부에서 읽는 현재 체력
-        public float CurrentHealth
-        {
-            get
-            {
-                // 현재 clamp된 체력 반환
-                return _currentHealth;
-            }
-        }
+        public float CurrentHealth { get { return _currentHealth; } } // 현재 clamp된 체력 반환
 
         // 외부에서 읽는 사망 상태
-        public bool IsDead
-        {
-            get
-            {
-                // 중복 피해를 막는 사망 상태 반환
-                return _isDead;
-            }
-        }
+        public bool IsDead { get { return _isDead; } } // 중복 피해를 막는 사망 상태 반환
 
         // Component가 활성화될 때 최대 체력으로 초기화
         private void Awake()
@@ -125,6 +108,9 @@ namespace UJam.Runtime.Combat
 
             // 실제 피해량을 한 번만 통지
             DamageApplied?.Invoke(actualDamage);
+
+            // 실제 체력 변화 이후의 상태를 한번만 통지
+            OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
 
             // 이번 피해로 처음 사망했는지 확인
             if (_currentHealth <= 0f && !_isDead)

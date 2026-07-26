@@ -25,7 +25,6 @@ namespace UJam.Runtime.Grid
         // 외부 생성을 막고 단일 인스턴스만 유지
         private GridSystem()
         {
-            // 초기화 전에도 조회가 안전한 빈 Cell 장부 생성
             _cells = new Dictionary<(int Row, int Col), Cell>();
         }
 
@@ -33,7 +32,8 @@ namespace UJam.Runtime.Grid
 
         #region Grid Information
 
-        // row와 col tuple로 Cell을 찾기 위한 정보 장부
+        // row와 col tuple로 Cell을 찾기 위한 Dictionary
+        // Row, Col로 좌표를 지정하면 이에 저장된 Cell 객체를 반환하는 빈 Dictionary를 보유함
         private Dictionary<(int Row, int Col), Cell> _cells;
 
         // 각 Cell의 가로 길이
@@ -60,11 +60,11 @@ namespace UJam.Runtime.Grid
 
         // 외부 설정으로 전체 Grid와 기본 None Cell을 다시 생성
         public bool Initialize(
-            float cellWidth,
-            float cellHeight,
-            int rowCount,
-            int columnCount,
-            Vector3 origin)
+            float cellWidth,    // 단위 Cell 하나의 가로 길이
+            float cellHeight,   // 단위 Cell 하나의 세로 길이
+            int rowCount,       // 총 격자의 세로 길이
+            int columnCount,    // 총 격자의 가로 길이
+            Vector3 origin)     // 총 격자의 원점 World 좌표
         {
             // Cell 크기와 Grid 개수와 월드 좌표가 모두 유효한지 확인
             if (!IsPositiveFinite(cellWidth)
@@ -87,7 +87,7 @@ namespace UJam.Runtime.Grid
                 return false;
             }
 
-            // 검증이 끝난 Cell만 담을 새 장부
+            // 위에서 계산한 갯수만큼 빈 cell 저장 공간을 생성
             Dictionary<(int Row, int Col), Cell> initializedCells = new Dictionary<(int Row, int Col), Cell>((int)cellCount);
 
             // 전체 세로 Cell을 순서대로 생성
@@ -100,6 +100,8 @@ namespace UJam.Runtime.Grid
                     (int Row, int Col) key = (row, col);
                     // 현재 좌표의 기본 None Cell 정보
                     Cell cell = new Cell(row, col, cellWidth, cellHeight);
+
+                    // cell을 생성해서 dictionary에 할당
                     initializedCells.Add(key, cell);
                 }
             }
@@ -109,7 +111,7 @@ namespace UJam.Runtime.Grid
             RowCount = rowCount;
             ColumnCount = columnCount;
             Origin = origin;
-            _cells = initializedCells;
+            _cells = initializedCells; // GridSystem을 통해 외부에서 사용할 수 있도록 변수에 Dictionary 할당
             IsInitialized = true;
 
             // 전체 Cell 생성이 끝난 초기화 성공 반환
@@ -118,10 +120,10 @@ namespace UJam.Runtime.Grid
 
         #endregion
 
-        #region Cell Update
+        #region Cell 관련 Public 함수들
 
-        // 지정한 Cell 상태와 선택적인 방어 건물 객체를 함께 갱신
-        public bool UpdateCellState(int row, int col, CellState state, GameObject defenseObject = null)
+        // 외부에서 Cell 상태를 업데이트 하기 위해 호출하는 함수
+        public bool UpdateCellState(int row, int col, CellState state, GameObject obj = null)
         {
             // 정의되지 않은 상태 값은 Cell에 저장하지 않음
             if (!Enum.IsDefined(typeof(CellState), state))
@@ -140,23 +142,19 @@ namespace UJam.Runtime.Grid
                 return false;
             }
 
-            // Def 상태는 실제 방어 건물 객체와 함께 저장
-            if (state == CellState.Def && defenseObject == null)
+            // Def 상태는 실제 방어 건물 객체와 함께 저장하도록 하는 방어 코드
+            if (state == CellState.Def && obj == null)
             {
                 // 연결할 방어 건물이 없는 Def 갱신 실패 반환
                 return false;
             }
 
             // 검증된 Cell 상태와 방어 건물 연결을 반영
-            cell.UpdateState(state, defenseObject);
+            cell.UpdateState(state, obj);
 
             // Cell 상태 갱신 성공 반환
             return true;
         }
-
-        #endregion
-
-        #region Cell Query
 
         // row와 col로 특정 Cell 상태를 조회
         public bool TryGetCellState(int row, int col, out CellState state)
@@ -200,12 +198,12 @@ namespace UJam.Runtime.Grid
             }
 
             // Cell에 연결된 방어 건물 객체 반환
-            return cell.DefenseObject;
+            return cell.Obj;
         }
 
         #endregion
 
-        #region Internal Query
+        #region 내부 Query 처리 함수들
 
         // row와 col을 Dictionary key로 바꿔 Cell을 조회
         private bool TryFindCell(int row, int col, out Cell cell)
@@ -236,7 +234,7 @@ namespace UJam.Runtime.Grid
 
         #endregion
 
-        #region Validation
+        #region 유효성 validation
 
         // 값이 양수이며 NaN이나 Infinity가 아닌지 확인
         private static bool IsPositiveFinite(float value)

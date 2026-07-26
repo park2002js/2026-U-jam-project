@@ -10,7 +10,7 @@ namespace UJam.Runtime.Enemy
     [RequireComponent(typeof(Health))]
     public abstract class EnemyBase : MonoBehaviour, IDamageable
     {
-        #region Inspector
+        #region Inspector 창에 띄울 것들
 
         // Enemy 체력을 관리할 Component
         [SerializeField] private Health _health;
@@ -48,40 +48,13 @@ namespace UJam.Runtime.Enemy
         #region Properties
 
         // 현재 Enemy 스탯
-        public EnemyStatus Status
-        {
-            get
-            {
-                // 현재 스탯 반환
-                return _status;
-            }
-        }
+        public EnemyStatus Status { get { return _status; } } // 현재 스탯 반환
 
         // 현재 Enemy 상태 머신
-        public EnemyFSM FSM
-        {
-            get
-            {
-                // 현재 FSM 반환
-                return _fsm;
-            }
-        }
+        public EnemyFSM FSM { get { return _fsm; }} // 현재 FSM 반환
 
         // 현재 Health Component
-        public Health Health
-        {
-            get
-            {
-                // 현재 Health 반환
-                return _health;
-            }
-        }
-
-        // Archive로 옮긴 IAttackSource·Faction·AttackId 계약 비활성
-        /*
-        public Faction Faction => new Faction(_status != null ? _status.FactionId : "Enemy");
-        public AttackId AttackId => new AttackId(_status != null ? _status.AttackId : "Default");
-        */
+        public Health Health { get { return _health; } } // 현재 Health 반환
 
         // 외부 사거리 판정자가 사용할 공격 가능 Cell 개수
         public int AttackRangeCellCount

@@ -18,34 +18,13 @@ namespace UJam.Runtime.Defense
         public event Action<DefenseBase> Destroyed;
 
         // 외부에 공개할 방어 건물 이름
-        public string BuildingName
-        {
-            get
-            {
-                // 비어 있지 않은 현재 건물 이름 반환
-                return _buildingName;
-            }
-        }
+        public string BuildingName { get { return _buildingName; } } // 비어 있지 않은 현재 건물 이름 반환
 
         // 외부에 공개할 구매 또는 설치 비용
-        public long Cost
-        {
-            get
-            {
-                // 음수가 아닌 현재 비용 반환
-                return _cost;
-            }
-        }
+        public long Cost { get { return _cost; } } // 음수가 아닌 현재 비용 반환
 
         // 외부에서 확인할 파괴 처리 상태
-        public bool IsDestroyed
-        {
-            get
-            {
-                // 현재 파괴 처리 상태 반환
-                return _isDestroyed;
-            }
-        }
+        public bool IsDestroyed { get { return _isDestroyed; } } // 현재 파괴 처리 상태 반환
 
         // 공통 설정값을 안전한 범위로 보정
         protected virtual void Awake()
@@ -57,10 +36,7 @@ namespace UJam.Runtime.Defense
             }
 
             // 잘못된 음수 비용을 무료로 보정
-            if (_cost < 0L)
-            {
-                _cost = 0L;
-            }
+            if (_cost < 0L) _cost = 0L;
         }
 
         // 방어 건물을 한 번만 파괴

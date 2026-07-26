@@ -16,9 +16,9 @@ namespace UJam.Runtime.Combat
     public readonly struct DamageInfo
     {
         // 필수 피해량과 선택적인 전달 주체 저장
-        public DamageInfo(
-            float damage,
-            string source = null,
+        public DamageInfo(  
+            float damage,   // 피해량
+            string source = null,   // 데미지를 준 주체 (즉, TakeDamage를 호출한 사람)
             DamageSourceKind sourceKind = DamageSourceKind.Unknown)
         {
             // 외부에서 결정한 피해량 저장

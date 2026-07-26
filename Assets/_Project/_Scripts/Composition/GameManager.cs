@@ -5,6 +5,7 @@ using UJam.Runtime.Phase;
 using UJam.Runtime.Placement;
 using UJam.Runtime.Player;
 using UJam.Runtime.Shop;
+using UJam.Runtime.Item;
 
 namespace UJam.Runtime.Composition
 {
