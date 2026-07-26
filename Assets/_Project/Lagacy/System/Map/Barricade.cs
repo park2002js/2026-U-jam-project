@@ -9,21 +9,26 @@ namespace EnemySystem
     {
         public static event Action OnAnyBarricadeDestroyed;
 
+        // 노드 참조 → 바리케이드 (신버전, 좌표 변환 없이 정확)
+        public static readonly Dictionary<GraphNode, Barricade> NodeLookup
+            = new Dictionary<GraphNode, Barricade>();
+
+        // 격자 셀 → 바리케이드 (구버전 BarricadeBreaker 호환용)
         public static readonly Dictionary<Vector2Int, Barricade> Lookup
             = new Dictionary<Vector2Int, Barricade>();
+
         public static readonly List<Barricade> All = new List<Barricade>();
 
         public const uint BarricadeTag = 1;
+
+        public static Vector2Int WorldToCell(Vector3 pos)
+            => new Vector2Int(Mathf.RoundToInt(pos.x), Mathf.RoundToInt(pos.z));
 
         [Header("바리케이드 능력치")]
         public float maxHP = 200f;
         private float hp;
 
         private readonly List<GraphNode> myNodes = new List<GraphNode>();
-        private readonly List<Vector2Int> myCells = new List<Vector2Int>();
-
-        public static Vector2Int WorldToCell(Vector3 pos)
-            => new Vector2Int(Mathf.RoundToInt(pos.x), Mathf.RoundToInt(pos.z));
 
         void OnEnable()
         {
@@ -34,12 +39,10 @@ namespace EnemySystem
         void OnDisable()
         {
             All.Remove(this);
-            foreach (Vector2Int c in myCells)
-                if (Lookup.TryGetValue(c, out var b) && b == this)
-                    Lookup.Remove(c);
+            ClearLookups();
         }
 
-        // 등록: 콜라이더 영역 안 모든 노드에 '태그'만 부여 (walkable 유지!)
+        // 콜라이더 영역 안 모든 노드에 태그 부여 (walkable은 유지!)
         public void RegisterToGraph()
         {
             if (AstarPath.active == null) return;
@@ -55,8 +58,6 @@ namespace EnemySystem
             AstarPath.active.AddWorkItem(ctx =>
             {
                 myNodes.Clear();
-                myCells.Clear();
-
                 GridGraph grid = AstarPath.active.data.gridGraph;
                 if (grid == null) return;
 
@@ -66,15 +67,14 @@ namespace EnemySystem
                     if (p.x >= bb.min.x && p.x <= bb.max.x &&
                         p.z >= bb.min.z && p.z <= bb.max.z)
                     {
-                        node.Tag = BarricadeTag;   // 태그만! walkable은 true 유지
+                        node.Tag = BarricadeTag;      // walkable 유지
                         myNodes.Add(node);
-                        Vector2Int cell = WorldToCell(p);
-                        myCells.Add(cell);
-                        Lookup[cell] = this;
+                        NodeLookup[node] = this;
+                        Lookup[WorldToCell(p)] = this;   // 구버전 호환
                     }
                 });
 
-                Debug.Log($"[Barricade] {name} → {myNodes.Count}개 노드 점유(태그)");
+                Debug.Log($"[Barricade] {name} → {myNodes.Count}칸 점유");
             });
         }
 
@@ -95,17 +95,30 @@ namespace EnemySystem
                 AstarPath.active.AddWorkItem(ctx =>
                 {
                     foreach (GraphNode n in nodes)
-                        if (n != null) n.Tag = 0;   // 태그만 제거
+                        if (n != null) n.Tag = 0;
                 });
             }
 
-            foreach (Vector2Int c in myCells)
-                if (Lookup.TryGetValue(c, out var b) && b == this)
-                    Lookup.Remove(c);
+            ClearLookups();
             All.Remove(this);
 
             OnAnyBarricadeDestroyed?.Invoke();
             Destroy(gameObject);
+        }
+
+        private void ClearLookups()
+        {
+            foreach (GraphNode n in myNodes)
+            {
+                if (n == null) continue;
+
+                if (NodeLookup.TryGetValue(n, out var b1) && b1 == this)
+                    NodeLookup.Remove(n);
+
+                Vector2Int cell = WorldToCell((Vector3)n.position);
+                if (Lookup.TryGetValue(cell, out var b2) && b2 == this)
+                    Lookup.Remove(cell);
+            }
         }
 
         void OnDrawGizmos()
@@ -115,8 +128,7 @@ namespace EnemySystem
             foreach (var n in myNodes)
             {
                 if (n == null) continue;
-                Vector3 p = (Vector3)n.position;
-                Gizmos.DrawCube(p, new Vector3(0.9f, 0.2f, 0.9f));
+                Gizmos.DrawCube((Vector3)n.position, new Vector3(0.9f, 0.2f, 0.9f));
             }
         }
     }

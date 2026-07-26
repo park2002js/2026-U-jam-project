@@ -25,14 +25,6 @@ namespace EnemySystem
                 => node.Walkable && node.Tag != Barricade.BarricadeTag;
             public uint GetTraversalCost(Path path, GraphNode node) => 0;
         }
-        private class AllowBarricade : ITraversalProvider
-        {
-            public bool CanTraverse(Path path, GraphNode node) 
-                => node.Walkable || node.Tag == Barricade.BarricadeTag; // 막혀있어도 태그가 있으면 통과 허용!
-            public uint GetTraversalCost(Path path, GraphNode node) => 0;
-        }
-        private static readonly AllowBarricade allowProvider = new AllowBarricade();
-
         private static readonly BlockBarricade blockProvider = new BlockBarricade();
 
         void Awake() { enemy = GetComponent<Enemy>(); }
@@ -71,7 +63,6 @@ namespace EnemySystem
 
             // 우회로 없음 → 2차: 바리케이드 통과 허용(provider 없음) 탐색
             ABPath open = ABPath.Construct(transform.position, baseTarget.position, OnOpenComplete);
-            open.traversalProvider = allowProvider;
             AstarPath.StartPath(open);
         }
 
@@ -123,10 +114,6 @@ namespace EnemySystem
                 Recalculate();
                 return;
             }
-
-            // Y축 무시 거리 계산
-            Vector3 myPos2D = new Vector3(transform.position.x, 0, transform.position.z);
-            Vector3 attackPos2D = new Vector3(attackPoint.x, 0, attackPoint.z);
 
             float dist = Vector3.Distance(transform.position, attackPoint);
             if (dist <= enemy.attackRange + 0.5f)
