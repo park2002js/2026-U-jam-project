@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using UJam.Runtime.Enemy;
 using UJam.Runtime.Grid;
 using UnityEngine;
 
@@ -48,11 +49,17 @@ namespace UJam.Runtime.Phase
         // 남은 수와 완료를 전달할 PhaseSystem
         private PhaseSystem _phaseSystem;
 
+        // 발표용 Enemy에 주입할 기본 거점 Target
+        private GameObject _defaultEnemyTarget;
+
         // 현재 진행 중인 Wave 배열 위치
         private int _currentWaveIndex = -1;
 
         // 현재 Wave에서 남은 Enemy 수
         private int _remainingEnemyCount;
+
+        // 현재 Wave에서 죽은 Enemy 수
+        private int _deadEnemyCount;
 
         // Wave 준비 또는 전투가 진행 중인지 여부
         private bool _isWaveRunning;
@@ -80,6 +87,12 @@ namespace UJam.Runtime.Phase
         // Singleton과 런타임 준비 객체 정리
         private void OnDestroy()
         {
+            // 연결된 Phase 변경 로그 해제
+            if (_phaseSystem != null)
+            {
+                _phaseSystem.PhaseChanged -= HandlePhaseChanged;
+            }
+
             // 자신이 등록한 Singleton만 해제
             if (Instance == this)
             {
@@ -96,7 +109,27 @@ namespace UJam.Runtime.Phase
         // 남은 수와 Wave 완료를 받을 PhaseSystem 연결
         public void ConfigurePhaseSystem(PhaseSystem phaseSystem)
         {
+            // 기존 Phase 변경 로그 해제
+            if (_phaseSystem != null)
+            {
+                _phaseSystem.PhaseChanged -= HandlePhaseChanged;
+            }
+
             _phaseSystem = phaseSystem;
+
+            // 새 Phase 변경 로그 연결
+            if (_phaseSystem != null)
+            {
+                _phaseSystem.PhaseChanged += HandlePhaseChanged;
+                Debug.Log($"[WaveController] Phase 시작: {_phaseSystem.CurrentState}", this);
+            }
+        }
+
+        // GameManager가 발표용 기본 거점 Target 연결
+        public void ConfigureDefaultTarget(GameObject target)
+        {
+            // 이후 생성할 Enemy에 전달할 거점 저장
+            _defaultEnemyTarget = target;
         }
 
         // 다음 Wave의 총 Enemy 수 조회
@@ -125,8 +158,17 @@ namespace UJam.Runtime.Phase
             // 검증된 다음 Wave 정보
             WaveInfo nextWave;
 
-            // 진행 중이거나 다음 Wave가 잘못됐는지 확인
-            if (_isWaveRunning || !TryGetValidNextWave(out nextWave))
+            // 이미 진행 중인 Wave인지 확인
+            if (_isWaveRunning)
+            {
+                Debug.LogWarning("[WaveController] Wave 시작 실패: 이미 Wave가 진행 중임", this);
+
+                // Wave 시작 실패 반환
+                return false;
+            }
+
+            // 다음 Wave가 잘못됐는지 확인
+            if (!TryGetValidNextWave(out nextWave))
             {
                 // Wave 시작 실패 반환
                 return false;
@@ -141,15 +183,20 @@ namespace UJam.Runtime.Phase
             {
                 _aliveEnemyIds.Clear();
                 _remainingEnemyCount = nextWave.TotalEnemyCount;
+                _deadEnemyCount = 0;
             }
 
-            // PhaseSystem에 최초 남은 수 전달
+            // PhaseSystem에 최초 남은 수와 죽은 수 전달
             if (_phaseSystem != null)
             {
                 _phaseSystem.UpdateRemainingEnemyCount(_remainingEnemyCount);
+                _phaseSystem.UpdateDeadEnemyCount(_deadEnemyCount);
             }
 
             StartCoroutine(PrepareAndActivateWave(nextWave));
+            Debug.Log(
+                $"[WaveController] Wave {_currentWaveIndex + 1} 시작: Enemy {_remainingEnemyCount}명",
+                this);
 
             // Wave 시작 성공 반환
             return true;
@@ -169,6 +216,8 @@ namespace UJam.Runtime.Phase
             int enemyId = enemy.GetInstanceID();
             // 잠금 밖에서 전달할 남은 수
             int remainingEnemyCount;
+            // 잠금 밖에서 전달할 죽은 수
+            int deadEnemyCount;
             // 잠금 밖에서 전달할 Wave 완료 여부
             bool isWaveComplete;
 
@@ -183,7 +232,9 @@ namespace UJam.Runtime.Phase
                 }
 
                 _remainingEnemyCount -= 1;
+                _deadEnemyCount += 1;
                 remainingEnemyCount = _remainingEnemyCount;
+                deadEnemyCount = _deadEnemyCount;
                 isWaveComplete = remainingEnemyCount == 0;
 
                 // 마지막 Enemy 사망 시 다음 Wave 시작 가능 상태로 변경
@@ -196,10 +247,11 @@ namespace UJam.Runtime.Phase
             // 원자적 감소 결과가 음수가 되지 않았는지 실행 중 확인
             Debug.Assert(remainingEnemyCount >= 0, "Wave enemy count became negative.");
 
-            // 최신 남은 수를 PhaseSystem에 전달
+            // 최신 남은 수와 죽은 수를 PhaseSystem에 전달
             if (_phaseSystem != null)
             {
                 _phaseSystem.UpdateRemainingEnemyCount(remainingEnemyCount);
+                _phaseSystem.UpdateDeadEnemyCount(deadEnemyCount);
             }
 
             // 마지막 Enemy 사망인지 확인
@@ -281,6 +333,13 @@ namespace UJam.Runtime.Phase
                 yield break;
             }
 
+            // 생성된 Enemy에 발표용 기본 거점 Target 주입
+            EnemyBase enemy = preparedEnemy.Instance.GetComponent<EnemyBase>();
+            if (enemy != null)
+            {
+                enemy.ConfigureTarget(_defaultEnemyTarget);
+            }
+
             preparedEnemy.Instance.transform.SetParent(_activeEnemyRoot, true);
             preparedEnemy.Instance.SetActive(true);
         }
@@ -296,16 +355,55 @@ namespace UJam.Runtime.Phase
             // 배열과 다음 Wave 존재 여부 확인
             if (_waves == null || nextWaveIndex < 0 || nextWaveIndex >= _waves.Length)
             {
+                Debug.LogWarning(
+                    $"[WaveController] Wave 시작 실패: 다음 Wave가 없음 (index: {nextWaveIndex})",
+                    this);
+
                 // 다음 Wave 없음 반환
                 return false;
             }
 
             wave = _waves[nextWaveIndex];
 
-            // Wave와 Grid 준비 여부 확인
-            if (wave == null || wave.TotalEnemyCount == 0 || !GridSystem.Instance.IsInitialized)
+            // Wave Asset 연결 여부 확인
+            if (wave == null)
             {
-                // 실행 불가능한 Wave 반환
+                Debug.LogWarning(
+                    $"[WaveController] Wave 시작 실패: Waves[{nextWaveIndex}]에 WaveInfo가 연결되지 않음",
+                    this);
+
+                // Wave 검증 실패 반환
+                return false;
+            }
+
+            // Wave Enemy 존재 여부 확인
+            if (wave.TotalEnemyCount == 0)
+            {
+                Debug.LogWarning(
+                    $"[WaveController] Wave 시작 실패: Waves[{nextWaveIndex}]의 Enemy가 0명임",
+                    this);
+                wave = null;
+
+                // Wave 검증 실패 반환
+                return false;
+            }
+
+            // Grid 초기화 여부 확인
+            if (!GridSystem.Instance.IsInitialized)
+            {
+                Debug.LogWarning("[WaveController] Wave 시작 실패: GridSystem이 초기화되지 않음", this);
+                wave = null;
+
+                // Wave 검증 실패 반환
+                return false;
+            }
+
+            // Enemy 기본 Target 연결 여부 확인
+            if (_defaultEnemyTarget == null)
+            {
+                Debug.LogWarning(
+                    "[WaveController] Wave 시작 실패: GameManager의 BaseCore 참조가 비어 있음",
+                    this);
                 wave = null;
 
                 // Wave 검증 실패 반환
@@ -316,13 +414,16 @@ namespace UJam.Runtime.Phase
             WaveInfo.EnemySpawnInfo[] enemies = wave.Enemies;
 
             // 모든 Enemy 정보의 필수 값 검사
-            foreach (WaveInfo.EnemySpawnInfo enemyInfo in enemies)
+            for (int index = 0; index < enemies.Length; index += 1)
             {
+                // 현재 검사할 Enemy 정보
+                WaveInfo.EnemySpawnInfo enemyInfo = enemies[index];
                 // 현재 Enemy의 Grid 좌표
                 Vector2Int gridPosition = enemyInfo.GridPosition;
 
                 // Prefab과 Grid 범위와 대기시간 확인
                 if (enemyInfo.EnemyPrefab == null
+                    || enemyInfo.EnemyPrefab.GetComponent<EnemyBase>() == null
                     || gridPosition.x < 0
                     || gridPosition.x >= GridSystem.Instance.ColumnCount
                     || gridPosition.y < 0
@@ -331,6 +432,10 @@ namespace UJam.Runtime.Phase
                     || float.IsNaN(enemyInfo.WaitTime)
                     || float.IsInfinity(enemyInfo.WaitTime))
                 {
+                    Debug.LogWarning(
+                        $"[WaveController] Wave 시작 실패: Waves[{nextWaveIndex}] Enemy[{index}] 설정 오류 "
+                        + $"(Prefab: {enemyInfo.EnemyPrefab}, Grid: {gridPosition}, WaitTime: {enemyInfo.WaitTime})",
+                        this);
                     wave = null;
 
                     // 잘못된 Enemy 정보 실패 반환
@@ -340,6 +445,12 @@ namespace UJam.Runtime.Phase
 
             // 전체 Wave 정보 검증 성공 반환
             return true;
+        }
+
+        // PhaseSystem의 Phase 시작 로그 출력
+        private void HandlePhaseChanged(PhaseState phase)
+        {
+            Debug.Log($"[WaveController] Phase 시작: {phase}", this);
         }
 
         // Grid 좌표를 기존 Grid 원점 규칙의 World 좌표로 변환

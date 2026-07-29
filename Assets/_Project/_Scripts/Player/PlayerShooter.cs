@@ -1,12 +1,13 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UJam.Runtime.Combat;
 
 namespace UJam.Runtime.Player
 {
     public sealed class PlayerShooter : MonoBehaviour
     {
-        // 화면 중앙 Ray를 만들 Player 카메라
+        // 마우스 위치의 Ray를 만들 Player 카메라
         [SerializeField] private Camera _aimCamera;
 
         // 시각적 Bullet이 시작할 총구 위치
@@ -14,6 +15,9 @@ namespace UJam.Runtime.Player
 
         // 사용자가 할당할 시각적 Bullet Prefab
         [SerializeField] private GameObject _bulletPrefab;
+
+        // 발사 공격력을 제공할 Player 상태
+        [SerializeField] private PlayerStatus _playerStatus;
 
         // Raycast 최대 사거리
         [SerializeField, Min(0.01f)] private float _maxDistance = 100f;
@@ -27,7 +31,7 @@ namespace UJam.Runtime.Player
         // 시각적 Bullet 최대 생존 시간
         [SerializeField, Min(0.01f)] private float _bulletVisualLifetime = 3f;
 
-        // 카메라와 총구 기본 참조 보완
+        // 카메라와 총구와 Player 상태 기본 참조 보완
         private void Awake()
         {
             // Inspector 카메라가 없으면 Main Camera 사용
@@ -41,24 +45,53 @@ namespace UJam.Runtime.Player
             {
                 _bulletSpawnPoint = transform;
             }
+
+            // Inspector 상태가 없으면 부모 또는 Scene의 Player 상태 사용
+            if (_playerStatus == null)
+            {
+                _playerStatus = GetComponentInParent<PlayerStatus>();
+
+                // 부모에도 없으면 활성 Scene 전체에서 Player 상태 확인
+                if (_playerStatus == null)
+                {
+                    _playerStatus = FindFirstObjectByType<PlayerStatus>();
+                }
+            }
         }
 
-        // 카메라 중앙 Ray로 즉시 피해를 주고 시각적 Bullet 생성
+        // 우클릭으로 기존 입력과 Phase를 우회해 강제 발사
+        private void Update()
+        {
+            // 우클릭 순간과 공격력 제공 상태 확인
+            if (Mouse.current != null
+                && Mouse.current.rightButton.wasPressedThisFrame
+                && _playerStatus != null)
+            {
+                // 현재 Player 공격력으로 발사
+                TryShoot(_playerStatus.AttackDamage);
+            }
+        }
+
+        // 마우스 위치의 Ray로 즉시 피해를 주고 시각적 Bullet 생성
         public bool TryShoot(float damage)
         {
-            // 필수 카메라와 유효한 공격 수치 확인
+            // 필수 카메라와 마우스와 유효한 공격 수치 확인
             if (_aimCamera == null
+                || Mouse.current == null
                 || !IsPositiveFinite(damage)
                 || !IsPositiveFinite(_maxDistance)
                 || !IsPositiveFinite(_bulletVisualSpeed)
                 || !IsPositiveFinite(_bulletVisualLifetime))
             {
                 // 발사 실패 반환
+                Debug.Log("Ray 발사 실패");
                 return false;
             }
 
-            // 현재 카메라 화면 중앙에서 생성한 Ray
-            Ray ray = _aimCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            // 현재 마우스 커서의 화면 위치
+            Vector2 cursorPosition = Mouse.current.position.ReadValue();
+            // 카메라에서 마우스 커서 방향으로 생성한 Ray
+            Ray ray = _aimCamera.ScreenPointToRay(cursorPosition);
             // 아무것도 맞지 않았을 때 사용할 최대 사거리 끝점
             Vector3 endPoint = ray.origin + ray.direction * _maxDistance;
 

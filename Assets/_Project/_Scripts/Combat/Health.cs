@@ -106,6 +106,12 @@ namespace UJam.Runtime.Combat
                 return 0f;
             }
 
+            // 피해를 받은 객체와 실제 피해량과 남은 체력 출력
+            Debug.Log(
+                $"[Health] {gameObject.name} 데미지 {actualDamage} 받음 "
+                + $"({_currentHealth}/{_maxHealth})",
+                gameObject);
+
             // 실제 피해량을 한 번만 통지
             DamageApplied?.Invoke(actualDamage);
 

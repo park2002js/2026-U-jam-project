@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "name": "New Actions",
+    "maps": [
+        {
+            "name": "shoot",
+            "id": "bacf4b9e-6ef5-4c50-b8ec-3499ed440a2c",
+            "actions": [
+                {
+                    "name": "New action",
+                    "type": "Button",
+                    "id": "5ec7ee2a-3bb9-49d0-b9eb-ca3a6ccd8552",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "adcd0ad7-fd80-4508-afde-7c1156adb1f5",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "Tap",
+                    "processors": "",
+                    "groups": "",
+                    "action": "New action",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
