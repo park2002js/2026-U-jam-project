@@ -12,4 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54f1839bfc947194c8085da44ae836e3, type: 3}
   m_Name: Wave 1
   m_EditorClassIdentifier: 
-  _enemies: []
+  _enemies:
+  - _enemyPrefab: {fileID: 0}
+    _gridPosition: {x: 0, y: 0}
+    _waitTime: 0
+  - _enemyPrefab: {fileID: 0}
+    _gridPosition: {x: 0, y: 0}
+    _waitTime: 0
+  - _enemyPrefab: {fileID: 0}
+    _gridPosition: {x: 0, y: 0}
+    _waitTime: 0
+  - _enemyPrefab: {fileID: 0}
+    _gridPosition: {x: 0, y: 0}
+    _waitTime: 0
