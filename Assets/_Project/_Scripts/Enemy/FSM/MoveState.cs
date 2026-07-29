@@ -1,5 +1,4 @@
 using UJam.Runtime.Enemy;
-using UnityEngine;
 
 namespace UJam.Runtime.Enemy.FSM
 {
@@ -28,21 +27,8 @@ namespace UJam.Runtime.Enemy.FSM
                 return;
             }
 
-            // Enemy Navigation 이동 호출
-            _enemy.Move();
-
-            // 이미 전달된 사거리 정보가 유효하면 Attack 전환
-            if (_fsm.Target != null && _fsm.InRange)
-            {
-                _fsm.SetState(EnemyStateKind.Attack);
-            }
-        }
-
-        // 외부 범위 판정 결과 전달
-        public void SetRange(Object target, bool inside)
-        {
-            // 중앙 FSM에 사거리 정보 전달
-            _fsm.SetRange(target, inside);
+            // 발표용 임시 직선 이동 허용
+            _enemy.StartMovement();
         }
     }
 }

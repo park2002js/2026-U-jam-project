@@ -1,6 +1,5 @@
 using UJam.Runtime.Combat;
 using UJam.Runtime.Grid;
-using UJam.Runtime.Navigation;
 using UJam.Runtime.Phase;
 using UJam.Runtime.Shop;
 using UnityEngine;
@@ -18,9 +17,6 @@ namespace UJam.Runtime.Enemy
         // 상태별 Animation을 재생할 Component
         [SerializeField] private Animator _anim;
 
-        // 목적지 이동을 처리할 Component
-        [SerializeField] private NavigationDriver _nav;
-
         // 사망 시 Wallet에 지급할 재화
         [SerializeField, Min(0)] private long _currencyReward = 1L;
 
@@ -33,6 +29,12 @@ namespace UJam.Runtime.Enemy
 
         // 현재 Enemy 중앙 상태 머신
         private EnemyFSM _fsm;
+
+        // 발표용 마지막 row 직선 이동 객체
+        private TempNavi _tempNavi;
+
+        // 활성화 전에 주입받을 기본 거점 Target
+        private GameObject _configuredTarget;
 
         // 현재 공격 사거리를 Cell 개수로 올림 변환한 값
         private int _attackRangeCellCount;
@@ -100,17 +102,30 @@ namespace UJam.Runtime.Enemy
                 _anim = GetComponent<Animator>();
             }
 
-            // 같은 GameObject에서 Navigation 보완
-            if (_nav == null)
-            {
-                _nav = GetComponent<NavigationDriver>();
-            }
+            // 발표용 임시 직선 Navigation 생성
+            _tempNavi = new TempNavi(transform);
 
             // Enemy와 Animator를 연결한 FSM 생성
             _fsm = new EnemyFSM(this, _anim);
 
             // Health와 최초 Idle 상태 초기화
             _fsm.Init();
+
+            // 활성화 전에 전달받은 기본 거점 Target 반영
+            if (_configuredTarget != null)
+            {
+                _fsm.SetTarget(_configuredTarget);
+            }
+        }
+
+        // 발표용 거리 판정과 이동과 공격 상태 갱신
+        private void Update()
+        {
+            // 준비된 FSM의 발표용 상태 흐름 실행
+            if (_fsm != null)
+            {
+                _fsm.Tick();
+            }
         }
 
         // Enemy 제거 전 Health 이벤트 해제
@@ -200,23 +215,26 @@ namespace UJam.Runtime.Enemy
             return true;
         }
 
-        // 외부 사거리 판정 전달
-        public void SetRange(Object target, bool inside)
+        // Enemy 활성화 전후에 기본 거점 Target 주입
+        public void ConfigureTarget(GameObject target)
         {
-            // 준비된 FSM에 타겟과 사거리 전달
+            // 이후 초기화와 상태 전환에서 사용할 Target 저장
+            _configuredTarget = target;
+
+            // 이미 준비된 FSM에도 즉시 Target 전달
             if (_fsm != null)
             {
-                _fsm.SetRange(target, inside);
+                _fsm.SetTarget(target);
             }
         }
 
         // 외부 효과로 공격 타겟 변경
-        public void ChangeTarget(Object target)
+        public void ChangeTarget(GameObject target)
         {
-            // Attack 상태의 타겟 변경 경계 호출
+            // 준비된 FSM에 새 Target 전달
             if (_fsm != null)
             {
-                _fsm.Attack.ChangeTarget(target);
+                _fsm.SetTarget(target);
             }
         }
 
@@ -289,31 +307,48 @@ namespace UJam.Runtime.Enemy
             OnSpawn();
         }
 
-        // Move 상태의 이동 행동 실행
-        internal void Move()
+        // Move 상태의 발표용 직선 이동 허용
+        internal void StartMovement()
         {
-            // 현재 Target을 Navigation에 전달해 목적지 해석과 이동 요청 위임
-            if (_fsm != null && _fsm.Target != null && _nav != null)
+            // 준비된 임시 Navigation 이동 허용
+            if (_tempNavi != null)
             {
-                _nav.RequestMove(_fsm.Target, out _);
+                _tempNavi.StartMovement();
+            }
+        }
+
+        // 발표용 목표 Cell을 향한 직선 이동 실행
+        internal void Move(Vector2Int targetCell)
+        {
+            // 준비된 스탯과 임시 Navigation 확인
+            if (_status != null && _tempNavi != null)
+            {
+                _tempNavi.Move(targetCell, AttackRangeCellCount, _status.Speed);
+            }
+        }
+
+        // Attack과 Dead 상태의 발표용 이동 중단
+        internal void StopMovement()
+        {
+            // 준비된 임시 Navigation 이동 차단
+            if (_tempNavi != null)
+            {
+                _tempNavi.StopMovement();
             }
         }
 
         // Attack 상태의 공격 행동 실행
-        internal void Attack(Object target)
+        internal void Attack(GameObject target, Vector3 attackPoint)
         {
-            // 파생 Enemy 공격 행동 호출
-            OnAttack(target);
+            // 파생 Enemy에 피해 대상과 실제 Grid 공격 지점 전달
+            OnAttack(target, attackPoint);
         }
 
         // Dead 상태의 사망 행동 실행
         internal void Dead()
         {
-            // Navigation의 보관된 이동 요청 정지
-            if (_nav != null)
-            {
-                _nav.StopMovement();
-            }
+            // 발표용 임시 이동 중단
+            StopMovement();
 
             // 현재 Enemy의 사망 보상 지급
             GrantDeathReward();
@@ -329,6 +364,9 @@ namespace UJam.Runtime.Enemy
 
             // 파생 Enemy 사망 행동 호출
             OnDead();
+
+            // 공통 사망 처리를 마친 Enemy 객체 즉시 제거 예약
+            Destroy(gameObject);
         }
 
         // FSM 상태 Animation 실행
@@ -356,9 +394,9 @@ namespace UJam.Runtime.Enemy
         }
 
         // 파생 Enemy 공격 행동
-        protected virtual void OnAttack(Object target)
+        protected virtual void OnAttack(GameObject target, Vector3 attackPoint)
         {
-            // 타겟과 Status를 사용하는 공격 로직이 구현되어야 함
+            // 타겟과 Grid 공격 지점과 Status를 사용하는 공격 로직이 구현되어야 함
         }
 
         // 파생 Enemy 사망 행동
@@ -390,46 +428,38 @@ namespace UJam.Runtime.Enemy
         #region Helpers
 
         // Status 기반 직접 피해 적용
-        protected bool TryDamage(Object target)
+        protected bool TryDamage(GameObject target)
         {
-            // Archive로 옮긴 HitZone·DamageType·DamageFlags 공격 흐름 비활성
-            /*
+            // Target과 Status와 피해량 확인
             if (target == null || _status == null)
             {
+                // 공격할 수 없는 Target 실패 반환
                 return false;
             }
 
-            Transform targetTransform = GetTargetTransform(target);
-            if (targetTransform == null)
+            // Target 자신에서 피해 계약 확인
+            IDamageable damageable = target.GetComponent<IDamageable>();
+            if (damageable == null)
             {
+                // Target 자식에서 피해 계약 보완
+                damageable = target.GetComponentInChildren<IDamageable>();
+            }
+
+            // 피해 계약과 양수 피해량 확인
+            if (damageable == null || _status.Damage <= 0f)
+            {
+                // 피해 전달 실패 반환
                 return false;
             }
 
-            HitZoneReceiver receiver = targetTransform.GetComponentInParent<HitZoneReceiver>();
-            if (receiver == null)
-            {
-                receiver = targetTransform.GetComponentInChildren<HitZoneReceiver>();
-            }
-
-            if (receiver == null || _status.Damage <= 0f)
-            {
-                return false;
-            }
-
+            // 현재 Enemy 스탯 기반 피해 정보 생성
             DamageInfo info = new DamageInfo(
-                this,
                 _status.Damage,
-                new DamageType(_status.DamageTypeId),
-                null,
-                new HitContext(receiver.Zone),
-                DamageFlags.None);
+                gameObject.name,
+                DamageSourceKind.Enemy);
 
-            receiver.TakeDamage(info);
-            return true;
-            */
-
-            // 구형 공격 흐름 비활성 결과 반환
-            return false;
+            // 실제 체력이 감소했는지 반환
+            return damageable.TakeDamage(info) > 0f;
         }
 
         // Status 공격 사거리를 현재 Grid 크기 기준 Cell 개수로 변환
@@ -492,32 +522,6 @@ namespace UJam.Runtime.Enemy
                 _rewardGranted = true;
             }
         }
-
-        // Archive 이전 피격 부위 탐색 Helper 비활성
-        /*
-        private static Transform GetTargetTransform(Object target)
-        {
-            Transform targetTransform = target as Transform;
-            if (targetTransform != null)
-            {
-                return targetTransform;
-            }
-
-            GameObject targetObject = target as GameObject;
-            if (targetObject != null)
-            {
-                return targetObject.transform;
-            }
-
-            Component targetComponent = target as Component;
-            if (targetComponent != null)
-            {
-                return targetComponent.transform;
-            }
-
-            return null;
-        }
-        */
 
         #endregion
     }

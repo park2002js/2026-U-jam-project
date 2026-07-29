@@ -11,6 +11,10 @@ namespace UJam.Runtime.Enemy
         // 상태별 Animation을 재생할 Animator
         private readonly Animator _anim;
 
+        // 발표용 마지막 row 거리 판정 객체
+        // 발표 후 A* 경로 거리 판정으로 교체 대상
+        private readonly EnemyRangeChecker _rangeChecker;
+
         // 현재 상태 종류
         private EnemyStateKind _state;
 
@@ -23,14 +27,19 @@ namespace UJam.Runtime.Enemy
         // 현재 타겟 사거리 포함 여부
         private bool _inRange;
 
-        // 현재 공격과 이동에 사용할 Unity Target Object
-        private Object _target;
+        // 현재 공격에 사용할 기본 거점 GameObject
+        private GameObject _target;
+
+        // 발표용 Grid가 계산한 같은 col의 실제 공격 World 지점
+        private Vector3 _attackPoint;
 
         // Enemy와 네 상태를 한 번 연결
         public EnemyFSM(EnemyBase enemy, Animator anim)
         {
             _enemy = enemy;
             _anim = anim;
+            // 발표용 임시 거리 판정 객체 생성
+            _rangeChecker = new EnemyRangeChecker(enemy != null ? enemy.transform : null);
 
             // 재사용할 네 상태 객체 생성
             Idle = new IdleState(enemy, this);
@@ -61,8 +70,8 @@ namespace UJam.Runtime.Enemy
             }
         }
 
-        // 현재 공격과 이동에 사용할 Unity Target Object
-        public Object Target
+        // 현재 공격에 사용할 기본 거점 GameObject
+        public GameObject Target
         {
             get
             {
@@ -106,6 +115,85 @@ namespace UJam.Runtime.Enemy
             return Switch(EnemyStateKind.Idle);
         }
 
+        // 원거리 투사체가 향할 현재 Grid 공격 World 지점
+        public Vector3 AttackPoint
+        {
+            get
+            {
+                // 마지막 거리 판정에서 계산한 공격 지점 반환
+                return _attackPoint;
+            }
+        }
+
+        // 발표용 Grid 거리와 직선 이동과 공격 흐름 갱신
+        // 발표 후 정식 Navigation과 상태 Event 흐름으로 교체 대상
+        public void Tick()
+        {
+            // Spawn 전과 Dead 상태의 발표용 갱신 차단
+            if (!_ready
+                || !_spawnDone
+                || _state == EnemyStateKind.Idle
+                || _state == EnemyStateKind.Dead
+                || _target == null)
+            {
+                // 갱신할 수 없는 Frame 종료
+                return;
+            }
+
+            // 발표용 마지막 row 거리와 목표 Cell
+            bool inRange;
+            Vector2Int targetCell;
+            // 같은 col의 마지막 row 공격 World 지점
+            Vector3 attackPoint;
+
+            // 임시 거리 판정 실패 시 이동과 공격 중단
+            if (!_rangeChecker.TryCheckRange(
+                _enemy.AttackRangeCellCount,
+                out inRange,
+                out targetCell,
+                out attackPoint))
+            {
+                _enemy.StopMovement();
+
+                // 잘못된 Grid 상태의 Frame 종료
+                return;
+            }
+
+            _inRange = inRange;
+            _attackPoint = attackPoint;
+
+            // 공격 사거리 안 진입 처리
+            if (_inRange)
+            {
+                // Move에서 Attack으로 전환
+                if (_state == EnemyStateKind.Move)
+                {
+                    SetState(EnemyStateKind.Attack);
+                }
+
+                // Attack 상태의 Cooldown 기반 공격 요청
+                if (_state == EnemyStateKind.Attack)
+                {
+                    Attack.Hit();
+                }
+
+                // 사거리 안 Frame 종료
+                return;
+            }
+
+            // 사거리 밖 Attack을 Move로 전환
+            if (_state == EnemyStateKind.Attack)
+            {
+                SetState(EnemyStateKind.Move);
+            }
+
+            // Move 상태에서 발표용 마지막 row 직선 이동
+            if (_state == EnemyStateKind.Move)
+            {
+                _enemy.Move(targetCell);
+            }
+        }
+
         // 상태 또는 외부 시스템의 상태 변경 요청
         public bool SetState(EnemyStateKind next)
         {
@@ -141,38 +229,64 @@ namespace UJam.Runtime.Enemy
             return Switch(next);
         }
 
-        // 외부 사거리 판정으로 타겟과 상태 갱신
-        public void SetRange(Object target, bool inside)
+        // 발표용 기본 거점 Target 설정과 거리 판정 연결
+        internal void SetTarget(GameObject target)
         {
             _target = target;
-            _inRange = target != null && inside;
+            _inRange = false;
+            _attackPoint = default;
+            // 임시 거리 판정 객체에도 Target 전달
+            _rangeChecker.SetTarget(target);
 
-            // Move 중 타겟이 사거리 안이면 Attack 전환
-            if (_state == EnemyStateKind.Move && _inRange)
-            {
-                SetState(EnemyStateKind.Attack);
-                // 같은 보고에서 반대 전이 중복 처리 차단
-                return;
-            }
-
-            // Attack 중 사거리 이탈이면 Move 전환
-            if (_state == EnemyStateKind.Attack && !_inRange)
+            // Spawn 뒤 생존 상태만 Move 전환
+            if (_ready && _spawnDone && _state != EnemyStateKind.Dead)
             {
                 SetState(EnemyStateKind.Move);
             }
         }
 
-        // 외부 효과로 타겟을 교체하고 Move 전환
-        internal void SetTarget(Object target)
+        // 공격 직전 발표용 Grid 사거리 재검사
+        internal bool CanAttackTarget()
         {
-            _target = target;
-            _inRange = false;
+            // 공격 Target과 현재 상태 확인
+            if (_target == null || _state != EnemyStateKind.Attack)
+            {
+                // 공격 불가 반환
+                return false;
+            }
 
-            // 생존 상태만 Move 전환
-            if (_ready && _state != EnemyStateKind.Dead)
+            // 최신 발표용 Grid 사거리 결과
+            bool inRange;
+            // 현재 공격에서 직접 사용하지 않는 목표 Cell
+            Vector2Int targetCell;
+            // 최신 같은 col의 공격 World 지점
+            Vector3 attackPoint;
+
+            // 최신 거리 판정 결과 확인
+            if (!_rangeChecker.TryCheckRange(
+                _enemy.AttackRangeCellCount,
+                out inRange,
+                out targetCell,
+                out attackPoint))
+            {
+                // 거리 판정 실패의 공격 차단
+                return false;
+            }
+
+            _inRange = inRange;
+            _attackPoint = attackPoint;
+
+            // 사거리 이탈 시 Move 복귀
+            if (!_inRange)
             {
                 SetState(EnemyStateKind.Move);
+
+                // 사거리 밖 공격 차단
+                return false;
             }
+
+            // 공격 가능 반환
+            return true;
         }
 
         // 최초 Spawn 완료 뒤 Move 전환
@@ -210,6 +324,7 @@ namespace UJam.Runtime.Enemy
         {
             _target = null;
             _inRange = false;
+            _attackPoint = default;
         }
 
         // 상태 종류에 맞는 고유 함수 실행

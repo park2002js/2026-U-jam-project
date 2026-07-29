@@ -21,28 +21,25 @@ namespace UJam.Runtime.Enemy.FSM
         // Attack 상태 진입 준비
         public void Ready()
         {
-            // 공격 Animation 선딜레이 또는 준비 로직이 구현되어야 함
+            // 발표용 임시 이동을 끊고 공격 준비
+            _enemy.StopMovement();
+
+            // 발표용 Attack 상태 진입 확인
+            Debug.Log($"[EnemyFSM] {_enemy.gameObject.name} Attack 상태 진입", _enemy.gameObject);
         }
 
         // 현재 타겟 공격 실행
         public void Hit()
         {
-            // 실제 Attack 상태에서만 공격 허용
-            if (_fsm.State != EnemyStateKind.Attack)
+            // 실제 Attack 상태와 최신 발표용 Grid 사거리 확인
+            if (_fsm.State != EnemyStateKind.Attack || !_fsm.CanAttackTarget())
             {
-                // 다른 상태의 공격 요청 종료
+                // 다른 상태 또는 사거리 밖 공격 요청 종료
                 return;
             }
 
-            // 공격 전 사거리 재검사 없이 현재 타겟 사용
-            _enemy.Attack(_fsm.Target);
-        }
-
-        // 외부 효과로 타겟 교체와 Move 전환
-        public void ChangeTarget(Object target)
-        {
-            // 중앙 FSM에 새 타겟 전달
-            _fsm.SetTarget(target);
+            // 검증된 현재 Target과 같은 col의 Grid 지점 공격
+            _enemy.Attack(_fsm.Target, _fsm.AttackPoint);
         }
     }
 }
