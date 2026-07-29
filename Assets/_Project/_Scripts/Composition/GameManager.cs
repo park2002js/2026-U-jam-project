@@ -11,6 +11,9 @@ namespace UJam.Runtime.Composition
 {
     public sealed class GameManager : MonoBehaviour
     {
+        // 아래 Grid 설정값은 GridPreview에도 따로 존재함
+        // 이 값을 변경하면 Scene 미리보기와 달라지므로 GridPreview의 같은 값도 함께 변경
+
         // Grid Cell 가로와 세로 크기
         [SerializeField, Min(0.0001f)] private float _gridCellSize = 1f;
 
@@ -25,6 +28,9 @@ namespace UJam.Runtime.Composition
 
         // Player에 전달할 Phase 시스템
         [SerializeField] private PhaseSystem _phaseSystem;
+
+        // Phase 시스템에 전달할 Wave 제어기
+        [SerializeField] private WaveController _waveController;
 
         // Phase 상태를 받을 Player 상태
         [SerializeField] private PlayerStatus _playerStatus;
@@ -49,6 +55,9 @@ namespace UJam.Runtime.Composition
                 _gridHeight,
                 _gridWidth,
                 _gridOrigin);
+
+            // Grid 준비 뒤 Phase와 Wave 시스템 연결
+            _phaseSystem.Initialize(_waveController);
 
             // Player에 전달할 설치 시스템
             PlacementSystem placementSystem = new PlacementSystem(gridSystem);

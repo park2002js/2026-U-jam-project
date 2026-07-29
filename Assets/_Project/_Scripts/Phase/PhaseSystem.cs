@@ -27,6 +27,12 @@ namespace UJam.Runtime.Phase
         // WaveController가 마지막으로 보고한 생존 Enemy 수
         private int _remainingEnemyCount;
 
+        // GameManager가 연결한 Wave 제어기
+        private WaveController _waveController;
+
+        // GameManager 초기화 완료 여부
+        private bool _isInitialized;
+
         // PlayerStatus와 외부 시스템에 전달할 Phase 변경 이벤트
         public event Action<PhaseState> PhaseChanged;
 
@@ -50,36 +56,37 @@ namespace UJam.Runtime.Phase
             }
         }
 
-        // 최초 정비 UI 상태 적용
-        private void Awake()
+        // GameManager가 Grid 준비 뒤 Wave 제어기와 최초 정비 Phase 연결
+        public void Initialize(WaveController waveController)
         {
-            ChangePhase(PhaseState.Preparation);
-        }
-
-        // 모든 Awake 뒤 WaveController와 연결
-        private void Start()
-        {
-            // Scene에 준비된 Singleton 확인
-            if (WaveController.Instance != null)
+            // Wave 제어기 누락과 중복 초기화 차단
+            if (waveController == null || _isInitialized)
             {
-                WaveController.Instance.ConfigurePhaseSystem(this);
+                // 잘못된 초기화 요청 종료
+                return;
             }
+
+            _waveController = waveController;
+            _remainingEnemyCount = 0;
+            _waveController.ConfigurePhaseSystem(this);
+
+            // 게임 시작 Phase를 정비로 적용
+            ChangePhase(PhaseState.Preparation);
+            _isInitialized = true;
         }
 
         // Button 클릭으로 정비에서 전투로 전환
-        public void StartCombat()
+        public void StartCombatPhase()
         {
-            // 정비 상태와 WaveController 존재 여부 확인
-            if (_currentState != PhaseState.Preparation || WaveController.Instance == null)
+            // 초기화 완료와 정비 상태 확인
+            if (!_isInitialized || _currentState != PhaseState.Preparation)
             {
                 // 시작할 수 없는 전투 요청 종료
                 return;
             }
 
-            WaveController.Instance.ConfigurePhaseSystem(this);
-
             // 다음 Wave를 시작할 수 있는지 확인
-            if (!WaveController.Instance.StartNextWave())
+            if (!_waveController.StartNextWave())
             {
                 // 잘못된 Wave의 Phase 변경 차단
                 return;

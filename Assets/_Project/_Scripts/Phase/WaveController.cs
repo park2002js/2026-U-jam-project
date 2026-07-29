@@ -30,7 +30,7 @@ namespace UJam.Runtime.Phase
         // 순서대로 진행할 전체 Wave 정보
         [SerializeField] private WaveInfo[] _waves;
 
-        // 활성화된 Enemy를 정리할 선택적 부모
+        // 활성화된 Enemy를 정리할 선택적 부모 (생성된 적들을 Hierarchy에서 한곳에 모아 관리하기 위한 선택적 부모)
         [SerializeField] private Transform _activeEnemyRoot;
 
         // 비동기 생성이 끝난 Enemy와 대기시간 목록
