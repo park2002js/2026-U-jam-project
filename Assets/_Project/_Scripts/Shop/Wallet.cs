@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace UJam.Runtime.Shop
@@ -6,6 +7,9 @@ namespace UJam.Runtime.Shop
     {
         // Scene에서 사용할 단일 Wallet 인스턴스
         public static Wallet Instance { get; private set; }
+
+        //쟈화 변경 전달용 함수
+        public event Action<long> OnCurrencyChanged;
 
         // Inspector에서 설정할 시작 재화
         [SerializeField, Min(0)] private long _currency;
@@ -22,6 +26,9 @@ namespace UJam.Runtime.Shop
             {
                 // 외부 설정값을 음수가 아닌 범위로 저장
                 _currency = value < 0L ? 0L : value;
+                
+                //UIPlayer에 변경된 재화를 전달
+                OnCurrencyChanged?.Invoke(_currency); 
             }
         }
 
@@ -71,6 +78,9 @@ namespace UJam.Runtime.Shop
             // 허용 범위만큼 현재 재화 증가
             _currency += amount > available ? available : amount;
 
+            //UIPlayer에 변경된 재화를 전달
+            OnCurrencyChanged?.Invoke(_currency);
+
             // 재화 추가 성공 반환
             return true;
         }
@@ -87,6 +97,9 @@ namespace UJam.Runtime.Shop
 
             // 검증된 비용 차감
             _currency -= amount;
+
+            //UIPlayer에 변경된 재화를 전달
+            OnCurrencyChanged?.Invoke(_currency);
 
             // 재화 차감 성공 반환
             return true;
