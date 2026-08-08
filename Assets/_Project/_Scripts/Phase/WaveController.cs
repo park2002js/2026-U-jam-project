@@ -8,23 +8,6 @@ namespace UJam.Runtime.Phase
 {
     public sealed class WaveController : MonoBehaviour
     {
-        // 준비된 Enemy 객체와 개별 대기시간
-        private readonly struct PreparedEnemy
-        {
-            // 비활성 상태로 준비된 Enemy 객체
-            public GameObject Instance { get; }
-
-            // 활성화 전 대기시간
-            public float WaitTime { get; }
-
-            // 준비된 Enemy 객체와 대기시간 저장
-            public PreparedEnemy(GameObject instance, float waitTime)
-            {
-                Instance = instance;
-                WaitTime = waitTime;
-            }
-        }
-
         // 현재 Scene에서 사용할 단일 WaveController
         public static WaveController Instance { get; private set; }
 
@@ -34,17 +17,8 @@ namespace UJam.Runtime.Phase
         // 활성화된 Enemy를 정리할 선택적 부모 (생성된 적들을 Hierarchy에서 한곳에 모아 관리하기 위한 선택적 부모)
         [SerializeField] private Transform _activeEnemyRoot;
 
-        // 비동기 생성이 끝난 Enemy와 대기시간 목록
-        private readonly List<PreparedEnemy> _preparedEnemies = new List<PreparedEnemy>();
-
         // 현재 Wave에 속한 생존 Enemy 식별자
         private readonly HashSet<int> _aliveEnemyIds = new HashSet<int>();
-
-        // 중복 사망과 남은 수 갱신을 한 번에 보호할 잠금 객체
-        private readonly object _enemyCountLock = new object();
-
-        // 준비 중인 Enemy를 비활성 상태로 유지할 런타임 부모
-        private Transform _preparedRoot;
 
         // 남은 수와 완료를 전달할 PhaseSystem
         private PhaseSystem _phaseSystem;
@@ -64,7 +38,7 @@ namespace UJam.Runtime.Phase
         // Wave 준비 또는 전투가 진행 중인지 여부
         private bool _isWaveRunning;
 
-        // Singleton과 비활성 준비 루트 초기화
+        // Singleton 초기화
         private void Awake()
         {
             // 이미 다른 WaveController가 등록됐는지 확인
@@ -77,14 +51,9 @@ namespace UJam.Runtime.Phase
             }
 
             Instance = this;
-
-            // 비동기 생성 결과를 숨길 런타임 객체 생성
-            GameObject preparedRootObject = new GameObject("Prepared Enemies");
-            preparedRootObject.SetActive(false);
-            _preparedRoot = preparedRootObject.transform;
         }
 
-        // Singleton과 런타임 준비 객체 정리
+        // Singleton 정리
         private void OnDestroy()
         {
             // 연결된 Phase 변경 로그 해제
@@ -97,12 +66,6 @@ namespace UJam.Runtime.Phase
             if (Instance == this)
             {
                 Instance = null;
-            }
-
-            // 생성한 준비 루트가 남아 있는지 확인
-            if (_preparedRoot != null)
-            {
-                Destroy(_preparedRoot.gameObject);
             }
         }
 
@@ -152,54 +115,53 @@ namespace UJam.Runtime.Phase
             return _waves[nextWaveIndex].TotalEnemyCount;
         }
 
-        // 다음 Wave를 검증하고 비동기 준비와 활성화 시작
+        // 기존 PhaseSystem 호출을 유지하는 호환용 진입점
         public bool StartNextWave()
         {
-            // 검증된 다음 Wave 정보
-            WaveInfo nextWave;
+            int previousWaveIndex = _currentWaveIndex;
+            WaveStart();
+            return _currentWaveIndex != previousWaveIndex;
+        }
 
-            // 이미 진행 중인 Wave인지 확인
+        // 모든 Enemy를 한 Frame에 생성하고 개별 Move 대기를 시작
+        public void WaveStart()
+        {
             if (_isWaveRunning)
             {
                 Debug.LogWarning("[WaveController] Wave 시작 실패: 이미 Wave가 진행 중임", this);
-
-                // Wave 시작 실패 반환
-                return false;
+                return;
             }
 
-            // 다음 Wave가 잘못됐는지 확인
-            if (!TryGetValidNextWave(out nextWave))
-            {
-                // Wave 시작 실패 반환
-                return false;
-            }
+            if (!TryGetValidNextWave(out WaveInfo nextWave)) return;
 
             _isWaveRunning = true;
             _currentWaveIndex += 1;
-            _preparedEnemies.Clear();
+            _aliveEnemyIds.Clear();
+            _remainingEnemyCount = nextWave.TotalEnemyCount;
+            _deadEnemyCount = 0;
 
-            // 새 Wave의 사망 장부와 남은 수를 함께 초기화
-            lock (_enemyCountLock)
-            {
-                _aliveEnemyIds.Clear();
-                _remainingEnemyCount = nextWave.TotalEnemyCount;
-                _deadEnemyCount = 0;
-            }
-
-            // PhaseSystem에 최초 남은 수와 죽은 수 전달
             if (_phaseSystem != null)
             {
                 _phaseSystem.UpdateRemainingEnemyCount(_remainingEnemyCount);
                 _phaseSystem.UpdateDeadEnemyCount(_deadEnemyCount);
             }
 
-            StartCoroutine(PrepareAndActivateWave(nextWave));
-            Debug.Log(
-                $"[WaveController] Wave {_currentWaveIndex + 1} 시작: Enemy {_remainingEnemyCount}명",
-                this);
+            foreach (WaveInfo.EnemySpawnInfo enemyInfo in nextWave.Enemies)
+            {
+                GameObject instance = Instantiate(
+                    enemyInfo.EnemyPrefab,
+                    GetWorldPosition(enemyInfo.GridPosition),
+                    Quaternion.identity,
+                    _activeEnemyRoot);
+                EnemyBase enemy = instance.GetComponent<EnemyBase>();
 
-            // Wave 시작 성공 반환
-            return true;
+                enemy.FSM.Targets.Clear();
+                enemy.FSM.Targets.Add(_defaultEnemyTarget);
+                _aliveEnemyIds.Add(instance.GetInstanceID());
+                StartCoroutine(SetMoveAfterWait(enemy, enemyInfo.WaitTime));
+            }
+
+            Debug.Log($"[WaveController] Wave {_currentWaveIndex + 1} 시작: Enemy {_remainingEnemyCount}명", this);
         }
 
         // Enemy 사망을 중복 없이 반영하고 PhaseSystem에 보고
@@ -214,44 +176,25 @@ namespace UJam.Runtime.Phase
 
             // 현재 Enemy의 Unity 식별자
             int enemyId = enemy.GetInstanceID();
-            // 잠금 밖에서 전달할 남은 수
-            int remainingEnemyCount;
-            // 잠금 밖에서 전달할 죽은 수
-            int deadEnemyCount;
-            // 잠금 밖에서 전달할 Wave 완료 여부
-            bool isWaveComplete;
-
-            // 소속 확인과 수치 변경을 하나의 원자적 구간으로 처리
-            lock (_enemyCountLock)
+            // 진행 중인 Wave 소속의 첫 사망인지 확인
+            if (!_isWaveRunning || !_aliveEnemyIds.Remove(enemyId))
             {
-                // 진행 중인 Wave 소속의 첫 사망인지 확인
-                if (!_isWaveRunning || !_aliveEnemyIds.Remove(enemyId))
-                {
-                    // 외부 Enemy 또는 중복 사망 보고 실패 반환
-                    return false;
-                }
-
-                _remainingEnemyCount -= 1;
-                _deadEnemyCount += 1;
-                remainingEnemyCount = _remainingEnemyCount;
-                deadEnemyCount = _deadEnemyCount;
-                isWaveComplete = remainingEnemyCount == 0;
-
-                // 마지막 Enemy 사망 시 다음 Wave 시작 가능 상태로 변경
-                if (isWaveComplete)
-                {
-                    _isWaveRunning = false;
-                }
+                return false;
             }
 
-            // 원자적 감소 결과가 음수가 되지 않았는지 실행 중 확인
-            Debug.Assert(remainingEnemyCount >= 0, "Wave enemy count became negative.");
+            _remainingEnemyCount -= 1;
+            _deadEnemyCount += 1;
+            bool isWaveComplete = _remainingEnemyCount == 0;
+
+            if (isWaveComplete) _isWaveRunning = false;
+
+            Debug.Assert(_remainingEnemyCount >= 0, "Wave enemy count became negative.");
 
             // 최신 남은 수와 죽은 수를 PhaseSystem에 전달
             if (_phaseSystem != null)
             {
-                _phaseSystem.UpdateRemainingEnemyCount(remainingEnemyCount);
-                _phaseSystem.UpdateDeadEnemyCount(deadEnemyCount);
+                _phaseSystem.UpdateRemainingEnemyCount(_remainingEnemyCount);
+                _phaseSystem.UpdateDeadEnemyCount(_deadEnemyCount);
             }
 
             // 마지막 Enemy 사망인지 확인
@@ -264,84 +207,15 @@ namespace UJam.Runtime.Phase
             return true;
         }
 
-        // 모든 Enemy를 비동기로 준비한 뒤 대기를 한 번에 시작
-        private IEnumerator PrepareAndActivateWave(WaveInfo wave)
+        // 지정된 시간 뒤 생성된 Enemy를 Move 상태로 전환
+        private IEnumerator SetMoveAfterWait(EnemyBase enemy, float waitTime)
         {
-            // 현재 Wave의 모든 Enemy 정보
-            WaveInfo.EnemySpawnInfo[] enemies = wave.Enemies;
-
-            // Enemy를 배열 순서대로 비동기 생성
-            for (int index = 0; index < enemies.Length; index += 1)
+            if (waitTime > 0f)
             {
-                // 현재 생성할 Enemy 정보
-                WaveInfo.EnemySpawnInfo enemyInfo = enemies[index];
-                // Grid 좌표를 변환한 World 좌표
-                Vector3 worldPosition = GetWorldPosition(enemyInfo.GridPosition);
-                // Unity 6 비동기 Instantiate 작업
-                AsyncInstantiateOperation<GameObject> operation = UnityEngine.Object.InstantiateAsync(
-                    enemyInfo.EnemyPrefab,
-                    1,
-                    _preparedRoot,
-                    worldPosition,
-                    Quaternion.identity);
-
-                // 현재 Enemy 준비 완료까지 Coroutine 양보
-                yield return operation;
-
-                // 비활성 준비 루트 아래에 생성된 Enemy
-                GameObject enemy = operation.Result[0];
-                // Enemy 객체와 개별 대기시간 묶음
-                PreparedEnemy preparedEnemy = new PreparedEnemy(enemy, enemyInfo.WaitTime);
-                _preparedEnemies.Add(preparedEnemy);
-
-                // Wave 소속 Enemy 식별자 등록
-                lock (_enemyCountLock)
-                {
-                    _aliveEnemyIds.Add(enemy.GetInstanceID());
-                }
+                yield return new WaitForSeconds(waitTime);
             }
 
-            ActivatePreparedEnemies();
-        }
-
-        // 준비된 모든 Enemy의 개별 대기를 같은 Frame에 시작
-        private void ActivatePreparedEnemies()
-        {
-            // 준비된 Enemy 전체를 동기 순회
-            foreach (PreparedEnemy preparedEnemy in _preparedEnemies)
-            {
-                StartCoroutine(ActivateAfterWait(preparedEnemy));
-            }
-
-            _preparedEnemies.Clear();
-        }
-
-        // 지정된 시간 뒤 Enemy를 실제 Scene에 활성화
-        private IEnumerator ActivateAfterWait(PreparedEnemy preparedEnemy)
-        {
-            // 양수 대기시간이 있는지 확인
-            if (preparedEnemy.WaitTime > 0f)
-            {
-                // Enemy별 시간만큼 Coroutine 양보
-                yield return new WaitForSeconds(preparedEnemy.WaitTime);
-            }
-
-            // 대기 중 Enemy가 제거됐는지 확인
-            if (preparedEnemy.Instance == null)
-            {
-                // 제거된 Enemy 활성화 중단
-                yield break;
-            }
-
-            // 생성된 Enemy에 발표용 기본 거점 Target 주입
-            EnemyBase enemy = preparedEnemy.Instance.GetComponent<EnemyBase>();
-            if (enemy != null)
-            {
-                enemy.ConfigureTarget(_defaultEnemyTarget);
-            }
-
-            preparedEnemy.Instance.transform.SetParent(_activeEnemyRoot, true);
-            preparedEnemy.Instance.SetActive(true);
+            if (enemy != null) enemy.FSM.SetState(EnemyStateType.Move);
         }
 
         // 다음 Wave와 모든 Spawn 값 검증

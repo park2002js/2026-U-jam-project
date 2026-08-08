@@ -1,322 +1,201 @@
 using System;
+using UJam.Runtime.Enemy.Movement;
 using UnityEngine;
 
 namespace UJam.Runtime.Enemy
 {
-    public interface IStatChange
-    {
-        // 외부 버프와 디버프가 전달받은 Enemy 스탯을 변경하는 경계
-        void Apply(EnemyStatus status);
-    }
-
     [Serializable]
-    public sealed class EnemyStatus
+    public class EnemyStatus : MonoBehaviour
     {
-        // Enemy가 가질 수 있는 최대 체력
-        [SerializeField, Min(0.0001f)] private float _maxHealth = 100f;
+        #region 기본 수치 값 & 속성들
+        // Enemy 이름
+        [SerializeField] private String _enemyName;
 
-        // Navigation 이동 정책에서 사용할 이동 속도
-        [SerializeField, Min(0f)] private float _speed = 3.5f;
+        // 쓰러질 때 주는 재화량
+        [SerializeField, Min(0)] private int _credits;
 
-        // 구체 공격 로직에서 사용할 기본 피해량
-        [SerializeField, Min(0f)] private float _damage = 10f;
+        // 최대 체력
+        [SerializeField, Min(0.0001f)] private float _maxHealth;
 
-        // 연속 공격 사이의 기본 대기 시간
-        [SerializeField, Min(0f)] private float _cooldown = 0.5f;
+        // 이동속도
+        [SerializeField, Min(0f)] private float _speed;
 
-        // Grid 사거리 판정과 Navigation 요청에서 사용할 공격 거리
-        [SerializeField, Min(0f)] private float _range = 1.5f;
+        // 공격력
+        [SerializeField, Min(0f)] private float _attackDamage;
 
-        // 이동 중 점프 통과 가능 여부
-        [SerializeField] private bool _canJump;
+        // 공격 속도
+        [SerializeField, Min(0f)] private float _attackSpeed;
 
-        // 이동 중 비행 통과 가능 여부
-        [SerializeField] private bool _canFly;
+        // 사거리
+        [SerializeField, Min(0f)] private float _attackRange;
 
-        // 이동 중 장애물 파괴 가능 여부
-        [SerializeField] private bool _canBreak;
+        // 이동 알고리즘 (Component로 넣은 객체를 할당)
+        [SerializeField] private EnemyMovement _movement;
 
-        // Combat 공격자 계약에서 사용할 진영 식별자
-        [SerializeField] private string _factionId = "Enemy";
 
-        // Combat 공격자 계약에서 사용할 공격 식별자
-        [SerializeField] private string _attackId = "Default";
+        // 죽었는지 여부를 나타내는 속성
+        private bool _isDead = false;
 
-        // Combat 피해 계약에서 사용할 피해 종류 식별자
-        [SerializeField] private string _damageTypeId = "Physical";
+        // 생존에서 사망으로 처음 전환될 때 알리는 이벤트 (UI, 소유중인 객체 용)
+        public event Action Died;
 
-        // Inspector와 파생 Enemy가 사용할 기본 스탯 생성자
-        public EnemyStatus()
+        // 외부에게 체력 변경을 알리는 이벤트 (현재 체력, 최대 체력) (UI 용)
+        public event Action<float, float> OnEnemyHpChanged;
+
+        #endregion
+
+        #region 실시간 수치 값
+        // 현재 체력
+        private float _hp;
+
+        // 실제 이동속도
+        private float _sp;
+
+        // 실제 공격력
+        private float _ad;
+
+        // 실제 공격 속도
+        private float _as;
+
+        // 실제 사거리
+        private float _range;
+
+        #endregion
+
+        #region 외부에서 읽을 수 있도록 하는 실시간 값
+        public String EnemyName => _enemyName;
+        public int Credits => _credits;
+        public float HP => _hp;
+        public float Speed => _sp;
+        public float AttackDamage => _ad;
+        public float AttackSpeed => _as;
+        public float AttackRange => _range;
+        public EnemyMovement Movement => _movement;
+
+        #endregion
+
+        /// <summary>
+        /// 모든 기본 수치 값을 실시간 수치 값으로 전환하는 초기화 함수
+        /// Idle 상태에서 호출한다.
+        /// </summary>
+        public void init()
         {
-            // 기본 필드 값을 유효 범위로 정리
-            Sanitize();
+            // 1. 기본 값 최종 변경 사항 반영
+            SetDefaults();
+
+            // 2. 실시간 값으로 반영
+            _hp = _maxHealth;
+            _sp = _speed;
+            _ad = _attackDamage;
+            _as = _attackSpeed;
+            _range = _attackRange;
         }
 
-        // 파생 Enemy가 모든 초기 스탯을 명시하는 생성자
-        public EnemyStatus(
-            float maxHealth,
-            float moveSpeed,
-            float attackDamage,
-            float attackCooldown,
-            float attackRange,
-            bool canJump = false,
-            bool canFly = false,
-            bool canBreakObstacles = false,
-            string factionId = "Enemy",
-            string attackId = "Default",
-            string damageTypeId = "Physical")
+        // Enemy가 TakeDamage로 데미지를 입을 때마다 호출하는 함수. 인자만큼 체력을 깎고 죽었는지 여부를 체크한다.
+        public float ApplyDamage(float damage)
         {
-            _maxHealth = maxHealth;
-            _speed = moveSpeed;
-            _damage = attackDamage;
-            _cooldown = attackCooldown;
-            _range = attackRange;
-            _canJump = canJump;
-            _canFly = canFly;
-            _canBreak = canBreakObstacles;
-            _factionId = factionId;
-            _attackId = attackId;
-            _damageTypeId = damageTypeId;
+            // 이미 사망한 대상은 다시 피해를 받지 않도록 하기 위해 0을 반환하는 것으로 종료
+            if (_isDead) return 0f;
 
-            // 전달받은 초기 값을 유효 범위로 정리
-            Sanitize();
-        }
 
-        // 현재 최대 체력
-        public float MaxHealth
-        {
-            get
+            /*
+                별도의 Damage 감소 정책이 존재한다면 이곳에 정의
+            */
+
+            
+            // 혹은 피해량이 유효하지 않은 값이면 0을 반환하는 것으로 종료
+            if (damage <= 0f) return 0f;
+
+            // 체력 감소 이행, 만약 깎인 채력이 0보다 작으면 0으로 보정
+            _hp = Math.Min(0f, _hp - damage);
+
+            // 피해를 받은 객체와 실제 피해량과 남은 체력 출력
+            Debug.Log( $"[Health] {gameObject.name} 데미지 {damage} 받음 " + $"({_hp}/{_maxHealth})");
+
+
+            // 실제 체력 변화 이후의 상태를 한번만 통지
+            OnEnemyHpChanged?.Invoke(_hp, _maxHealth);
+
+            // 이번 피해로 처음 사망했는지 확인
+            if (_hp <= 0f && !_isDead)
             {
-                // Health 초기화에 사용할 최대 체력 반환
-                return _maxHealth;
-            }
-        }
+                _isDead = true; // 사망 상태를 먼저 기록해 중복 사망 통지를 차단
 
-        // 현재 이동 속도
-        public float Speed
-        {
-            get
-            {
-                // 이동 정책에 전달할 속도 반환
-                return _speed;
-            }
-        }
-
-        // 현재 기본 공격 피해량
-        public float Damage
-        {
-            get
-            {
-                // 구체 공격 로직에 전달할 피해량 반환
-                return _damage;
-            }
-        }
-
-        // 현재 공격 대기 시간
-        public float Cooldown
-        {
-            get
-            {
-                // 구체 공격 로직에 전달할 대기 시간 반환
-                return _cooldown;
-            }
-        }
-
-        // 현재 공격 사거리
-        public float Range
-        {
-            get
-            {
-                // Grid 사거리 계산에 전달할 거리 반환
-                return _range;
-            }
-        }
-
-        // 현재 점프 통과 가능 여부
-        public bool CanJump
-        {
-            get
-            {
-                // Navigation 통과 프로필의 점프 값 반환
-                return _canJump;
-            }
-        }
-
-        // 현재 비행 통과 가능 여부
-        public bool CanFly
-        {
-            get
-            {
-                // Navigation 통과 프로필의 비행 값 반환
-                return _canFly;
-            }
-        }
-
-        // 현재 장애물 파괴 가능 여부
-        public bool CanBreak
-        {
-            get
-            {
-                // Navigation 통과 프로필의 장애물 파괴 값 반환
-                return _canBreak;
-            }
-        }
-
-        // 현재 진영 식별자
-        public string FactionId
-        {
-            get
-            {
-                // Combat 공격자 계약에 전달할 진영 반환
-                return _factionId;
-            }
-        }
-
-        // 현재 공격 식별자
-        public string AttackId
-        {
-            get
-            {
-                // Combat 공격자 계약에 전달할 공격 ID 반환
-                return _attackId;
-            }
-        }
-
-        // 현재 피해 종류 식별자
-        public string DamageTypeId
-        {
-            get
-            {
-                // DamageInfo 생성에 전달할 피해 종류 반환
-                return _damageTypeId;
-            }
-        }
-
-        // 최대 체력을 버프와 디버프가 변경하는 경계
-        public void SetHealth(float value)
-        {
-            // 양의 유한 값만 최대 체력으로 사용
-            _maxHealth = SafePositive(value, 1f);
-        }
-
-        // 이동 속도를 버프와 디버프가 변경하는 경계
-        public void SetMove(float value)
-        {
-            // 음수가 아닌 유한 값만 이동 속도로 사용
-            _speed = SafeZero(value);
-        }
-
-        // 공격 피해량을 버프와 디버프가 변경하는 경계
-        public void SetDamage(float value)
-        {
-            // 음수가 아닌 유한 값만 공격 피해량으로 사용
-            _damage = SafeZero(value);
-        }
-
-        // 공격 대기 시간을 버프와 디버프가 변경하는 경계
-        public void SetCooldown(float value)
-        {
-            // 음수가 아닌 유한 값만 공격 대기 시간으로 사용
-            _cooldown = SafeZero(value);
-        }
-
-        // 공격 사거리를 버프와 디버프가 변경하는 경계
-        public void SetRange(float value)
-        {
-            // 음수가 아닌 유한 값만 공격 사거리로 사용
-            _range = SafeZero(value);
-        }
-
-        // 이동 통과 능력을 버프와 디버프가 변경하는 경계
-        public void SetTravel(bool canJump, bool canFly, bool canBreakObstacles)
-        {
-            _canJump = canJump;
-            _canFly = canFly;
-            _canBreak = canBreakObstacles;
-        }
-
-        // 공격 식별 정보를 파생 Enemy가 변경하는 경계
-        public void SetIds(string factionId, string attackId, string damageTypeId)
-        {
-            _factionId = SafeId(factionId, "Enemy");
-            _attackId = SafeId(attackId, "Default");
-            _damageTypeId = SafeId(damageTypeId, "Physical");
-        }
-
-        // 현재 스탯을 Enemy 인스턴스 전용 복사본으로 생성
-        public EnemyStatus Copy()
-        {
-            // 모든 현재 값을 보존한 독립 스탯 생성
-            EnemyStatus copy = new EnemyStatus(
-                _maxHealth,
-                _speed,
-                _damage,
-                _cooldown,
-                _range,
-                _canJump,
-                _canFly,
-                _canBreak,
-                _factionId,
-                _attackId,
-                _damageTypeId);
-
-            // 독립 스탯 복사본 반환
-            return copy;
-        }
-
-        // 외부 Modifier 적용 뒤 모든 스탯을 다시 검증하는 경계
-        public void Sanitize()
-        {
-            _maxHealth = SafePositive(_maxHealth, 1f);
-            _speed = SafeZero(_speed);
-            _damage = SafeZero(_damage);
-            _cooldown = SafeZero(_cooldown);
-            _range = SafeZero(_range);
-            _factionId = SafeId(_factionId, "Enemy");
-            _attackId = SafeId(_attackId, "Default");
-            _damageTypeId = SafeId(_damageTypeId, "Physical");
-        }
-
-        // 양의 유한 스탯을 검증하고 잘못된 값을 기본값으로 교체
-        private static float SafePositive(float value, float fallback)
-        {
-            // 사용할 수 없는 양수 값인지 확인
-            if (float.IsNaN(value) || float.IsInfinity(value) || value <= 0f)
-            {
-                // 안전한 양수 기본값 반환
-                return fallback;
+                Died?.Invoke(); // 최초 사망시에만 이벤트 발생
             }
 
-            // 검증된 양수 값 반환
-            return value;
+            // 최종 받은 피해량 반환
+            return damage;
         }
 
-        // 음수가 아닌 유한 스탯을 검증하고 잘못된 값을 0으로 교체
-        private static float SafeZero(float value)
+        #region 기본 수치 값 버프/디버프
+
+        /// <summary>
+        /// 나중에 구체적으로 구현될, "기본 값"을 수정하는 버프 디버프를 모두 적용하는 함수이다.
+        /// </summary>
+        public void SetDefaults() {}
+
+        // 최대 체력 변경
+        public void SetDefaultHealth(float value)
         {
-            // 사용할 수 없는 비음수 값인지 확인
-            if (float.IsNaN(value) || float.IsInfinity(value) || value < 0f)
-            {
-                // 안전한 0 값 반환
-                return 0f;
-            }
-
-            // 검증된 비음수 값 반환
-            return value;
+            _maxHealth += value;
         }
 
-        // 비어 있지 않은 식별자를 검증하고 기본 식별자로 교체
-        private static string SafeId(string value, string fallback)
+        // 이동 속도 변경
+        public void SetDefaultSpeed(float value)
         {
-            // 비어 있는 식별자인지 확인
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                // 안전한 기본 식별자 반환
-                return fallback;
-            }
-
-            // 검증된 식별자 반환
-            return value;
+            _speed += value;
         }
+
+        // 공격력 변경
+        public void SetDefaultAttackDamage(float value)
+        {
+            _attackDamage += value;
+        }
+
+        // 공격 속도 변경
+        public void SetDefaultAttackSpeed(float value)
+        {
+            _attackSpeed += value;
+        }
+        
+        // 사거리 변경
+        public void SetDefaultAttackRange(float value)
+        {
+            _attackRange += value;
+        }
+        #endregion
+
+        #region  실시간 수치 값 버프/디버프
+        // 최대 체력 변경
+        public void SetRuntimeHealth(float value)
+        {
+            _hp += value;
+        }
+
+        // 이동 속도 변경
+        public void SetRuntimeSpeed(float value)
+        {
+            _sp += value;
+        }
+
+        // 공격력 변경
+        public void SetRuntimeAttackDamage(float value)
+        {
+            _ad += value;
+        }
+
+        // 공격 속도 변경
+        public void SetRuntimeAttackSpeed(float value)
+        {
+            _as += value;
+        }
+        
+        // 사거리 변경
+        public void SetRuntimeAttackRange(float value)
+        {
+            _range += value;
+        }
+        #endregion
     }
 }

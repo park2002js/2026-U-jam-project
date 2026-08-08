@@ -3530,6 +3530,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _gridCellSize: 3
   _gridOrigin: {x: -26, y: 0, z: -93}
+  _baseCoreRow: 0
   _gridWidth: 15
   _gridHeight: 60
   _phaseSystem: {fileID: 658456069}
@@ -3903,7 +3904,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &801454074
 Transform:
   m_ObjectHideFlags: 0
@@ -9263,7 +9264,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1921170767
 Transform:
   m_ObjectHideFlags: 0

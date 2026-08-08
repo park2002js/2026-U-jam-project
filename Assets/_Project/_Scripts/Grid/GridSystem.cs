@@ -9,24 +9,17 @@ namespace UJam.Runtime.Grid
     {
         #region Singleton
 
-        // 게임 전체에서 공유할 단일 GridSystem 인스턴스
+        // 유일한 하나의 객체 생성
         private static readonly GridSystem _instance = new GridSystem();
-
-        // 게임 전체에서 공유할 GridSystem 접근점
-        public static GridSystem Instance
-        {
-            get
-            {
-                // 생성된 단일 인스턴스 반환
-                return _instance;
-            }
-        }
 
         // 외부 생성을 막고 단일 인스턴스만 유지
         private GridSystem()
         {
             _cells = new Dictionary<(int Row, int Col), Cell>();
         }
+
+        // 게임 내에서 GridSystem 인스턴스를 사용 가능
+        public static GridSystem Instance  { get { return _instance; } }
 
         #endregion
 
@@ -54,6 +47,9 @@ namespace UJam.Runtime.Grid
         // 유효한 Grid 정보가 준비됐는지 여부
         public bool IsInitialized { get; private set; }
 
+        // 거점이 위치하는 Row 줄 
+        public int BaseCoreRow { get; private set; }
+
         #endregion
 
         #region Initialization
@@ -64,7 +60,8 @@ namespace UJam.Runtime.Grid
             float cellHeight,   // 단위 Cell 하나의 세로 길이
             int rowCount,       // 총 격자의 세로 길이
             int columnCount,    // 총 격자의 가로 길이
-            Vector3 origin)     // 총 격자의 원점 World 좌표
+            Vector3 origin,     // 총 격자의 원점 World 좌표
+            int baseCoreRow)    // 거점의 Row 줄 위치
         {
             // Cell 크기와 Grid 개수와 월드 좌표가 모두 유효한지 확인
             if (!IsPositiveFinite(cellWidth)
@@ -200,6 +197,11 @@ namespace UJam.Runtime.Grid
             // Cell에 연결된 방어 건물 객체 반환
             return cell.Obj;
         }
+
+        // public vector2<int, int> GetGridCoordinates(int x, int z)
+        // {
+
+        // }
 
         #endregion
 

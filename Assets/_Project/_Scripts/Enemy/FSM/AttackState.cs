@@ -6,10 +6,9 @@ namespace UJam.Runtime.Enemy.FSM
     public sealed class AttackState
     {
         // 공격 행동을 구현하는 Enemy
-        private readonly EnemyBase _enemy;
+        private EnemyBase _enemy;
 
-        // 현재 타겟과 Move 전환을 관리하는 FSM
-        private readonly EnemyFSM _fsm;
+        private EnemyFSM _fsm;
 
         // Enemy와 FSM 연결
         public AttackState(EnemyBase enemy, EnemyFSM fsm)
@@ -19,27 +18,15 @@ namespace UJam.Runtime.Enemy.FSM
         }
 
         // Attack 상태 진입 준비
-        public void Ready()
+        public void Enter()
         {
-            // 발표용 임시 이동을 끊고 공격 준비
-            _enemy.StopMovement();
-
-            // 발표용 Attack 상태 진입 확인
-            Debug.Log($"[EnemyFSM] {_enemy.gameObject.name} Attack 상태 진입", _enemy.gameObject);
-        }
-
-        // 현재 타겟 공격 실행
-        public void Hit()
-        {
-            // 실제 Attack 상태와 최신 발표용 Grid 사거리 확인
-            if (_fsm.State != EnemyStateKind.Attack || !_fsm.CanAttackTarget())
+            // TargetValidator가 True를 내보내면 계속 공격을 진행
+            while(_fsm.TGV.Check())
             {
-                // 다른 상태 또는 사거리 밖 공격 요청 종료
-                return;
+                _enemy.Attack();                
             }
-
-            // 검증된 현재 Target과 같은 col의 Grid 지점 공격
-            _enemy.Attack(_fsm.Target, _fsm.AttackPoint);
+            // 반복문이 종료되면 False를 내보낸 것이므로 Move 상태로 변경
+            _fsm.SetState(EnemyStateType.Move);
         }
     }
 }
