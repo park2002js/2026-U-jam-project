@@ -8,7 +8,7 @@ namespace UJam.Runtime.Shop
         // Scene에서 사용할 단일 Wallet 인스턴스
         public static Wallet Instance { get; private set; }
 
-        //쟈화 변경 전달용 함수
+        // 재화 변경 전달용 함수
         public event Action<long> OnCurrencyChanged;
 
         // Inspector에서 설정할 시작 재화

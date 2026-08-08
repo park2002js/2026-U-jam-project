@@ -81,9 +81,6 @@ PrefabInstance:
       addedObject: {fileID: 6664673736334674918}
     - targetCorrespondingSourceObject: {fileID: -6236548848200438998, guid: 61281542103592f4fb8ba0631a6028be, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 5187566928899074003}
-    - targetCorrespondingSourceObject: {fileID: -6236548848200438998, guid: 61281542103592f4fb8ba0631a6028be, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 7623373784323841653}
   m_SourcePrefab: {fileID: -6924169913242556111, guid: 61281542103592f4fb8ba0631a6028be, type: 3}
 --- !u!1 &214267930281238900 stripped
@@ -104,24 +101,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _maxHealth: 100
---- !u!114 &5187566928899074003
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 214267930281238900}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d1cc51da97792e40aaeef2bd1265258, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _health: {fileID: 6664673736334674918}
-  _anim: {fileID: 0}
-  _currencyReward: 2000
-  _projectilePrefab: {fileID: 2185744104420288720, guid: d84b19498b00985489578140a1293605, type: 3}
-  _firePoint: {fileID: 4021645171301757241}
-  _projectileSpeed: 15
 --- !u!65 &7623373784323841653
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -143,8 +122,3 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 50, y: 50, z: 50}
   m_Center: {x: 0, y: 26, z: 0}
---- !u!4 &4021645171301757241 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2037219848808102759, guid: 61281542103592f4fb8ba0631a6028be, type: 3}
-  m_PrefabInstance: {fileID: 3137434789155424862}
-  m_PrefabAsset: {fileID: 0}

@@ -17,18 +17,13 @@ namespace UJam.Runtime.Enemy.FSM
             _fsm = fsm;
         }
 
-        // 현재 목적지 이동 요청
-        public void Go()
+        // 이동 시작
+        public void Enter()
         {
-            // 실제 Move 상태에서만 이동 요청 허용
-            if (_fsm.State != EnemyStateKind.Move)
-            {
-                // 다른 상태의 이동 요청 종료
-                return;
-            }
-
-            // 발표용 임시 직선 이동 허용
-            _enemy.StartMovement();
+            // 우선 공격 대상이 사거리 안에 존재하지 않으면 (Check의 반환이 False) Move 함수 발동
+            if(!_fsm.TGV.Check()) _enemy.Move();
+            // 사거리 내에 존재하면 바로 Attack 상태로 전환한다.
+            else _fsm.SetState(EnemyStateType.Attack);
         }
     }
 }

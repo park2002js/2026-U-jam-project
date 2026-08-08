@@ -5,7 +5,7 @@ namespace UJam.Runtime.Player
 {
     public sealed class PlayerInventory : MonoBehaviour
     {
-        // Item 정의가 확정되기 전 문자열 식별자와 수량 보관
+        // 아이템의 식별 Id와 
         private readonly Dictionary<string, int> _items = new Dictionary<string, int>();
 
         // 지정한 Item의 현재 보유 수량 조회

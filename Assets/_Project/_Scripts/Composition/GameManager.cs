@@ -10,7 +10,7 @@ using UJam.Runtime.Item;
 
 namespace UJam.Runtime.Composition
 {
-    public sealed class GameManager : MonoBehaviour
+    public class GameManager : MonoBehaviour
     {
         // 아래 Grid 설정값은 GridPreview에도 따로 존재함
         // 이 값을 변경하면 Scene 미리보기와 달라지므로 GridPreview의 같은 값도 함께 변경
@@ -20,6 +20,9 @@ namespace UJam.Runtime.Composition
 
         // Grid 시작 월드 좌표
         [SerializeField] private Vector3 _gridOrigin;
+
+        // 거점이 위치한 Row 칸 수
+        [SerializeField] private int _baseCoreRow;
 
         // Grid 가로 Cell 수
         [SerializeField, Min(1)] private int _gridWidth = 10;
@@ -58,7 +61,8 @@ namespace UJam.Runtime.Composition
                 _gridCellSize,
                 _gridHeight,
                 _gridWidth,
-                _gridOrigin);
+                _gridOrigin,
+                _baseCoreRow);
 
             // 발표용 Enemy 기본 Target으로 거점 객체 연결
             if (_waveController != null && _baseCore != null)

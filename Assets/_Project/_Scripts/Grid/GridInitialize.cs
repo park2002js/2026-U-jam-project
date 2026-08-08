@@ -19,7 +19,7 @@ public class GridInitialize : MonoBehaviour
     private void Awake()
     {
         Vector3 origin = useThisTransformAsOrigin ? transform.position : manualOrigin;
-        bool ok = GridSystem.Instance.Initialize(cellWidth, cellHeight, rowCount, columnCount, origin);
+        bool ok = GridSystem.Instance.Initialize(cellWidth, cellHeight, rowCount, columnCount, origin, 60);
         if (!ok)
             Debug.LogError("[GridInitializer] 초기화 실패 — 크기/개수/원점 값을 확인하세요.");
         else
