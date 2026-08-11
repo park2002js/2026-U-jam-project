@@ -1,7 +1,9 @@
+using System.Collections;
 using UJam.Runtime.Combat;
 using UJam.Runtime.Enemy.Movement;
 using UJam.Runtime.Phase;
 using UJam.Runtime.Shop;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace UJam.Runtime.Enemy
@@ -36,6 +38,9 @@ namespace UJam.Runtime.Enemy
         // 현재 Enemy 상태 머신
         public EnemyFSM FSM { get { return _fsm; }} // 현재 FSM 반환
 
+        // 현재 Enemy 움직임 로직
+        public EnemyMovement Movement { get { return _movement; }} // 현재 movement 반환
+
 
         #endregion
 
@@ -48,12 +53,10 @@ namespace UJam.Runtime.Enemy
             _fsm = new EnemyFSM(this);
         }
 
-        // 발표용 거리 판정과 이동과 공격 상태 갱신
         private void Update()
         {
         }
 
-        // Enemy 제거 전 Health 이벤트 해제
         protected virtual void OnDestroy()
         {
 
@@ -92,18 +95,76 @@ namespace UJam.Runtime.Enemy
         // Move의 기본 공통 행동 정의
         public virtual void Move()
         {
+            // 필요하다면 animation 단계를 여기에 추가
             _movement.Enter();
         }
 
         // Attack의 기본 공통 행동 정의
         public virtual void Attack()
         {
+            // 우선 공격 대상을 담는 Stack이 "GameObject"타입을 담는 것으로 정의되어 있기 때문에, TakeDamage를 호출하기 위해서 IDamageable로 형변환을 시도
+            GameObject target = _fsm.Targets[_fsm.Targets.Count - 1];
+            IDamageable damageable = target.GetComponent<IDamageable>();
+
+            // 형변환 실패시 IDamageable을 상속받은 대상을 공격하고 있지 않다는 뜻이므로 Debug.Log를 호출하도록 하는 것으로 
+            if (damageable == null)
+            {
+                Debug.LogError($"공격 대상 {target.name}의 TakeDamage를 호출할 수 없습니다.", target);
+                return;
+            }
+
+            damageable.TakeDamage(new DamageInfo(_status.AttackDamage, name, DamageSourceKind.Enemy));
         }
 
         // Dead의 기본 공통 행동 정의
         public virtual void Dead()
         {
+            // 1. 모든 코루틴 종료
+            _fsm.Move.Exit();
+            _fsm.Attack.Exit();
+            StopAllCoroutines();
 
+            // 2. 모든 물리 상호작용 제거
+            foreach (Collider targetCollider in GetComponentsInChildren<Collider>())
+            {
+                targetCollider.enabled = false;
+            }
+
+            // 3. Wallet에 돈 추가
+            if (Wallet.Instance != null)
+            {
+                Wallet.Instance.AddCurrency(_status.Credits);
+            }
+
+            // 4. WaveController에 사망 정보 보내기
+            if (WaveController.Instance != null)
+            {
+                WaveController.Instance.ReportEnemyDead(gameObject);
+            }
+
+            // 5. 기본 Animation을 시작하고 삭제시킨다.
+            StartCoroutine(DeadAnim());
+        }
+
+        /// <summary>
+        /// 기본 Animation으로, Y축 아래로 하강한 뒤 Destroy를 통해 인스턴스를 게임내에서 지운다.
+        /// 필요시 해당 animation을 구체화할 수 있다.
+        /// </summary>
+        public virtual IEnumerator DeadAnim()
+        {
+            Vector3 start = transform.position;
+            Vector3 end = start + Vector3.down * 1.5f;
+            float duration = 0.5f;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                transform.position = Vector3.Lerp(start, end, elapsed / duration);
+                yield return null;
+            }
+
+            Destroy(gameObject);
         }
 
         #endregion
@@ -113,7 +174,17 @@ namespace UJam.Runtime.Enemy
 
         public float TakeDamage(DamageInfo info)
         {
+            Debug.Log("[EnemyBase] : TakeDamage 호출됨");
+            _status.ApplyDamage(info.Damage);
             return 0f;
+        }
+
+        /// <summary>
+        /// FSM 시스템의 ReTargeting을 호출하는 중간자 역할
+        /// </summary>
+        public void ReTargeting()
+        {
+            _fsm.ReTargeting();
         }
 
         #endregion

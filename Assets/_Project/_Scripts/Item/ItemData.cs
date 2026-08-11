@@ -9,7 +9,7 @@ namespace UJam.Runtime.Item
         fileName = "NewItem",
         menuName = "Game/Items/Item"
     )]
-    public sealed class ItemData : ScriptableObject
+    public class ItemData : ScriptableObject
     {
         [Header("식별 정보")]
         [SerializeField] private string id;
