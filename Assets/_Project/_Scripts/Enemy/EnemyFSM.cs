@@ -78,6 +78,41 @@ namespace UJam.Runtime.Enemy
             SetState(EnemyStateType.Dead);
         }
 
+        /// <summary>
+        /// 외부에서 EnemyBase를 경유하여 호출하는 ReTargeting 함수
+        /// </summary>
+        public void ReTargeting()
+        {
+            // Move 상태이면 movement의 ReTargeting 호출
+            if(state == EnemyStateType.Move)
+            {
+                if (targets.Count == 0) {Debug.Log($"{_enemy} : Stack에 공격 대상이 사라짐", _enemy); Move.Exit(); return;}
+
+                // 우선 공격 타겟에 대해서 "사거리 내에 존재"(=True 반환)한다면 Move를 할 필요가 없으므로 즉시 종료
+                if (TGV.Check())
+                {
+                    Move.Exit();
+                    SetState(EnemyStateType.Attack); // 공격 대상이 사거리 내에 존재하므로 공격 상태로 전환
+                    return;
+                }
+                // 사거리 밖에 존재하는 경우 (=False 반환) Target이 바뀌었는지 확인해야 하므로 movement의 ReTargeting을 호출
+                _enemy.Movement.ReTargeting();
+            }
+
+            // Attack 상태이면 TGV Check 결과로 동작 결정
+            if(state == EnemyStateType.Attack)
+            {
+                // Attack 상태 종료후 Move 상태로 변화
+                if(!TGV.Check())
+                {
+                    Attack.Exit();
+                    SetState(EnemyStateType.Move);
+                    return;
+                }
+                // TGV 결과가 True이면, Attack 상태를 그대로 유지하면 되므로 아무 변화를 주지 않음
+            }
+        }
+
         // 상태 종류에 맞는 고유 함수 실행
         private bool Switch(EnemyStateType next)
         {

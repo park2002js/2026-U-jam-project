@@ -62,9 +62,12 @@ namespace UJam.Runtime.Enemy
                 return Mathf.Abs(pos.z - baseCoreZ) <= range * grid.CellHeight;
             }
 
-            // 3-2. 우선 공격 대상이 거점이 아닌 경우 : 맨해튼 거리로 사거리보다 안쪽에 존재하는지 확인
+            // 3-2. 우선 공격 대상이 거점이 아닌 경우 : 유클리드 거리로 사거리보다 안쪽에 존재하는지 확인
             Vector3 targetPos = target.transform.position;
-            return Mathf.Abs(pos.x - targetPos.x) / grid.CellWidth + Mathf.Abs(pos.z - targetPos.z) / grid.CellHeight <= range;
+            Vector2 toTarget = new Vector2(
+                (targetPos.x - pos.x) / grid.CellWidth,
+                (targetPos.z - pos.z) / grid.CellHeight);
+            return toTarget.magnitude <= range;
         }
     }
 }

@@ -26,5 +26,11 @@ namespace UJam.Runtime.Enemy.Movement
         /// Enemy가 Move 상태에서 벗어났을 때, 이동관련 로직을 마무리하기 위해 호출하는 함수
         /// </summary>
         public virtual void Exit() {}
+
+        /// <summary>
+        /// 현재 Move 상태인 Enemy에게 현재의 Target이 유효한지 확인해보도록 하는 함수.
+        /// 이것의 발동 책임은 외부에게 있다.
+        /// </summary>
+        public virtual void ReTargeting() {}
     }
 }
