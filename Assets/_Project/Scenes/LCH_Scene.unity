@@ -2320,10 +2320,18 @@ MonoBehaviour:
     m_Bits: 64
   indicatorPrefab: {fileID: 3261088568597131734, guid: edfc34a572fbd384a933abc0df83164d, type: 3}
   fitIndicatorToCell: 1
-  lightningBeamPrefab: {fileID: 341406639536114751, guid: 3d9eb4a8f52bfd34cbc9f604ba3e99e3, type: 3}
-  strikeEffectPrefab: {fileID: 0}
-  strikeHeight: 10
+  strikeEffectPrefab: {fileID: 341406639536114751, guid: 3d9eb4a8f52bfd34cbc9f604ba3e99e3, type: 3}
+  effectScale: 0.3
+  effectLifetime: 1.5
   damage: 50
+  strikeHeight: 10
+  boltWidthRatio: 0.1
+  boltJaggerRatio: 0.15
+  boltLifetime: 0.15
+  boltMaterial: {fileID: 0}
+  boltColor: {r: 0.6556604, g: 1, b: 1, a: 1}
+  zoneRadius: 3
+  zoneLifetime: 1
   aimKey: 25
 --- !u!4 &1147796341
 Transform:

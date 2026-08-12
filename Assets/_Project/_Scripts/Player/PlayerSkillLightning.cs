@@ -11,14 +11,26 @@ public class PlayerSkillLightning : MonoBehaviour
     public LayerMask enemyMask;         // 데미지 판정할 '적' 레이어
 
     [Header("Indicator (판대기)")]
-    public GameObject indicatorPrefab;  // 마우스 따라다닐 원형 인디케이터
-    public bool fitIndicatorToCell = true;
+    public GameObject indicatorPrefab;
+    public bool fitIndicatorToCell = true; // 인디케이터를 데미지 원 크기에 맞춤
 
     [Header("Lightning")]
-    public GameObject lightningBeamPrefab; // Lightning 컴포넌트 붙은 프리팹
-    public GameObject strikeEffectPrefab;  // 착탄 이펙트 (선택)
-    public float strikeHeight = 10f;       // 번개 시작 하늘 높이
+    public GameObject strikeEffectPrefab;  // GroundLight (땅 빛 이펙트)
+    public float effectScale = 0.3f;       // 땅 이펙트 크기 배율
+    public float effectLifetime = 1.5f;    // 땅 이펙트 유지 시간(초)
     public float damage = 50f;
+
+    [Header("Lightning Bolt (줄기)")]
+    public float strikeHeight = 10f;        // 줄기 시작 하늘 높이
+    public float boltWidthRatio = 0.1f;     // 줄기 굵기 = zoneRadius × 이 값
+    public float boltJaggerRatio = 0.15f;   // 지그재그 폭 = zoneRadius × 이 값
+    public float boltLifetime = 0.15f;      // 줄기 유지 시간
+    public Material boltMaterial;           // 줄기 머티리얼
+    public Color boltColor = Color.cyan;    // 줄기 색
+
+    [Header("Damage Zone")]
+    public float zoneRadius = 1f;      // 원 크기 (조준 원 + 데미지 범위). 키우면 둘 다 커짐
+    public float zoneLifetime = 0.5f;  // 콜라이더 유지 시간(초). 이 시간 안에 들어온 적도 맞음
 
     [Header("Input")]
     public Key aimKey = Key.K;
@@ -81,11 +93,10 @@ public class PlayerSkillLightning : MonoBehaviour
         Vector3 center = CellToWorldCenter(row, col);
         if (indicatorObj != null)
         {
-            GridSystem grid = GridSystem.Instance;
             indicatorObj.transform.position = center + new Vector3(0f, 0.05f, 0f);
             if (fitIndicatorToCell)
                 indicatorObj.transform.localScale =
-                    new Vector3(grid.CellWidth, indicatorObj.transform.localScale.y, grid.CellHeight);
+                    new Vector3(zoneRadius * 2f, indicatorObj.transform.localScale.y, zoneRadius * 2f);
         }
     }
 
@@ -100,38 +111,77 @@ public class PlayerSkillLightning : MonoBehaviour
 
     private void StrikeCell(int row, int col)
     {
-        GridSystem grid = GridSystem.Instance;
         Vector3 center = CellToWorldCenter(row, col);
 
-        // 1) 번개 이펙트 — Lightning 재활용 (하늘 → 착탄점 수직 빔)
-        if (lightningBeamPrefab != null)
-        {
-            GameObject beam = Instantiate(lightningBeamPrefab, center, Quaternion.identity);
-            Lightning beamScript = beam.GetComponent<Lightning>();
-            if (beamScript != null)
-                beamScript.Setup(center + new Vector3(0f, strikeHeight, 0f), center);
-        }
+        // 1) 번개 줄기 — 코드로 LineRenderer 생성 (하늘 → 착탄점 수직)
+        SpawnLightningBolt(center);
+
+        // 2) 땅에 떨어지는 빛 이펙트(GroundLight) — 반경에 맞춰 스케일 + 수명
         if (strikeEffectPrefab != null)
-            Instantiate(strikeEffectPrefab, center, Quaternion.identity);
-
-        // 2) 그 셀에 '중심'이 있는 적만 데미지
-        Vector3 boxCenter = center + Vector3.up * 1f;
-        Vector3 halfExtents = new Vector3(grid.CellWidth, 2f, grid.CellHeight);
-        Collider[] hits = Physics.OverlapBox(boxCenter, halfExtents, Quaternion.identity, enemyMask);
-
-        foreach (Collider c in hits)
         {
-            if (!TryWorldToCell(c.transform.position, out int r, out int cCol)) continue;
-            if (r != row || cCol != col) continue;
+            GameObject fx = Instantiate(strikeEffectPrefab, center, Quaternion.identity);
 
-            Enemy enemy = c.GetComponent<Enemy>();
-            if (enemy != null) enemy.TakeDamage(damage);
+            ParticleSystem[] systems = fx.GetComponentsInChildren<ParticleSystem>();
+            foreach (ParticleSystem ps in systems)
+            {
+                var main = ps.main;
+                main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+            }
+            fx.transform.localScale = Vector3.one * (zoneRadius * effectScale);
+
+            Destroy(fx, effectLifetime);
         }
+
+        // 3) 착탄 위치에 데미지 콜라이더 생성 → 들어오는 적에게 데미지
+        GameObject zoneObj = new GameObject("LightningDamageZone");
+        zoneObj.transform.position = center;
+        LightningDamageZone zone = zoneObj.AddComponent<LightningDamageZone>();
+        zone.Setup(damage, zoneRadius, zoneLifetime, enemyMask);
     }
 
-    // ── 좌표 변환 (GridSystem의 public 값만 읽어서 스크립트 내부에서 계산) ──
+    // 하늘에서 착탄점으로 내리치는 번개 줄기를 코드로 생성
+    private void SpawnLightningBolt(Vector3 groundPos)
+    {
+        GameObject boltObj = new GameObject("LightningBolt");
+        LineRenderer lr = boltObj.AddComponent<LineRenderer>();
 
-    // 월드 좌표 → 격자 (row, col). 범위 밖이면 false
+        Vector3 sky = groundPos + new Vector3(0f, strikeHeight, 0f);
+
+        // 굵기와 지그재그 폭을 원 크기에 비례시킴
+        float width = zoneRadius * boltWidthRatio;
+        float jagger = zoneRadius * boltJaggerRatio;
+
+        int segments = 8;
+        lr.positionCount = segments + 1;
+        for (int i = 0; i <= segments; i++)
+        {
+            float t = (float)i / segments;
+            Vector3 point = Vector3.Lerp(sky, groundPos, t);
+            if (i != 0 && i != segments)
+            {
+                point.x += Random.Range(-jagger, jagger);
+                point.z += Random.Range(-jagger, jagger);
+            }
+            lr.SetPosition(i, point);
+        }
+
+        lr.startWidth = width;
+        lr.endWidth = width;
+        lr.numCapVertices = 2;
+
+        if (boltMaterial != null)
+            lr.material = boltMaterial;
+        else
+        {
+            lr.material = new Material(Shader.Find("Sprites/Default"));
+            lr.startColor = boltColor;
+            lr.endColor = boltColor;
+        }
+
+        Destroy(boltObj, boltLifetime);
+    }
+    // ── 좌표 변환 (GridSystem public 값만 읽어서 내부 계산) ──
+
     private bool TryWorldToCell(Vector3 worldPos, out int row, out int col)
     {
         row = 0;
@@ -140,8 +190,6 @@ public class PlayerSkillLightning : MonoBehaviour
         GridSystem grid = GridSystem.Instance;
         if (!grid.IsInitialized) return false;
 
-        // ⚠️ 가정: Col은 X축, Row는 Z축. Origin은 (0,0)셀의 모서리.
-        //    격자를 다르게 깔았다면 이 두 줄만 뒤집으면 됩니다.
         float localX = worldPos.x - grid.Origin.x;
         float localZ = worldPos.z - grid.Origin.z;
 
@@ -153,7 +201,6 @@ public class PlayerSkillLightning : MonoBehaviour
         return true;
     }
 
-    // 격자 (row, col) → 중앙 월드 좌표
     private Vector3 CellToWorldCenter(int row, int col)
     {
         GridSystem grid = GridSystem.Instance;
