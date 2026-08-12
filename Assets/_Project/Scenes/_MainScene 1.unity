@@ -6338,6 +6338,7 @@ GameObject:
   - component: {fileID: 1365220344}
   - component: {fileID: 1365220343}
   - component: {fileID: 1365220342}
+  - component: {fileID: 1365220350}
   m_Layer: 0
   m_Name: PlayerManagers
   m_TagString: Untagged
@@ -6459,6 +6460,40 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1365220350
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1365220341}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4802b891a370a1418551007686d8367, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  aimCamera: {fileID: 1177861736}
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 8
+  enemyMask:
+    serializedVersion: 2
+    m_Bits: 64
+  indicatorPrefab: {fileID: 3261088568597131734, guid: edfc34a572fbd384a933abc0df83164d, type: 3}
+  fitIndicatorToCell: 1
+  strikeEffectPrefab: {fileID: 341406639536114751, guid: 3d9eb4a8f52bfd34cbc9f604ba3e99e3, type: 3}
+  effectScale: 0.3
+  effectLifetime: 1.5
+  damage: 50
+  strikeHeight: 10
+  boltWidthRatio: 0.1
+  boltJaggerRatio: 0.15
+  boltLifetime: 0.15
+  boltMaterial: {fileID: 0}
+  boltColor: {r: 0, g: 1, b: 1, a: 1}
+  zoneRadius: 1
+  zoneLifetime: 0.5
+  aimKey: 25
 --- !u!1 &1380356873
 GameObject:
   m_ObjectHideFlags: 0
