@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace UJam.Runtime.Enemy
 {
+    /// <summary>
+    /// 외부에 의해 변화할 수 있는, Enemy의 기본 수치들을 관리하고 정의하는 Class
+    /// </summary>
     [Serializable]
     public class EnemyStatus : MonoBehaviour
     {
