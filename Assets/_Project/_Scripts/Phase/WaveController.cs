@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UJam.Runtime.Enemy;
 using UJam.Runtime.Grid;
 using UnityEngine;
@@ -8,11 +9,40 @@ namespace UJam.Runtime.Phase
 {
     public sealed class WaveController : MonoBehaviour
     {
+        // JSON의 Prefab 이름과 실제 Enemy Prefab을 연결하기 위한 정보
+        [System.Serializable]
+        private struct EnemyPrefabEntry
+        {
+            [SerializeField] private string _name;
+            [SerializeField] private GameObject _prefab;
+
+            // JSON에서 사용할 Prefab 이름
+            public string Name
+            {
+                get
+                {
+                    return _name;
+                }
+            }
+
+            // 이름과 연결된 실제 Enemy Prefab
+            public GameObject Prefab
+            {
+                get
+                {
+                    return _prefab;
+                }
+            }
+        }
+
         // 현재 Scene에서 사용할 단일 WaveController
         public static WaveController Instance { get; private set; }
 
         // 순서대로 진행할 전체 Wave 정보
         [SerializeField] private WaveInfo[] _waves;
+        
+        // JSON에 적힌 Prefab 이름과 실제 Enemy Prefab 연결 정보
+        [SerializeField] private EnemyPrefabEntry[] _enemyPrefabs;
 
         // 활성화된 Enemy를 정리할 선택적 부모 (생성된 적들을 Hierarchy에서 한곳에 모아 관리하기 위한 선택적 부모)
         [SerializeField] private Transform _activeEnemyRoot;
@@ -51,6 +81,9 @@ namespace UJam.Runtime.Phase
             }
 
             Instance = this;
+
+             // JSON 파일에서 Wave 정보 불러오기
+            LoadWaveData();
         }
 
         // Singleton 정리
@@ -93,6 +126,45 @@ namespace UJam.Runtime.Phase
         {
             // 이후 생성할 Enemy에 전달할 거점 저장
             _defaultEnemyTarget = target;
+        }
+        
+        // JSON 파일을 읽어 전체 Wave 정보를 불러옴
+        private void LoadWaveData()
+        {
+            // Prefab 이름과 실제 Prefab을 연결할 Dictionary 생성
+            Dictionary<string, GameObject> prefabDictionary =
+                new Dictionary<string, GameObject>();
+
+            // Inspector에 등록된 Prefab 정보를 Dictionary로 변환
+            foreach (EnemyPrefabEntry entry in _enemyPrefabs)
+            {
+                // 이름이 비어 있거나 Prefab이 없으면 제외
+                if (string.IsNullOrWhiteSpace(entry.Name)
+                    || entry.Prefab == null)
+                {
+                    continue;
+                }
+
+                // 예: "Goblin" -> Goblin Prefab
+                prefabDictionary[entry.Name] = entry.Prefab;
+            }
+
+            // JSON 파일을 읽을 WaveInfoFileReader 생성
+            WaveInfoFileReader reader =
+                new WaveInfoFileReader(prefabDictionary);
+
+            // Wave JSON 파일들이 저장된 폴더 경로
+            string directoryPath =
+                Path.Combine(
+                    Application.streamingAssetsPath,
+                    "WaveData");
+
+            // JSON 파일들을 읽어 WaveInfo 배열로 변환
+            _waves = reader.LoadWaveData(directoryPath);
+
+            Debug.Log(
+                $"[WaveController] Wave {_waves.Length}개 로드 완료",
+                this);
         }
 
         // 다음 Wave의 총 Enemy 수 조회
@@ -341,4 +413,6 @@ namespace UJam.Runtime.Phase
             return new Vector3(worldX, grid.Origin.y, worldZ);
         }
     }
+
+    
 }

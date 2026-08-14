@@ -3,8 +3,7 @@ using UnityEngine;
 
 namespace UJam.Runtime.Phase
 {
-    [CreateAssetMenu(fileName = "WaveInfo", menuName = "UJam/Wave Info")]
-    public sealed class WaveInfo : ScriptableObject
+    public sealed class WaveInfo
     {
         [Serializable]
         public struct EnemySpawnInfo
@@ -24,7 +23,7 @@ namespace UJam.Runtime.Phase
             {
                 get
                 {
-                    // Inspector에 저장된 Prefab 반환
+                    // 생성할 Enemy Prefab 반환
                     return _enemyPrefab;
                 }
             }
@@ -34,7 +33,7 @@ namespace UJam.Runtime.Phase
             {
                 get
                 {
-                    // Inspector에 저장된 Grid 좌표 반환
+                    // Enemy를 배치할 Grid 좌표 반환
                     return _gridPosition;
                 }
             }
@@ -44,9 +43,20 @@ namespace UJam.Runtime.Phase
             {
                 get
                 {
-                    // Inspector에 저장된 대기시간 반환
+                    // Enemy별 활성화 대기시간 반환
                     return _waitTime;
                 }
+            }
+
+            // JSON에서 읽은 정보를 바탕으로 EnemySpawnInfo 생성
+            public EnemySpawnInfo(
+                GameObject enemyPrefab,
+                Vector2Int gridPosition,
+                float waitTime)
+            {
+                _enemyPrefab = enemyPrefab;
+                _gridPosition = gridPosition;
+                _waitTime = waitTime;
             }
         }
 
@@ -72,5 +82,11 @@ namespace UJam.Runtime.Phase
                 return _enemies ?? Array.Empty<EnemySpawnInfo>();
             }
         }
-    }
+
+        // 변환된 EnemySpawnInfo 배열을 받아 하나의 WaveInfo 생성
+        public WaveInfo(EnemySpawnInfo[] enemies)
+        {
+            _enemies = enemies ?? Array.Empty<EnemySpawnInfo>();
+        }
+    }   
 }
