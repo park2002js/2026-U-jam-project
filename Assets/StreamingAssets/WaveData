@@ -1,0 +1,22 @@
+{
+  "enemies": [
+    {
+      "prefabName": "Goblin",
+      "statusSettings": [
+        {
+          "statusDelta": {
+            "speed": 0,
+            "attackDamage": 0
+          },
+          "spawns": [
+            {
+              "x": 1,
+              "z": 1,
+              "waitTime": 0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
