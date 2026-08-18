@@ -58,9 +58,8 @@ namespace UJam.Runtime.Enemy
             targetValidator = new TargetValidator(enemy, this);
             
             
+            // FSM 생성 직후에는 아직 상태에 진입하지 않음
             state = EnemyStateType.None;
-            // FSM의 기본 시작 상태는 Idle 상태로 지정
-            SetState(EnemyStateType.Idle);
         }
 
         // 상태 또는 외부 시스템의 상태 변경 요청

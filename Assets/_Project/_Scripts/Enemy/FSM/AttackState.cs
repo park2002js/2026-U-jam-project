@@ -38,9 +38,12 @@ namespace UJam.Runtime.Enemy.FSM
         // Attack 상태를 빠져나오기 위한 코루틴
         public void Exit()
         {
-            // 진행중인 코루틴을 종료
-            _enemy.StopCoroutine(coroutine);
-            coroutine = null;
+            // 진행중인 코루틴이 있을 경우에만 종료
+            if(coroutine != null)
+            {
+                _enemy.StopCoroutine(coroutine);
+                coroutine = null;
+            }
         }
 
         private IEnumerator AttackLoop()
