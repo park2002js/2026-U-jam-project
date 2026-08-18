@@ -3,50 +3,55 @@
 // 이 객체로 Apply하는 것은 단 하나의 아이템에 대해서만 가능합니다.
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
+
 namespace UJam.Runtime.Item
 {
     public sealed class ItemEffectExecutor : MonoBehaviour
     {
         private readonly List<ItemData> activeItems = new();
+        private readonly List<ActiveEffect> activeEffects = new();
 
-        private void Awake()
+        private void Update()
         {
-            // 효과들을 가져올 객체 정보를 받아온다거나 하는 등의 초기화
-        }
-        private void OnEnable()
-        {
-            // 이벤트 구독
+            float dt = Time.deltaTime;
+            for (int i = activeEffects.Count - 1; i >= 0; i--)
+            {
+                if (activeEffects[i].Update(dt))
+                {
+                    activeEffects[i].Finish();
+                    activeEffects.RemoveAt(i);
+                }
+            }
         }
 
-        private void OnDisable()
-        {
-            // 이벤트 구독 해제
-        }
-
-        // 아이템 장착 등, 어떤 효과를 등록할 때 사용
         public void RegisterItem(ItemData item)
         {
+            if (item == null) return;
             activeItems.Add(item);
-            // 패시브 효과 적용 : ApplyPassiveEffects(item);
         }
 
-        // 아이템 제거 등, 어떤 효과를 해제할 때 사용
         public void UnregisterItem(ItemData item)
         {
-            // 패시브 효과 제거 : RemovePassiveEffects(item);
+            if (item == null) return;
             activeItems.Remove(item);
         }
 
-        // 특정 아이템 효과를 발동
-        public void Excute(ItemData item, ItemUseContext context)
+        // 아이템의 효과들을 발동 (지속시간 동안 유지)
+        public void Execute(ItemData item, ItemUseContext context)
         {
-            if (item == null)
-                return;
+            if (item == null) return;
+
+            // 이번 아이템이 효과를 몇 개 거는지 미리 로그
+            Debug.Log($"[Executor] '{item.DisplayName}' 발동 → 효과 {item.Effects.Count}개 등록 예정");
 
             foreach (ItemEffect effect in item.Effects)
             {
-                effect?.Apply(context);
+                if (effect == null) continue;
+                activeEffects.Add(new ActiveEffect(effect, context));
             }
+
+            Debug.Log($"[Executor] 현재 총 활성 효과 수: {activeEffects.Count}");
         }
     }
 }
