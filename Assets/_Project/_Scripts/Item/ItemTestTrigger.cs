@@ -4,21 +4,34 @@ using UJam.Runtime.Item;
 
 public class ItemTestTrigger : MonoBehaviour
 {
-    [SerializeField] private ItemEffectExecutor executor;  // 씬의 Executor
-    [SerializeField] private ItemData item;                // 발동할 아이템 (도트뎀 효과 담긴 SO)
-    [SerializeField] private GameObject targetEnemy;       // 도트뎀 걸 대상 적
+    [SerializeField] private ItemEffectExecutor executor;
+    [SerializeField] private GameObject targetEnemy;
+
+    [Header("키별 아이템 (G / H / J)")]
+    [SerializeField] private ItemData itemG;
+    [SerializeField] private ItemData itemH;
+    [SerializeField] private ItemData itemJ;
 
     private void Update()
     {
-        // J를 누르면 조건 참 → 효과 발동
-        if (Keyboard.current != null && Keyboard.current.jKey.wasPressedThisFrame)
-        {
-            var context = new ItemUseContext(
-                user: gameObject,
-                target: targetEnemy);
+        if (Keyboard.current == null) return;
 
-            executor.Execute(item, context);
-            Debug.Log($"[ItemTest] J 입력 → {item?.DisplayName} 발동");
+        if (Keyboard.current.gKey.wasPressedThisFrame) TryUse(itemG, "G");
+        if (Keyboard.current.hKey.wasPressedThisFrame) TryUse(itemH, "H");
+        if (Keyboard.current.jKey.wasPressedThisFrame) TryUse(itemJ, "J");
+    }
+
+    private void TryUse(ItemData item, string key)
+    {
+        if (item == null)
+        {
+            Debug.Log($"<color=yellow>[입력] {key} — 아이템이 지정되지 않음</color>");
+            return;
         }
+
+        Debug.Log($"<color=white>[입력] {key} 키 → '{item.DisplayName}' 사용</color>");
+
+        var context = new ItemUseContext(user: gameObject, target: targetEnemy);
+        executor.Execute(item, context);
     }
 }

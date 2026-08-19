@@ -2,14 +2,16 @@ using UnityEngine;
 
 namespace UJam.Runtime.Item
 {
-    // 효과 하나가 한 대상에게 걸린 인스턴스. 남은시간·틱타이머·대상을 보유한다.
     public sealed class ActiveEffect
     {
         public ItemEffect Effect { get; }
         public ItemUseContext Context { get; }
 
-        private float timeLeft;    // 남은 지속시간
-        private float tickTimer;   // 다음 틱까지 남은 시간
+        // 이 효과가 대상에게 붙인 이펙트 (SO가 아닌 여기서 보관)
+        private GameObject visualInstance;
+
+        private float timeLeft;
+        private float tickTimer;
 
         public ActiveEffect(ItemEffect effect, ItemUseContext context)
         {
@@ -18,35 +20,36 @@ namespace UJam.Runtime.Item
             timeLeft = effect.Duration;
             tickTimer = effect.TickInterval;
 
-            // 걸리는 순간 1회 Apply (버프 적용 등)
+            string targetName = context.Target != null ? context.Target.name : "없음";
+            Debug.Log($"<color=lime>[효과 부여] {effect.name} → 대상: {targetName}, 지속 {effect.Duration}초</color>");
+
             effect.Apply(context);
+
+            // 이펙트 프리팹이 있으면 대상에게 붙임
+            visualInstance = effect.SpawnVisual(context);
         }
 
-        // 매 프레임 Executor가 호출. 수명이 끝났으면 true 반환.
         public bool Update(float deltaTime)
         {
-            // 도트 등 반복(Tick) 처리
             tickTimer -= deltaTime;
             if (tickTimer <= 0f)
             {
-                Debug.Log($"[ActiveEffect] Tick 실행: {Effect.GetType().Name}");
                 Effect.Tick(Context);
                 tickTimer += Effect.TickInterval;
             }
 
-            // 지속시간이 0인 효과는 Apply만 하고 바로 종료
-            if (Effect.Duration <= 0f)
-                return true;
+            if (Effect.Duration <= 0f) return true;
 
             timeLeft -= deltaTime;
-            // Debug.Log($"[ActiveEffect] 남은 시간: {timeLeft}");
             return timeLeft <= 0f;
         }
 
-        // 종료 시 Executor가 호출 (버프 되돌리기 등)
         public void Finish()
         {
             Effect.Remove(Context);
+
+            // 붙였던 이펙트 제거
+            if (visualInstance != null) Object.Destroy(visualInstance);
         }
     }
 }

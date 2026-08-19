@@ -2360,8 +2360,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   executor: {fileID: 1791053633}
-  item: {fileID: 11400000, guid: fa23113147b21f445b099ac109a29cce, type: 2}
   targetEnemy: {fileID: 1808845896}
+  itemG: {fileID: 11400000, guid: fa23113147b21f445b099ac109a29cce, type: 2}
+  itemH: {fileID: 11400000, guid: 2fa07a406fc65b54194147d29e8a4fab, type: 2}
+  itemJ: {fileID: 11400000, guid: 6a3c3ff84fbfe8749a4e85f87ea95af2, type: 2}
 --- !u!1 &1163645609
 GameObject:
   m_ObjectHideFlags: 0
@@ -4345,6 +4347,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b5561bb64ab557d468bef12eceb77ffb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  maxActiveEffects: 2
 --- !u!4 &1791053634
 Transform:
   m_ObjectHideFlags: 0
