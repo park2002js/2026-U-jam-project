@@ -8,6 +8,20 @@ namespace UJam.Runtime.Item
     public sealed class ItemEffectExecutor : MonoBehaviour
     {
         private readonly List<ItemData> activeItems = new();
+        private readonly List<ActiveEffect> activeEffects = new();
+        private void Update()
+        {
+            float dt = Time.deltaTime;
+            for (int i = activeEffects.Count - 1; i >= 0; i--)
+            {
+                if (activeEffects[i].Update(dt))
+                {
+                    activeEffects[i].Finish();
+                    activeEffects.RemoveAt(i);
+                }
+            }
+        }
+
 
         private void Awake()
         {
@@ -38,14 +52,14 @@ namespace UJam.Runtime.Item
         }
 
         // 특정 아이템 효과를 발동
-        public void Excute(ItemData item, ItemUseContext context)
+        public void Execute(ItemData item, ItemUseContext context)
         {
-            if (item == null)
-                return;
+            if (item == null) return;
 
             foreach (ItemEffect effect in item.Effects)
             {
-                effect?.Apply(context);
+                if (effect == null) continue;
+                activeEffects.Add(new ActiveEffect(effect, context));
             }
         }
     }

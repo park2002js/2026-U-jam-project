@@ -6,8 +6,15 @@ namespace UJam.Runtime.Item
 {
     public abstract class ItemEffect : ScriptableObject
     {
-        public abstract void Apply(ItemUseContext context);
+        [Header("지속시간 설정")]
+        [SerializeField, Min(0f)] private float duration = 0f;
+        [SerializeField, Min(0f)] private float tickInterval = 1f;
 
+        public float Duration => duration;
+        public float TickInterval => tickInterval;
+
+        public virtual void Apply(ItemUseContext context) {}
+        public virtual void Tick(ItemUseContext context) {}
         public virtual void Remove(ItemUseContext context) {}
     }
-}
+}   

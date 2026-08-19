@@ -110,7 +110,7 @@ namespace UJam.Runtime.Enemy
             if (damage <= 0f) return 0f;
 
             // 체력 감소 이행, 만약 깎인 채력이 0보다 작으면 0으로 보정
-            _hp = Math.Min(0f, _hp - damage);
+            _hp = Math.Max(0f, _hp - damage);
 
             // 피해를 받은 객체와 실제 피해량과 남은 체력 출력
             Debug.Log( $"[Health] {gameObject.name} 데미지 {damage} 받음 " + $"({_hp}/{_maxHealth})");

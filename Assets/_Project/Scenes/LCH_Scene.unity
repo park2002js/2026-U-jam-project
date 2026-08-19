@@ -2292,6 +2292,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1147796341}
   - component: {fileID: 1147796342}
+  - component: {fileID: 1147796343}
   m_Layer: 0
   m_Name: skillmanager
   m_TagString: Untagged
@@ -2346,6 +2347,21 @@ MonoBehaviour:
   zoneRadius: 8
   zoneLifetime: 0.5
   aimKey: 25
+--- !u!114 &1147796343
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1147796339}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fa1de1ded032ce45b85dcc00f008eea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  executor: {fileID: 1791053633}
+  item: {fileID: 11400000, guid: fa23113147b21f445b099ac109a29cce, type: 2}
+  targetEnemy: {fileID: 1808845896}
 --- !u!1 &1163645609
 GameObject:
   m_ObjectHideFlags: 0
@@ -2706,6 +2722,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4950347624944623469, guid: ef63d30cdb4e73542a961873ed91023c, type: 3}
+      propertyPath: HP
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 4950347624944623469, guid: ef63d30cdb4e73542a961873ed91023c, type: 3}
       propertyPath: defaultTarget
       value: 
       objectReference: {fileID: 1914329873}
@@ -2713,7 +2733,10 @@ PrefabInstance:
     - {fileID: 5628454321756207872, guid: 9dc488e362a4e8441a5d8eda495ffa3b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1109111048479027950, guid: ef63d30cdb4e73542a961873ed91023c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1808845905}
   m_SourcePrefab: {fileID: 100100000, guid: ef63d30cdb4e73542a961873ed91023c, type: 3}
 --- !u!1 &1316893928
 GameObject:
@@ -4293,6 +4316,75 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1754877816}
   m_CullTransparentMesh: 1
+--- !u!1 &1791053632
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1791053634}
+  - component: {fileID: 1791053633}
+  m_Layer: 0
+  m_Name: new
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1791053633
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1791053632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5561bb64ab557d468bef12eceb77ffb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &1791053634
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1791053632}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 32.428898, y: 20.37441, z: 2.2668524}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1808845896 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1109111048479027950, guid: ef63d30cdb4e73542a961873ed91023c, type: 3}
+  m_PrefabInstance: {fileID: 1293681318}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1808845905
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1808845896}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d61cfe11ee0e31489ea96a8f4c47293, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _enemyName: goblin
+  _credits: 0
+  _maxHealth: 100
+  _speed: 4
+  _attackDamage: 4
+  _attackSpeed: 0
+  _attackRange: 0
+  _movement: {fileID: 0}
 --- !u!1 &1870744751
 GameObject:
   m_ObjectHideFlags: 0
@@ -6082,3 +6174,4 @@ SceneRoots:
   - {fileID: 1673762673}
   - {fileID: 2086273029}
   - {fileID: 1147796341}
+  - {fileID: 1791053634}
