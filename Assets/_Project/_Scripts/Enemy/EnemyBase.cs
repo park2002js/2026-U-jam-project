@@ -49,8 +49,11 @@ namespace UJam.Runtime.Enemy
         // Status와 Component를 준비하고 FSM 생성
         protected virtual void Awake()
         {
-            // 속성 초기화 위치에서는 EnemyBase 자신의 객체를 전달할 수 없기 때문에 Awake에 임시로 정의
+            // EnemyBase 자신의 객체를 전달하여 FSM 생성
             _fsm = new EnemyFSM(this);
+
+            // FSM이 EnemyBase에 할당된 이후 기본 Idle 상태로 진입
+            _fsm.SetState(EnemyStateType.Idle);
         }
 
         private void Update()
