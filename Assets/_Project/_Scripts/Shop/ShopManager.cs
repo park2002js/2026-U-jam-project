@@ -1,166 +1,117 @@
-using System.Collections.Generic;
+ï»¿using System.Collections.Generic;
 using UnityEngine;
-using UJam.Runtime.Item;
 
-namespace UJam.Runtime.Shop
+namespace ItemShopSystem
 {
-    public sealed class ShopManager : MonoBehaviour
+    public class ShopManager : MonoBehaviour
     {
-        [Header("»óÁ¡¿¡¼­ ÆÇ¸Å °¡´ÉÇÑ ÀüÃ¼ ¾ÆÀÌÅÛ")]
-        [SerializeField]
-        private ItemData[] itemPool;
+        public static ShopManager Instance { get; private set; }
 
-        [Header("»óÁ¡ Áø¿­ °³¼ö")]
-        [SerializeField, Min(1)]
-        private int displayCount = 4;
+        // ì™¸ë¶€ ì‹œìŠ¤í…œ
+        //private Wallet wallet;
 
-        // ÇöÀç »óÁ¡¿¡ Áø¿­µÇ¾î ÀÖ´Â ¾ÆÀÌÅÛ
-        private readonly List<ItemData> displayedItems = new();
+        // ShopManagerê°€ ê´€ë¦¬í•˜ëŠ” ì„¸ë¶€ ê¸°ëŠ¥
+        private ShopBuy shopBuy;
+        private ShopFusion shopFusion;
+        private ShopUpgrade shopUpgrade;
 
-        // ÇöÀç Áø¿­µÈ ¾ÆÀÌÅÛÀ» ¿ÜºÎ¿¡¼­ È®ÀÎÇÏ°í ½ÍÀ» ¶§ »ç¿ë
-        public IReadOnlyList<ItemData> DisplayedItems => displayedItems;
-
-
-        // ==============================
-        // 1. Player°¡ Shop¿¡ ÁøÀÔ
-        // ==============================
-        public void EnterShop()
+        // ì„ì‹œ ì•„ì´í…œ ë°ì´í„°
+        // ë‚˜ì¤‘ì— ì‹¤ì œ ItemData ëª©ë¡ìœ¼ë¡œ êµì²´
+        private List<string> implementedItemIds = new List<string>()
         {
-            Debug.Log("[Shop] Player°¡ Shop¿¡ ÁøÀÔÇß½À´Ï´Ù.");
+            "Item_001",
+            "Item_002",
+            "Item_003",
+            "Item_004",
+            "Item_005"
+        };
 
-            RefreshShop();
-        }
-
-
-        // ==============================
-        // 2. ·£´ı ¾ÆÀÌÅÛ N°³ »Ì±â
-        // ==============================
-        private void RefreshShop()
+        private void Awake()
         {
-            displayedItems.Clear();
-
-            // ItemData°¡ µî·ÏµÇ¾î ÀÖ´ÂÁö È®ÀÎ
-            if (itemPool == null || itemPool.Length == 0)
+            if (Instance != null && Instance != this)
             {
-                Debug.LogWarning("[Shop] µî·ÏµÈ ItemData°¡ ¾ø½À´Ï´Ù.");
+                Destroy(gameObject);
                 return;
             }
 
-            // Áø¿­ °³¼ö°¡ ÀüÃ¼ ¾ÆÀÌÅÛº¸´Ù ¸¹¾ÆÁö´Â °Í ¹æÁö
-            int count = Mathf.Min(displayCount, itemPool.Length);
+            Instance = this;
 
-            // ¿øº» ¹è¿­À» °Çµå¸®Áö ¾Ê±â À§ÇØ º¹»ç
-            List<ItemData> tempPool = new List<ItemData>(itemPool);
+            shopBuy = new ShopBuy(implementedItemIds);
+            shopFusion = new ShopFusion();
+            shopUpgrade = new ShopUpgrade();
 
-            for (int i = 0; i < count; i++)
-            {
-                // ·£´ı ÀÎµ¦½º ¼±ÅÃ
-                int randomIndex = Random.Range(0, tempPool.Count);
-
-                // ÇØ´ç ¾ÆÀÌÅÛ ¼±ÅÃ
-                ItemData selectedItem = tempPool[randomIndex];
-
-                displayedItems.Add(selectedItem);
-
-                // °°Àº ¾ÆÀÌÅÛÀÌ ´Ù½Ã ³ª¿ÀÁö ¾Êµµ·Ï Á¦°Å
-                tempPool.RemoveAt(randomIndex);
-            }
-
-            PrintShopItems();
+            Debug.Log("[ShopManager] ì´ˆê¸°í™”");
         }
 
 
-        // ==============================
-        // 3. ÇöÀç »óÁ¡ ¾ÆÀÌÅÛ Ãâ·Â
-        // ==============================
-        private void PrintShopItems()
+        // ==========================
+        // ìƒì  ì´ˆê¸° ìƒì„±
+        // ==========================
+
+        public List<string> OpenShop(int count)
         {
-            Debug.Log("========== SHOP ==========");
-
-            for (int i = 0; i < displayedItems.Count; i++)
-            {
-                ItemData item = displayedItems[i];
-
-                Debug.Log(
-                    $"Slot {i} | " +
-                    $"ÀÌ¸§ : {item.DisplayName} | " +
-                    $"°¡°İ : {item.Cost}"
-                );
-            }
-
-            Debug.Log("==========================");
+            return shopBuy.CreateInitialShop(count);
         }
 
 
-        // ==============================
-        // 4. ¾ÆÀÌÅÛ ±¸¸Å
-        // ==============================
-        public bool TryBuyItem(int slotIndex)
+        // ==========================
+        // ë¦¬ë¡¤
+        // ==========================
+
+        public List<string> Reroll(int count)
         {
-            // Àß¸øµÈ ½½·Ô ¹øÈ£ ¹æÁö
-            if (slotIndex < 0 || slotIndex >= displayedItems.Count)
-            {
-                Debug.LogWarning("[Shop] Á¸ÀçÇÏÁö ¾Ê´Â ½½·ÔÀÔ´Ï´Ù.");
-                return false;
-            }
+            return shopBuy.Reroll(count);
+        }
 
-            ItemData item = displayedItems[slotIndex];
 
-            // WalletÀÌ Scene¿¡ Á¸ÀçÇÏ´ÂÁö È®ÀÎ
-            if (Wallet.Instance == null)
-            {
-                Debug.LogError("[Shop] WalletÀÌ Scene¿¡ Á¸ÀçÇÏÁö ¾Ê½À´Ï´Ù.");
-                return false;
-            }
+        // ==========================
+        // êµ¬ë§¤
+        // ==========================
 
-            Debug.Log(
-                $"[Shop] {item.DisplayName} ±¸¸Å ½Ãµµ / °¡°İ : {item.Cost}"
-            );
+        public bool BuyItem(string itemId)
+        {
+            return shopBuy.BuyItem(itemId);
+        }
 
-            // Wallet¿¡°Ô °¡°İ¸¸Å­ Â÷°¨ ¿äÃ»
-            bool success = Wallet.Instance.TrySpend(item.Cost);
 
-            // µ· ºÎÁ·
-            if (!success)
-            {
-                Debug.Log(
-                    $"[Shop] ±¸¸Å ½ÇÆĞ - ÀçÈ­ ºÎÁ· / ÇöÀç ÀçÈ­ : " +
-                    $"{Wallet.Instance.Currency}"
-                );
+        // ==========================
+        // ì¡°í•©
+        // ==========================
 
-                return false;
-            }
+        public string FuseItem(string itemId1, string itemId2)
+        {
+            if (!ValidateItem(itemId1, itemId2))
+                return null;
 
-            // ±¸¸Å ¼º°ø
-            Debug.Log(
-                $"[Shop] ±¸¸Å ¼º°ø - {item.DisplayName} / " +
-                $"³²Àº ÀçÈ­ : {Wallet.Instance.Currency}"
-            );
+            return shopFusion.Fuse(itemId1, itemId2);
+        }
+
+
+        // ==========================
+        // ê°•í™”
+        // ==========================
+
+        public string UpgradeItem(string itemId)
+        {
+            if (!ValidateItem(itemId))
+                return null;
+
+            return shopUpgrade.Upgrade(itemId);
+        }
+
+
+        // ==========================
+        // ê³µí†µ ìœ íš¨ì„± ê²€ì‚¬
+        // ==========================
+
+        private bool ValidateItem(params string[] itemIds)
+        {
+            Debug.Log("[ShopManager] ì•„ì´í…œ ìœ íš¨ì„± ê²€ì‚¬");
+
+            // TODO
+            // ItemData ë° Inventory êµ¬í˜„ í›„ ì—°ê²°
 
             return true;
-        }
-
-
-        // ====================================
-        // UI ¾øÀ» ¶§ Å×½ºÆ®ÇÏ±â À§ÇÑ ÇÔ¼öµé
-        // ====================================
-
-        [ContextMenu("TEST - Enter Shop")]
-        private void TestEnterShop()
-        {
-            EnterShop();
-        }
-
-        [ContextMenu("TEST - Buy Slot 0")]
-        private void TestBuySlot0()
-        {
-            TryBuyItem(0);
-        }
-
-        [ContextMenu("TEST - Buy Slot 1")]
-        private void TestBuySlot1()
-        {
-            TryBuyItem(1);
         }
     }
 }
