@@ -1,145 +1,87 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
+using UJam.Runtime.Item;
+using UJam.Runtime.Player;
 
-namespace ItemShopSystem
+namespace UJam.Runtime.Shop
 {
     public class ShopBuy
     {
-        // 게임에 구현된 전체 아이템
-        private List<string> allItemIds;
+        public static bool IsPlaceholder(string itemId) => string.IsNullOrWhiteSpace(itemId) || itemId == ItemData.NullId;
 
-        // 현재 상점에 떠 있는 아이템
-        private List<string> currentShopItems;
+        // ShopManager의 원본 목록을 공유하며 구매 성공 시에만 원소를 제거한다.
+        private readonly List<string> allItemIds;
+        private readonly List<string> currentShopItems = new();
+        private bool isPurchasing;
 
+        public ShopBuy(List<string> itemIds) => allItemIds = itemIds;
 
-        public ShopBuy(List<string> itemIds)
-        {
-            allItemIds = new List<string>(itemIds);
-            currentShopItems = new List<string>();
-        }
+        // 다음 정비에서는 판매 완료 칸만 초기화하고 구매로 줄어든 원본 목록은 유지한다.
+        public void BeginPreparation() => currentShopItems.Clear();
 
-
-        // ============================================================
-        // 최초 상점 생성
-        // ============================================================
-
-        public List<string> CreateInitialShop(int itemCount)
-        {
-            Debug.Log("[ShopBuy] 초기 상점 생성");
-
-            List<string> shuffledItems =
-                new List<string>(allItemIds);
-
-            Shuffle(shuffledItems);
-
-            currentShopItems.Clear();
-
-            for (int i = 0; i < itemCount; i++)
-            {
-                if (i < shuffledItems.Count)
-                {
-                    currentShopItems.Add(shuffledItems[i]);
-                }
-                else
-                {
-                    // 아이템 부족 시 null
-                    currentShopItems.Add(null);
-                }
-            }
-
-            return new List<string>(currentShopItems);
-        }
-
-
-        // ============================================================
-        // 리롤
-        // ============================================================
+        // UI를 다시 열어도 기존 진열 및 Sold Out 상태를 보존한다.
+        public List<string> CreateInitialShop(int itemCount) => currentShopItems.Count == itemCount ? new List<string>(currentShopItems) : Reroll(itemCount);
 
         public List<string> Reroll(int itemCount)
         {
-            Debug.Log($"[ShopBuy] {itemCount}개 리롤");
-
-            List<string> result =
-                new List<string>();
-
-            for (int i = 0; i < itemCount; i++)
+            if (isPurchasing) return new List<string>(currentShopItems);
+            for (int i = 0; i < allItemIds.Count; i++)
             {
-                if (allItemIds.Count == 0)
-                {
-                    result.Add(null);
-                    continue;
-                }
-
-                int randomIndex =
-                    Random.Range(0, allItemIds.Count);
-
-                result.Add(allItemIds[randomIndex]);
+                int randomIndex = Random.Range(i, allItemIds.Count);
+                (allItemIds[i], allItemIds[randomIndex]) = (allItemIds[randomIndex], allItemIds[i]);
             }
 
-            currentShopItems = new List<string>(result);
+            if (currentShopItems.Count != itemCount)
+            {
+                currentShopItems.Clear();
+                for (int i = 0; i < itemCount; i++) currentShopItems.Add(ItemData.NullId);
+            }
 
-            return result;
+            int itemIndex = 0;
+            for (int slot = 0; slot < currentShopItems.Count; slot++)
+            {
+                if (currentShopItems[slot] == null) continue; // Sold Out 위치는 리롤 대상에서 제외한다.
+                currentShopItems[slot] = itemIndex < allItemIds.Count ? allItemIds[itemIndex++] : ItemData.NullId;
+            }
+            return new List<string>(currentShopItems);
         }
 
+        public bool BuyItem(string itemId, Wallet wallet, PlayerInventory inventory) => BuyItem(currentShopItems.IndexOf(itemId), wallet, inventory);
 
-        // ============================================================
-        // 구매
-        // ============================================================
-
-        public bool BuyItem(string itemId)
+        public bool BuyItem(int slot, Wallet wallet, PlayerInventory inventory)
         {
-            // 현재 상점 목록에 있는 아이템인지 확인
-            if (!currentShopItems.Contains(itemId))
+            if (isPurchasing || slot < 0 || slot >= currentShopItems.Count) return false;
+            string itemId = currentShopItems[slot];
+            if (IsPlaceholder(itemId) || !allItemIds.Contains(itemId)) return false;
+            if (wallet == null || inventory == null)
             {
-                Debug.LogError(
-                    $"[ShopBuy] 현재 상점에 없는 아이템입니다 : {itemId}"
-                );
-
+                Debug.LogWarning("[ShopBuy] Wallet과 PlayerInventory 연결을 확인하세요.");
                 return false;
             }
 
+            ItemData item = ItemData.Load(itemId);
+            if (item == null) return false;
+            int cost = item.Cost;
+            if (cost < 0 || wallet.Gold < cost || inventory.GetCount(itemId) == int.MaxValue) return false;
 
-            // =========================================
-            // TODO : Wallet 연결
-            // =========================================
-
-            Debug.Log(
-                $"[ShopBuy] Wallet 재화 검사 예정 : {itemId}"
-            );
-
-
-            // 현재는 구매 성공했다고 가정
-
-            currentShopItems.Remove(itemId);
-
-
-            // =========================================
-            // TODO : 실제 Inventory 추가
-            // =========================================
-
-            Debug.Log(
-                $"[ShopBuy] 구매 성공 : {itemId}"
-            );
-
-            return true;
-        }
-
-
-        // ============================================================
-        // 리스트 섞기
-        // ============================================================
-
-        private void Shuffle(List<string> list)
-        {
-            for (int i = 0; i < list.Count; i++)
+            // 재화/보유 변경 이벤트에서 다시 구매하거나 리롤하여 같은 상품을 중복 처리하지 못하게 한다.
+            isPurchasing = true;
+            try
             {
-                int randomIndex =
-                    Random.Range(i, list.Count);
+                if (cost > 0 && !wallet.TrySpend(cost)) return false;
+                if (!inventory.TryAdd(itemId))
+                {
+                    if (cost > 0) wallet.AddCurrency(cost);
+                    return false;
+                }
 
-                string temp = list[i];
-
-                list[i] = list[randomIndex];
-                list[randomIndex] = temp;
+                allItemIds.Remove(itemId);
+                currentShopItems[slot] = null; // Item_null은 빈 칸, null은 이번 진열의 Sold Out.
+                return true;
+            }
+            finally
+            {
+                isPurchasing = false;
             }
         }
     }

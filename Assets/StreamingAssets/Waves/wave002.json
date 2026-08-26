@@ -1,0 +1,32 @@
+{
+  "enemies": [
+    {
+      "prefabName": "Tee",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 1, "z": 1, "waitTime": 5 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Kog",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 6, "z": 5, "waitTime": 1 },
+            { "x": 7, "z": 4, "waitTime": 1 },
+            { "x": 8, "z": 3, "waitTime": 1 },
+            { "x": 9, "z": 2, "waitTime": 1 },
+            { "x": 10, "z": 1, "waitTime": 1 },
+            { "x": 11, "z": 6, "waitTime": 1 },
+            { "x": 12, "z": 7, "waitTime": 1 },
+            { "x": 13, "z": 8, "waitTime": 1 },
+            { "x": 14, "z": 9, "waitTime": 1 }
+          ]
+        }
+      ]
+    }
+  ]
+}

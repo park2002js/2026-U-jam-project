@@ -53,7 +53,8 @@ namespace UJam.Runtime.Enemy
             if (target.CompareTag("BaseCore"))
             {
                 GridSystem grid = GridSystem.Instance;
-                destination.x = transform.position.x;
+                destination.x = _firePoint.position.x;
+                destination.y = _firePoint.position.y;
                 destination.z = grid.Origin.z + grid.BaseCoreRow * grid.CellHeight;
             }
 

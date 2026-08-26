@@ -3,7 +3,8 @@ using UnityEngine;
 
 namespace UJam.Runtime.Phase
 {
-    public sealed class WaveInfo
+    [Serializable]
+    public class WaveInfo
     {
         [Serializable]
         public struct EnemySpawnInfo
@@ -14,7 +15,7 @@ namespace UJam.Runtime.Phase
             // x는 col이고 y는 row인 Grid 좌표
             [SerializeField] private Vector2Int _gridPosition;
 
-            // Wave 시작 뒤 Enemy가 활성화될 때까지 기다릴 시간
+            // Wave 시작 뒤 Enemy를 실제로 생성할 때까지 기다릴 시간
             [Min(0f)]
             [SerializeField] private float _waitTime;
 
@@ -38,7 +39,7 @@ namespace UJam.Runtime.Phase
                 }
             }
 
-            // Enemy별 활성화 대기시간
+            // Enemy별 생성 대기시간
             public float WaitTime
             {
                 get

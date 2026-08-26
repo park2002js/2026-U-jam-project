@@ -5,21 +5,31 @@ using UnityEngine;
 namespace UJam.Runtime.Grid
 {
     // 전체 Cell 정보와 Grid 설정을 한 곳에서 제공하는 최소 정보 허브
-    public sealed class GridSystem
+    public class GridSystem : MonoBehaviour
     {
         #region Singleton
 
         // 유일한 하나의 객체 생성
-        private static readonly GridSystem _instance = new GridSystem();
+        public static GridSystem Instance { get; private set; }
 
-        // 외부 생성을 막고 단일 인스턴스만 유지
-        private GridSystem()
+        // Inspector 설정을 읽을 수 있는 Awake에서 싱글톤과 내부 Cell을 준비한다.
+        private void Awake()
         {
-            _cells = new Dictionary<(int Row, int Col), Cell>();
+            if (Instance != null && Instance != this)
+            {
+                enabled = false;
+                return;
+            }
+
+            Instance = this;
+            Initialize();
         }
 
-        // 게임 내에서 GridSystem 인스턴스를 사용 가능
-        public static GridSystem Instance  { get { return _instance; } }
+        private void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+            IsInitialized = false;
+        }
 
         #endregion
 
@@ -30,89 +40,53 @@ namespace UJam.Runtime.Grid
         private Dictionary<(int Row, int Col), Cell> _cells;
 
         // 각 Cell의 가로 길이
-        public float CellWidth { get; private set; }
+        [SerializeField] public float CellWidth;
 
         // 각 Cell의 세로 길이
-        public float CellHeight { get; private set; }
+        [SerializeField] public float CellHeight;
 
         // 전체 Grid의 세로 Cell 수
-        public int RowCount { get; private set; }
+        [SerializeField] public int RowCount;
 
         // 전체 Grid의 가로 Cell 수
-        public int ColumnCount { get; private set; }
+        [SerializeField] public int ColumnCount;
 
         // Grid의 시작 월드 좌표
-        public Vector3 Origin { get; private set; }
+        [SerializeField] public Vector3 Origin;
+
+        // 거점이 위치한 Row 칸 수
+        [SerializeField] public int BaseCoreRow;
 
         // 유효한 Grid 정보가 준비됐는지 여부
         public bool IsInitialized { get; private set; }
-
-        // 거점이 위치하는 Row 줄 
-        public int BaseCoreRow { get; private set; }
 
         #endregion
 
         #region Initialization
 
-        // 외부 설정으로 전체 Grid와 기본 None Cell을 다시 생성
-        public bool Initialize(
-            float cellWidth,    // 단위 Cell 하나의 가로 길이
-            float cellHeight,   // 단위 Cell 하나의 세로 길이
-            int rowCount,       // 총 격자의 세로 길이
-            int columnCount,    // 총 격자의 가로 길이
-            Vector3 origin,     // 총 격자의 원점 World 좌표
-            int baseCoreRow)    // 거점의 Row 줄 위치
+        // Inspector 값은 그대로 두고 런타임 Cell과 초기화 상태만 생성한다.
+        private void Initialize()
         {
-            // Cell 크기와 Grid 개수와 월드 좌표가 모두 유효한지 확인
-            if (!IsPositiveFinite(cellWidth)
-                || !IsPositiveFinite(cellHeight)
-                || rowCount <= 0
-                || columnCount <= 0
-                || !IsFinite(origin))
+            if (!IsPositiveFinite(CellWidth) || !IsPositiveFinite(CellHeight) || RowCount <= 0 || ColumnCount <= 0 || !IsFinite(Origin))
             {
-                // 기존 Grid를 건드리지 않은 초기화 실패 반환
-                return false;
+                Debug.LogError("[GridSystem] Inspector의 Cell 크기, 개수, 원점 설정을 확인하세요.", this);
+                return;
             }
 
-            // Dictionary가 수용할 전체 Cell 개수
-            long cellCount = (long)rowCount * columnCount;
-
-            // Dictionary 용량을 넘는 Grid는 생성하지 않음
+            long cellCount = (long)RowCount * ColumnCount;
             if (cellCount > int.MaxValue)
             {
-                // 지나치게 큰 Grid 초기화 실패 반환
-                return false;
+                Debug.LogError("[GridSystem] Cell 수가 Dictionary 용량을 초과합니다.", this);
+                return;
             }
 
-            // 위에서 계산한 갯수만큼 빈 cell 저장 공간을 생성
-            Dictionary<(int Row, int Col), Cell> initializedCells = new Dictionary<(int Row, int Col), Cell>((int)cellCount);
-
-            // 전체 세로 Cell을 순서대로 생성
-            for (int row = 0; row < rowCount; row += 1)
+            _cells = new Dictionary<(int Row, int Col), Cell>((int)cellCount);
+            for (int row = 0; row < RowCount; row++)
             {
-                // 현재 row의 모든 가로 Cell을 생성
-                for (int col = 0; col < columnCount; col += 1)
-                {
-                    // 현재 row와 col을 Dictionary key로 사용할 tuple 좌표
-                    (int Row, int Col) key = (row, col);
-                    // 현재 좌표의 기본 None Cell 정보
-                    Cell cell = new Cell(row, col, cellWidth, cellHeight);
-
-                    // cell을 생성해서 dictionary에 할당
-                    initializedCells.Add(key, cell);
-                }
+                for (int col = 0; col < ColumnCount; col++) _cells.Add((row, col), new Cell(row, col, CellWidth, CellHeight));
             }
 
-            CellWidth = cellWidth;
-            CellHeight = cellHeight;
-            RowCount = rowCount;
-            ColumnCount = columnCount;
-            Origin = origin;
-            _cells = initializedCells; // GridSystem을 통해 외부에서 사용할 수 있도록 변수에 Dictionary 할당
             IsInitialized = true;
-
-            // 전체 Cell 생성이 끝난 초기화 성공 반환
-            return true;
         }
 
         #endregion

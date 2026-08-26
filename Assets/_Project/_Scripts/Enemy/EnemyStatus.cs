@@ -107,13 +107,15 @@ namespace UJam.Runtime.Enemy
 
             
             // 혹은 피해량이 유효하지 않은 값이면 0을 반환하는 것으로 종료
-            if (damage <= 0f) return 0f;
+            if (damage <= 0f || !float.IsFinite(damage)) return 0f;
 
             // 체력 감소 이행, 만약 깎인 채력이 0보다 작으면 0으로 보정
+            float previousHp = _hp;
             _hp = Math.Max(0f, _hp - damage);
+            float appliedDamage = previousHp - _hp;
 
             // 피해를 받은 객체와 실제 피해량과 남은 체력 출력
-            Debug.Log( $"[Health] {gameObject.name} 데미지 {damage} 받음 " + $"({_hp}/{_maxHealth})");
+            Debug.Log($"[Health] {gameObject.name} 데미지 {appliedDamage} 받음 ({_hp}/{_maxHealth})");
 
 
             // 실제 체력 변화 이후의 상태를 한번만 통지
@@ -128,7 +130,7 @@ namespace UJam.Runtime.Enemy
             }
 
             // 최종 받은 피해량 반환
-            return damage;
+            return appliedDamage;
         }
 
         #region 기본 수치 값 버프/디버프

@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &9079036601246403484
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 513161682052316347}
+  - component: {fileID: 4600398680650586484}
+  m_Layer: 0
+  m_Name: Skill_Basic_LightningBolt
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &513161682052316347
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9079036601246403484}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4600398680650586484
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9079036601246403484}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6437f783c21d8104098d78448fe67eb3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lightningBoltPrefab: {fileID: 2375589281258290619, guid: e3a106e9e788b4b4b873ed229e347e72, type: 3}
+  strikeHeight: 20
+  boltWidthRatio: 5
+  boltLifetime: 0.15
+  boltJagger: 0.3
+  strikeEffectPrefab: {fileID: 341406639536114751, guid: fe0aefe4481c68242840f25a5d0885d6, type: 3}
+  effectScale: 0.3
+  effectLifetime: 1.5
+  zoneRadius: 5
+  zoneLifetime: 0.5
+  damageMultiplier: 10
+  skillCoolTime: 5
+  skillIcon: {fileID: 661234031, guid: 17e5894d7e7e8624997c83a98451feb0, type: 3}

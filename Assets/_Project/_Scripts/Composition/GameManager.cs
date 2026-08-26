@@ -1,98 +1,113 @@
-using UnityEngine;
-using UJam.Integration.UI;
+using System;
 using UJam.Runtime.Defense;
 using UJam.Runtime.Grid;
 using UJam.Runtime.Phase;
-using UJam.Runtime.Placement;
-using UJam.Runtime.Player;
 using UJam.Runtime.Shop;
-using UJam.Runtime.Item;
+using UnityEngine;
 
-namespace UJam.Runtime.Composition
+/// <summary>
+/// 게임의 주요 흐름을 담당한다. 전역에서 사용될 수 있도록 싱글톤을 이용하였다.
+/// <para>담당하는 흐름은 다음과 같다.</para>
+/// <para>1. 게임 시작</para>
+/// <para>2. 게임 오버</para>
+/// <para>3. 게임 클리어</para>
+/// </summary>
+public class GameManager : MonoBehaviour
 {
-    public class GameManager : MonoBehaviour
+    public static GameManager Instance { get; private set; }
+
+    public event Action OnGameOver;
+    public event Action<PhaseState> OnPhaseChanged;
+
+    public bool IsGameOver { get; private set; }
+    public bool IsInitialized { get; private set; }
+    public PhaseState CurrentPhase => _phaseSystem != null ? _phaseSystem.CurrentState : PhaseState.None;
+
+    private PhaseSystem _phaseSystem;
+
+    /// <summary>
+    /// UIManager와 UICursorController 등이 Inspector 연결 없이 사용할 싱글톤을 등록합니다.
+    /// </summary>
+    private void Awake()
     {
-        // 아래 Grid 설정값은 GridPreview에도 따로 존재함
-        // 이 값을 변경하면 Scene 미리보기와 달라지므로 GridPreview의 같은 값도 함께 변경
-
-        // Grid Cell 가로와 세로 크기
-        [SerializeField, Min(0.0001f)] private float _gridCellSize = 1f;
-
-        // Grid 시작 월드 좌표
-        [SerializeField] private Vector3 _gridOrigin;
-
-        // 거점이 위치한 Row 칸 수
-        [SerializeField] private int _baseCoreRow;
-
-        // Grid 가로 Cell 수
-        [SerializeField, Min(1)] private int _gridWidth = 10;
-
-        // Grid 세로 Cell 수
-        [SerializeField, Min(1)] private int _gridHeight = 10;
-
-        // Player에 전달할 Phase 시스템
-        [SerializeField] private PhaseSystem _phaseSystem;
-
-        // Phase 시스템에 전달할 Wave 제어기
-        [SerializeField] private WaveController _waveController;
-
-        // 발표용 Enemy 기본 Target으로 주입할 거점
-        [SerializeField] private BaseCore _baseCore;
-
-        // Phase 상태를 받을 Player 상태
-        [SerializeField] private PlayerStatus _playerStatus;
-
-        // 설치 시스템을 받을 Player 설치 입력
-        [SerializeField] private PlayerPlacement _playerPlacement;
-
-        // UI에 전달할 단일 재화 저장소
-        [SerializeField] private Wallet _wallet;
-
-        // 선택적인 UI 읽기 경계
-        [SerializeField] private RuntimeUiStateBridge _runtimeUiStateBridge;
-
-        // 게임 시작에 필요한 최소 시스템 연결
-        private void Awake()
+        if (Instance != null && Instance != this)
         {
-            // 프로젝트 단일 Grid 시스템
-            GridSystem gridSystem = GridSystem.Instance;
-            gridSystem.Initialize(
-                _gridCellSize,
-                _gridCellSize,
-                _gridHeight,
-                _gridWidth,
-                _gridOrigin,
-                _baseCoreRow);
-
-            // 발표용 Enemy 기본 Target으로 거점 객체 연결
-            if (_waveController != null && _baseCore != null)
-            {
-                _waveController.ConfigureDefaultTarget(_baseCore.gameObject);
-            }
-
-            // Grid 준비 뒤 Phase와 Wave 시스템 연결
-            _phaseSystem.Initialize(_waveController);
-
-            // Player에 전달할 설치 시스템
-            PlacementSystem placementSystem = new PlacementSystem(gridSystem);
-
-            // Player 상태가 연결된 경우에만 Phase 전달
-            if (_playerStatus != null)
-            {
-                _playerStatus.ConfigurePhaseSystem(_phaseSystem);
-            }
-
-            // 설치 입력이 연결된 경우에만 설치 시스템 전달
-            if (_playerPlacement != null)
-            {
-                _playerPlacement.Configure(placementSystem);
-            }
-
-            // UI가 연결된 경우에만 조회 대상 전달
-            if (_runtimeUiStateBridge != null)
-            {
-                _runtimeUiStateBridge.Configure(_phaseSystem, _wallet, _playerStatus);
-            }
+            enabled = false;
+            return;
         }
+
+        Instance = this;
+    }
+
+    /// <summary>
+    /// 각 싱글톤의 Awake 초기화를 확인하고 연결을 마친 뒤 최초 정비 Phase를 시작합니다.
+    /// </summary>
+    private void Start()
+    {
+        if (Instance != this || IsInitialized || IsGameOver) return;
+        if (GridSystem.Instance == null || !GridSystem.Instance.IsInitialized)
+        {
+            Debug.LogError("[GameManager] GridSystem의 Awake 초기화가 완료되지 않았습니다.", this);
+            return;
+        }
+
+        if (ShopManager.Instance == null || !ShopManager.Instance.IsInitialized)
+        {
+            Debug.LogError("[GameManager] ShopManager의 Awake 초기화가 완료되지 않았습니다.", this);
+            return;
+        }
+
+        _phaseSystem = FindFirstObjectByType<PhaseSystem>();
+        BaseCore baseCore = FindFirstObjectByType<BaseCore>();
+        WaveController waveController = WaveController.Instance;
+        if (_phaseSystem == null || baseCore == null || waveController == null)
+        {
+            Debug.LogError("[GameManager] 활성화된 PhaseSystem, BaseCore, WaveController가 필요합니다.", this);
+            return;
+        }
+
+        waveController.ConfigureDefaultTarget(baseCore.gameObject);
+        if (!_phaseSystem.Initialize(waveController)) return;
+        IsInitialized = true;
+        _phaseSystem.StartPreparationPhase();
+    }
+
+    /// <summary>
+    /// UIManager의 전투 시작 요청을 PhaseSystem에 전달하며, 전환 가능 여부는 PhaseSystem이 판단합니다.
+    /// </summary>
+    public void StartCombatPhase()
+    {
+        if (IsInitialized && !IsGameOver) _phaseSystem.StartCombatPhase();
+    }
+
+    /// <summary>
+    /// PhaseSystem이 확정한 Phase를 UIManager, UICursorController와 다른 구독자에게 알립니다.
+    /// </summary>
+    public void HandlePhaseChanged(PhaseState phase)
+    {
+        if (!IsInitialized || IsGameOver) return;
+        if (phase == PhaseState.Preparation) ShopManager.Instance?.BeginPreparation();
+        OnPhaseChanged?.Invoke(phase);
+    }
+
+    /// <summary>
+    /// PlayerStatus의 사망 보고를 받아 UIManager 등에 게임 오버를 한 번만 알립니다.
+    /// </summary>
+    public void GameOver()
+    {
+        if (IsGameOver) return;
+
+        IsGameOver = true;
+        Debug.Log("[GameManager] Game Over 확정: OnGameOver 통지", this);
+        OnGameOver?.Invoke();
+    }
+
+    /// <summary>
+    /// 자신이 등록한 싱글톤과 초기화 상태를 해제합니다.
+    /// </summary>
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+        IsInitialized = false;
     }
 }

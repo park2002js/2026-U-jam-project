@@ -5,12 +5,12 @@ using UnityEngine;
 
 namespace UJam.Runtime.Item
 {
-    [CreateAssetMenu(
-        fileName = "NewItem",
-        menuName = "Game/Items/Item"
-    )]
+    [CreateAssetMenu(fileName = "NewItem", menuName = "Game/Items/Item")]
     public class ItemData : ScriptableObject
     {
+        public const string NullId = "Item_null";
+        public const string ResourceFolder = "Items";
+
         [Header("식별 정보")]
         [SerializeField] private string id;
 
@@ -28,5 +28,15 @@ namespace UJam.Runtime.Item
         public Sprite Icon => icon;
         public int Cost => cost;
         public IReadOnlyList<ItemEffect> Effects => effects;
+
+        // Shop, Inventory, UI 모두 Assets/**/Resources/Items/{id}.asset을 같은 규칙으로 조회한다.
+        public static ItemData Load(string itemId)
+        {
+            if (string.IsNullOrWhiteSpace(itemId) || itemId.Contains('/') || itemId.Contains('\\')) return null;
+            ItemData item = Resources.Load<ItemData>($"{ResourceFolder}/{itemId}");
+            if (item != null && item.Id == itemId) return item;
+            Debug.LogWarning($"[ItemData] Resources/{ResourceFolder}/{itemId}.asset이 없거나 에셋의 Id가 일치하지 않습니다.");
+            return null;
+        }
     }
 }

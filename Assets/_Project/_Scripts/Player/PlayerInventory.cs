@@ -1,14 +1,21 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UJam.Runtime.Item;
 
 namespace UJam.Runtime.Player
 {
-    public sealed class PlayerInventory : MonoBehaviour
+    public class PlayerInventory : MonoBehaviour
     {
         // 아이템의 식별 Id와 
         private readonly Dictionary<string, int> _items = new Dictionary<string, int>();
 
-        // 지정한 Item의 현재 보유 수량 조회
+        public event Action OnItemsChanged;
+        public IReadOnlyDictionary<string, int> Items => _items;
+
+        /// <summary>
+        /// 아이템 사용 코드에서 지정한 ID의 현재 보유 수량을 조회합니다.
+        /// </summary>
         public int GetCount(string itemId)
         {
             // 비어 있는 Item 식별자 차단
@@ -24,11 +31,13 @@ namespace UJam.Runtime.Player
             return _items.TryGetValue(itemId, out count) ? count : 0;
         }
 
-        // Item과 수량을 보관소에 추가
+        /// <summary>
+        /// 아이템을 추가하고 성공한 경우에만 UIPlayerItems에 목록 변경을 알립니다.
+        /// </summary>
         public bool TryAdd(string itemId, int amount = 1)
         {
             // 비어 있는 ID와 양수가 아닌 수량 차단
-            if (string.IsNullOrWhiteSpace(itemId) || amount <= 0)
+            if (string.IsNullOrWhiteSpace(itemId) || itemId == ItemData.NullId || amount <= 0)
             {
                 // Item 추가 실패 반환
                 return false;
@@ -45,12 +54,15 @@ namespace UJam.Runtime.Player
 
             // 새 보유 수량 저장
             _items[itemId] = current + amount;
+            OnItemsChanged?.Invoke();
 
             // Item 추가 성공 반환
             return true;
         }
 
-        // Item과 수량을 보관소에서 제거
+        /// <summary>
+        /// 아이템을 제거하고 성공한 경우에만 UIPlayerItems에 목록 변경을 알립니다.
+        /// </summary>
         public bool TryRemove(string itemId, int amount = 1)
         {
             // 비어 있는 ID와 양수가 아닌 수량 차단
@@ -80,6 +92,8 @@ namespace UJam.Runtime.Player
             {
                 _items[itemId] = remaining;
             }
+
+            OnItemsChanged?.Invoke();
 
             // Item 제거 성공 반환
             return true;

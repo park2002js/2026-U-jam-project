@@ -1,48 +1,51 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UJam.Runtime.Player;
 
-namespace ItemShopSystem
+namespace UJam.Runtime.Shop
 {
     public class ShopManager : MonoBehaviour
     {
         public static ShopManager Instance { get; private set; }
-
-        // 외부 시스템
-        //private Wallet wallet;
+        public bool IsInitialized { get; private set; }
 
         // ShopManager가 관리하는 세부 기능
         private ShopBuy shopBuy;
         private ShopFusion shopFusion;
         private ShopUpgrade shopUpgrade;
 
-        // 임시 아이템 데이터
-        // 나중에 실제 ItemData 목록으로 교체
-        private List<string> implementedItemIds = new List<string>()
-        {
-            "Item_001",
-            "Item_002",
-            "Item_003",
-            "Item_004",
-            "Item_005"
-        };
+        private readonly List<string> implementedItemIds = new();
+        [SerializeField] private PlayerInventory playerInventory;
 
         private void Awake()
         {
             if (Instance != null && Instance != this)
             {
-                Destroy(gameObject);
+                enabled = false;
                 return;
             }
 
             Instance = this;
+            Initialize();
+        }
 
+        private void Initialize()
+        {
+            // 추후에 아이템 아이디 리스트 파일을 읽고 리스트를 채울 것
+            implementedItemIds.Add("Item_001");
+            if (playerInventory == null) playerInventory = FindFirstObjectByType<PlayerInventory>();
             shopBuy = new ShopBuy(implementedItemIds);
             shopFusion = new ShopFusion();
             shopUpgrade = new ShopUpgrade();
-
+            IsInitialized = true;
             Debug.Log("[ShopManager] 초기화");
         }
 
+        private void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+            IsInitialized = false;
+        }
 
         // ==========================
         // 상점 초기 생성
@@ -51,6 +54,11 @@ namespace ItemShopSystem
         public List<string> OpenShop(int count)
         {
             return shopBuy.CreateInitialShop(count);
+        }
+
+        public void BeginPreparation()
+        {
+            if (IsInitialized) shopBuy.BeginPreparation();
         }
 
 
@@ -70,8 +78,10 @@ namespace ItemShopSystem
 
         public bool BuyItem(string itemId)
         {
-            return shopBuy.BuyItem(itemId);
+            return IsInitialized && shopBuy.BuyItem(itemId, Wallet.Instance, playerInventory);
         }
+
+        public bool BuyItem(int slot) => IsInitialized && shopBuy.BuyItem(slot, Wallet.Instance, playerInventory);
 
 
         // ==========================

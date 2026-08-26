@@ -17,6 +17,10 @@ namespace UJam.Runtime.Item
 
         public float Duration => duration;
         public float TickInterval => tickInterval;
+        protected GameObject VisualPrefab => visualPrefab;
+
+        // 명중 효과는 Apply에서 즉시 처리하며 지속 효과의 슬롯을 점유하지 않는다.
+        public virtual bool IsShootingHitEffect => false;
 
         public virtual void Apply(ItemUseContext context) {}
         public virtual void Tick(ItemUseContext context) {}

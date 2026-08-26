@@ -243,11 +243,11 @@ public class ElementReceiver : MonoBehaviour
                 if (lightningData.chainBeamPrefab != null)
                 {
                     GameObject beamObj = Instantiate(lightningData.chainBeamPrefab, currentStartPos, Quaternion.identity);
-                    Lightning beamScript = beamObj.GetComponent<Lightning>();
-                    if (beamScript != null)
-                    {
-                        beamScript.Setup(currentStartPos, targetEnemy.transform.position);
-                    }
+                    //Lightning beamScript = beamObj.GetComponent<Lightning>();
+                    // if (beamScript != null)
+                    // {
+                    //     beamScript.Setup(currentStartPos, targetEnemy.transform.position);
+                    // }
                 }
 
                 currentStartPos = targetEnemy.transform.position;

@@ -4,7 +4,7 @@ using System.Collections;
 
 namespace UJam.Runtime.Enemy.FSM
 {
-    public sealed class AttackState
+    public class AttackState
     {
         // 공격 행동을 구현하는 Enemy
         private EnemyBase _enemy;
@@ -56,8 +56,8 @@ namespace UJam.Runtime.Enemy.FSM
                 {
                     target = _fsm.Targets[_fsm.Targets.Count - 1];
 
-                    // 공격 대상을 향하는 벡터를 구한 뒤, 그 벡터 방향으로 쿼터니언 회전을 함
-                    Vector3 direction = target.transform.position - _enemy.transform.position;
+                    // 거점 공격은 월드 +Z 정면(Y 회전 0)을 유지하고 다른 대상만 실제 위치를 바라본다.
+                    Vector3 direction = target.CompareTag("BaseCore") ? Vector3.forward : target.transform.position - _enemy.transform.position;
 
                     // Y축을 기준으로 회전하므로 벡터의 Y축 변화량은 0으로 설정함
                     direction.y = 0f;    

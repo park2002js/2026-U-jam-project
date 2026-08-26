@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace UJam.Runtime.Enemy
 {
-    [RequireComponent(typeof(Health))]
+    [RequireComponent(typeof(EnemyStatus))]
     public abstract class EnemyBase : MonoBehaviour, IDamageable
     {
         #region Inspector 창에 띄울 것들
@@ -178,8 +178,7 @@ namespace UJam.Runtime.Enemy
         public float TakeDamage(DamageInfo info)
         {
             Debug.Log("[EnemyBase] : TakeDamage 호출됨");
-            _status.ApplyDamage(info.Damage);
-            return 0f;
+            return _status.ApplyDamage(info.Damage);
         }
 
         /// <summary>

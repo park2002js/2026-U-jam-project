@@ -6,6 +6,9 @@ namespace UJam.Runtime.Phase
     // 현재 게임 진행 구간
     public enum PhaseState
     {
+        // GameManager가 아직 최초 Phase를 시작하지 않은 상태
+        None = -1,
+
         // 전투 전 정비 구간
         Preparation,
 
@@ -13,16 +16,10 @@ namespace UJam.Runtime.Phase
         Combat
     }
 
-    public sealed class PhaseSystem : MonoBehaviour
+    public class PhaseSystem : MonoBehaviour
     {
-        // 정비 Phase에서만 표시할 UI 최상위 객체
-        [SerializeField] private GameObject _preparationUi;
-
-        // 전투 Phase에서만 표시할 UI 최상위 객체
-        [SerializeField] private GameObject _combatUi;
-
         // 현재 Phase 상태
-        private PhaseState _currentState = PhaseState.Preparation;
+        private PhaseState _currentState = PhaseState.None;
 
         // WaveController가 마지막으로 보고한 생존 Enemy 수
         private int _remainingEnemyCount;
@@ -30,88 +27,57 @@ namespace UJam.Runtime.Phase
         // WaveController가 마지막으로 보고한 현재 Wave 사망 Enemy 수
         private int _deadEnemyCount;
 
-        // GameManager가 연결한 Wave 제어기
+        // Wave 제어기
         private WaveController _waveController;
 
-        // GameManager 초기화 완료 여부
-        private bool _isInitialized;
-
-        // PlayerStatus와 외부 시스템에 전달할 Phase 변경 이벤트
-        public event Action<PhaseState> PhaseChanged;
+        // 초기화와 적 사망으로 갱신된 남은 수를 UIRemainingEnemyCount에 전달한다.
+        public event Action<int> OnRemainingEnemyCountChanged;
 
         // 외부 시스템이 조회할 현재 Phase
-        public PhaseState CurrentState
-        {
-            get
-            {
-                // 현재 Phase 상태 반환
-                return _currentState;
-            }
-        }
+        public PhaseState CurrentState => _currentState;
 
         // 남은 Enemy UI가 조회할 최신 수치
-        public int RemainingEnemyCount
-        {
-            get
-            {
-                // WaveController가 보고한 남은 수 반환
-                return _remainingEnemyCount;
-            }
-        }
+        public int RemainingEnemyCount => _remainingEnemyCount;
 
         // 현재 Wave에서 죽은 Enemy 수
-        public int DeadEnemyCount
-        {
-            get
-            {
-                // WaveController가 보고한 죽은 수 반환
-                return _deadEnemyCount;
-            }
-        }
+        public int DeadEnemyCount => _deadEnemyCount;
 
-        // GameManager가 Grid 준비 뒤 Wave 제어기와 최초 정비 Phase 연결
-        public void Initialize(WaveController waveController)
+        /// <summary>
+        /// GameManager가 WaveController를 연결합니다. 초기화 자체는 Phase를 시작하거나 이벤트를 보내지 않습니다.
+        /// </summary>
+        public bool Initialize(WaveController waveController)
         {
-            // Wave 제어기 누락과 중복 초기화 차단
-            if (waveController == null || _isInitialized)
+            if (waveController == null || _waveController != null)
             {
-                // 초기화 실패 원인 출력
-                Debug.LogWarning(
-                    waveController == null
-                        ? "[PhaseSystem] 초기화 실패: GameManager의 WaveController 참조가 비어 있음"
-                        : "[PhaseSystem] 초기화 실패: 이미 초기화됨",
-                    this);
-
-                // 잘못된 초기화 요청 종료
-                return;
+                Debug.LogWarning("[PhaseSystem] WaveController가 없거나 이미 초기화되었습니다.", this);
+                return false;
             }
 
             _waveController = waveController;
-            _remainingEnemyCount = 0;
-            _deadEnemyCount = 0;
             _waveController.ConfigurePhaseSystem(this);
-
-            // 게임 시작 Phase를 정비로 적용
-            ChangePhase(PhaseState.Preparation);
-            _isInitialized = true;
+            return true;
         }
 
-        // Button 클릭으로 정비에서 전투로 전환
+        /// <summary>
+        /// 최초 게임 준비 또는 전투 종료 후 정비 상태와 카운터를 설정하고 이벤트를 알립니다.
+        /// </summary>
+        internal void StartPreparationPhase()
+        {
+            if (_waveController == null || _currentState == PhaseState.Preparation || _remainingEnemyCount > 0) return;
+            if (GameManager.Instance != null && GameManager.Instance.IsGameOver) return;
+
+            _deadEnemyCount = 0;
+            UpdateRemainingEnemyCount(0);
+            ChangePhase(PhaseState.Preparation);
+        }
+
+        /// <summary>
+        /// UIManager → GameManager의 시작 요청을 검증하고 Wave 시작에 성공한 경우에만 전투로 전환합니다.
+        /// </summary>
         public void StartCombatPhase()
         {
-            // 초기화 완료와 정비 상태 확인
-            if (!_isInitialized || _currentState != PhaseState.Preparation)
-            {
-                // 전투 시작 실패 원인 출력
-                Debug.LogWarning(
-                    !_isInitialized
-                        ? "[PhaseSystem] 전투 시작 실패: GameManager 초기화가 완료되지 않음"
-                        : $"[PhaseSystem] 전투 시작 실패: 현재 Phase가 {_currentState}임",
-                    this);
-
-                // 시작할 수 없는 전투 요청 종료
-                return;
-            }
+            if (_waveController == null || _currentState != PhaseState.Preparation) return;
+            if (GameManager.Instance != null && GameManager.Instance.IsGameOver) return;
 
             // 다음 Wave를 시작할 수 있는지 확인
             if (!_waveController.StartNextWave())
@@ -126,10 +92,13 @@ namespace UJam.Runtime.Phase
             ChangePhase(PhaseState.Combat);
         }
 
-        // WaveController가 전달한 남은 Enemy 수 저장
+        /// <summary>
+        /// 초기화 또는 WaveController가 전달한 남은 적 수를 저장하고 매번 UIRemainingEnemyCount에 알립니다.
+        /// </summary>
         internal void UpdateRemainingEnemyCount(int remainingEnemyCount)
         {
             _remainingEnemyCount = Mathf.Max(0, remainingEnemyCount);
+            OnRemainingEnemyCountChanged?.Invoke(_remainingEnemyCount);
         }
 
         // WaveController가 전달한 현재 Wave 사망 Enemy 수 저장
@@ -139,43 +108,26 @@ namespace UJam.Runtime.Phase
             _deadEnemyCount = Mathf.Max(0, deadEnemyCount);
         }
 
-        // 현재 전투 완료 보고를 받아 바로 정비로 전환
+        /// <summary>
+        /// WaveController의 완료 보고를 받아 생존 적이 없는 전투를 정비 Phase로 전환합니다.
+        /// </summary>
         internal void CompleteCombatPhase()
         {
-            // 전투 중 완료 보고인지 확인
-            if (_currentState != PhaseState.Combat)
-            {
-                // 잘못된 완료 보고 종료
-                return;
-            }
-
-            ChangePhase(PhaseState.Preparation);
+            if (_remainingEnemyCount > 0 || (GameManager.Instance != null && GameManager.Instance.IsGameOver)) return;
+            if (_currentState == PhaseState.Combat) StartPreparationPhase();
         }
 
-        // Phase 상태와 두 UI 루트 활성화 갱신
+        /// <summary>
+        /// Phase 상태를 확정하고 GameManager에 변경을 전달합니다. UI 표시 판단은 UIManager가 담당합니다.
+        /// </summary>
         private void ChangePhase(PhaseState nextState)
         {
-            // 이벤트 중복 여부를 확인할 이전 Phase
-            PhaseState previousState = _currentState;
+            // 똑같은 상태를 다시 요청했다면 반환
+            if (_currentState == nextState) return;
+
             _currentState = nextState;
 
-            // 정비 UI가 연결됐는지 확인
-            if (_preparationUi != null)
-            {
-                _preparationUi.SetActive(nextState == PhaseState.Preparation);
-            }
-
-            // 전투 UI가 연결됐는지 확인
-            if (_combatUi != null)
-            {
-                _combatUi.SetActive(nextState == PhaseState.Combat);
-            }
-
-            // 실제 Phase가 달라졌을 때만 변경 통지
-            if (previousState != nextState)
-            {
-                PhaseChanged?.Invoke(nextState);
-            }
+            GameManager.Instance?.HandlePhaseChanged(nextState);
         }
     }
 }

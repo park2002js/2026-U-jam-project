@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-namespace ItemShopSystem
+namespace UJam.Runtime.Shop
 {
     public class ShopTest : MonoBehaviour
     {

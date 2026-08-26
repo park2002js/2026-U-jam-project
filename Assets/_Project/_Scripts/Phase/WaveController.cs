@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace UJam.Runtime.Phase
 {
-    public sealed class WaveController : MonoBehaviour
+    public class WaveController : MonoBehaviour
     {
         // JSON의 Prefab 이름과 실제 Enemy Prefab을 연결하기 위한 정보
         [System.Serializable]
@@ -52,6 +52,7 @@ namespace UJam.Runtime.Phase
 
         // 남은 수와 완료를 전달할 PhaseSystem
         private PhaseSystem _phaseSystem;
+        private GameManager _gameManager;
 
         // 발표용 Enemy에 주입할 기본 거점 Target
         private GameObject _defaultEnemyTarget;
@@ -90,9 +91,9 @@ namespace UJam.Runtime.Phase
         private void OnDestroy()
         {
             // 연결된 Phase 변경 로그 해제
-            if (_phaseSystem != null)
+            if (_gameManager != null)
             {
-                _phaseSystem.PhaseChanged -= HandlePhaseChanged;
+                _gameManager.OnPhaseChanged -= HandlePhaseChanged;
             }
 
             // 자신이 등록한 Singleton만 해제
@@ -102,22 +103,25 @@ namespace UJam.Runtime.Phase
             }
         }
 
-        // 남은 수와 Wave 완료를 받을 PhaseSystem 연결
+        /// <summary>
+        /// 적 수와 완료를 보고할 PhaseSystem을 연결하고, Phase 알림은 GameManager.Instance에서 구독합니다.
+        /// </summary>
         public void ConfigurePhaseSystem(PhaseSystem phaseSystem)
         {
             // 기존 Phase 변경 로그 해제
-            if (_phaseSystem != null)
+            if (_gameManager != null)
             {
-                _phaseSystem.PhaseChanged -= HandlePhaseChanged;
+                _gameManager.OnPhaseChanged -= HandlePhaseChanged;
             }
 
             _phaseSystem = phaseSystem;
+            _gameManager = GameManager.Instance;
 
             // 새 Phase 변경 로그 연결
-            if (_phaseSystem != null)
+            if (_phaseSystem != null && _gameManager != null)
             {
-                _phaseSystem.PhaseChanged += HandlePhaseChanged;
-                Debug.Log($"[WaveController] Phase 시작: {_phaseSystem.CurrentState}", this);
+                _gameManager.OnPhaseChanged += HandlePhaseChanged;
+                Debug.Log("[WaveController] PhaseSystem 연결 완료", this);
             }
         }
 
@@ -136,7 +140,7 @@ namespace UJam.Runtime.Phase
                 new Dictionary<string, GameObject>();
 
             // Inspector에 등록된 Prefab 정보를 Dictionary로 변환
-            foreach (EnemyPrefabEntry entry in _enemyPrefabs)
+            foreach (EnemyPrefabEntry entry in _enemyPrefabs ?? System.Array.Empty<EnemyPrefabEntry>())
             {
                 // 이름이 비어 있거나 Prefab이 없으면 제외
                 if (string.IsNullOrWhiteSpace(entry.Name)
@@ -157,7 +161,7 @@ namespace UJam.Runtime.Phase
             string directoryPath =
                 Path.Combine(
                     Application.streamingAssetsPath,
-                    "WaveData");
+                    "Waves");
 
             // JSON 파일들을 읽어 WaveInfo 배열로 변환
             _waves = reader.LoadWaveData(directoryPath);
@@ -195,7 +199,7 @@ namespace UJam.Runtime.Phase
             return _currentWaveIndex != previousWaveIndex;
         }
 
-        // 모든 Enemy를 한 Frame에 생성하고 개별 Move 대기를 시작
+        // 생성 대기 중인 적까지 남은 수에 포함하고 각각 Wave 시작 기준의 지연 생성을 예약한다.
         public void WaveStart()
         {
             if (_isWaveRunning)
@@ -220,17 +224,7 @@ namespace UJam.Runtime.Phase
 
             foreach (WaveInfo.EnemySpawnInfo enemyInfo in nextWave.Enemies)
             {
-                GameObject instance = Instantiate(
-                    enemyInfo.EnemyPrefab,
-                    GetWorldPosition(enemyInfo.GridPosition),
-                    Quaternion.identity,
-                    _activeEnemyRoot);
-                EnemyBase enemy = instance.GetComponent<EnemyBase>();
-
-                enemy.FSM.Targets.Clear();
-                enemy.FSM.Targets.Add(_defaultEnemyTarget);
-                _aliveEnemyIds.Add(instance.GetInstanceID());
-                StartCoroutine(SetMoveAfterWait(enemy, enemyInfo.WaitTime));
+                StartCoroutine(SpawnAfterWait(enemyInfo));
             }
 
             Debug.Log($"[WaveController] Wave {_currentWaveIndex + 1} 시작: Enemy {_remainingEnemyCount}명", this);
@@ -279,15 +273,19 @@ namespace UJam.Runtime.Phase
             return true;
         }
 
-        // 지정된 시간 뒤 생성된 Enemy를 Move 상태로 전환
-        private IEnumerator SetMoveAfterWait(EnemyBase enemy, float waitTime)
+        // waitTime은 이전 적이 생성된 시점이 아니라 Wave 시작 시점부터 센다.
+        private IEnumerator SpawnAfterWait(WaveInfo.EnemySpawnInfo enemyInfo)
         {
-            if (waitTime > 0f)
-            {
-                yield return new WaitForSeconds(waitTime);
-            }
+            if (enemyInfo.WaitTime > 0f) yield return new WaitForSeconds(enemyInfo.WaitTime);
+            if (!_isWaveRunning || (_gameManager != null && _gameManager.IsGameOver)) yield break;
 
-            if (enemy != null) enemy.FSM.SetState(EnemyStateType.Move);
+            GameObject instance = Instantiate(enemyInfo.EnemyPrefab, GetWorldPosition(enemyInfo.GridPosition), enemyInfo.EnemyPrefab.transform.rotation, _activeEnemyRoot);
+            EnemyBase enemy = instance.GetComponent<EnemyBase>();
+            enemy.FSM.Targets.Clear();
+            enemy.FSM.Targets.Add(_defaultEnemyTarget);
+            _aliveEnemyIds.Add(instance.GetInstanceID());
+            enemy.FSM.SetState(EnemyStateType.Move);
+            Debug.Log($"[WaveController] {enemyInfo.EnemyPrefab.name} 생성: Grid {enemyInfo.GridPosition}, 지연 {enemyInfo.WaitTime}초", this);
         }
 
         // 다음 Wave와 모든 Spawn 값 검증
@@ -335,7 +333,7 @@ namespace UJam.Runtime.Phase
             }
 
             // Grid 초기화 여부 확인
-            if (!GridSystem.Instance.IsInitialized)
+            if (GridSystem.Instance == null || !GridSystem.Instance.IsInitialized)
             {
                 Debug.LogWarning("[WaveController] Wave 시작 실패: GridSystem이 초기화되지 않음", this);
                 wave = null;
@@ -369,6 +367,7 @@ namespace UJam.Runtime.Phase
 
                 // Prefab과 Grid 범위와 대기시간 확인
                 if (enemyInfo.EnemyPrefab == null
+                    || !enemyInfo.EnemyPrefab.activeSelf
                     || enemyInfo.EnemyPrefab.GetComponent<EnemyBase>() == null
                     || gridPosition.x < 0
                     || gridPosition.x >= GridSystem.Instance.ColumnCount
@@ -393,7 +392,9 @@ namespace UJam.Runtime.Phase
             return true;
         }
 
-        // PhaseSystem의 Phase 시작 로그 출력
+        /// <summary>
+        /// GameManager가 중계한 Phase 변경을 로그로 표시합니다.
+        /// </summary>
         private void HandlePhaseChanged(PhaseState phase)
         {
             Debug.Log($"[WaveController] Phase 시작: {phase}", this);
@@ -409,8 +410,8 @@ namespace UJam.Runtime.Phase
             // row를 반영한 World z 좌표
             float worldZ = grid.Origin.z + gridPosition.y * grid.CellHeight;
 
-            // Grid 원점 높이를 유지한 World 좌표 반환
-            return new Vector3(worldX, grid.Origin.y, worldZ);
+            // 적은 Grid 원점 높이와 무관하게 바닥에서 0.1만큼 띄워 생성한다.
+            return new Vector3(worldX, 0.1f, worldZ);
         }
     }
 

@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace UJam.Runtime.Phase
 {
-    public sealed class WaveInfoFileReader
+    public class WaveInfoFileReader
     {
         // Prefab 이름과 실제 GameObject Prefab을 연결하기 위한 Dictionary
         // 예: "Goblin" -> Goblin Prefab
@@ -47,6 +47,7 @@ namespace UJam.Runtime.Phase
 
                 if (waveJson == null)
                 {
+                    waves.Add(null); // 잘못된 파일을 건너뛰어 다음 번호 Wave가 대신 실행되지 않도록 한다.
                     continue;
                 }
 
@@ -54,6 +55,8 @@ namespace UJam.Runtime.Phase
                 WaveInfo waveInfo = ConvertToWaveInfo(waveJson);
 
                 waves.Add(waveInfo);
+                if (waveInfo != null) Debug.Log($"[WaveInfoFileReader] {Path.GetFileName(filePath)}: Enemy {waveInfo.TotalEnemyCount}명");
+                else Debug.LogError($"[WaveInfoFileReader] 잘못된 Wave 설정: {filePath}");
             }
 
             // List를 배열로 변환해서 반환
@@ -99,10 +102,10 @@ namespace UJam.Runtime.Phase
             List<WaveInfo.EnemySpawnInfo> enemySpawnInfos =
                 new List<WaveInfo.EnemySpawnInfo>();
 
-            // enemies가 없는 경우 빈 WaveInfo 반환
-            if (waveJson.enemies == null)
+            // 생성 목록이 없는 Wave는 실행하지 않는다.
+            if (waveJson.enemies == null || waveJson.enemies.Length == 0)
             {
-                return new WaveInfo(enemySpawnInfos.ToArray());
+                return null;
             }
 
             // JSON에 정의된 적 종류를 하나씩 확인
@@ -110,23 +113,21 @@ namespace UJam.Runtime.Phase
             {
                 if (enemyJson == null)
                 {
-                    continue;
+                    return null;
                 }
 
                 // JSON에 적힌 Prefab 이름으로 실제 Prefab을 찾음
-                if (!_enemyPrefabs.TryGetValue(
-                        enemyJson.prefabName,
-                        out GameObject enemyPrefab))
+                if (string.IsNullOrWhiteSpace(enemyJson.prefabName) || !_enemyPrefabs.TryGetValue(enemyJson.prefabName, out GameObject enemyPrefab) || enemyPrefab == null)
                 {
                     Debug.LogError(
                         $"Prefab을 찾을 수 없습니다: {enemyJson.prefabName}");
 
-                    continue;
+                    return null;
                 }
 
-                if (enemyJson.statusSettings == null)
+                if (enemyJson.statusSettings == null || enemyJson.statusSettings.Length == 0)
                 {
-                    continue;
+                    return null;
                 }
 
                 // 해당 Prefab의 각 Status 설정을 확인
@@ -134,9 +135,9 @@ namespace UJam.Runtime.Phase
                          in enemyJson.statusSettings)
                 {
                     if (statusSetting == null ||
-                        statusSetting.spawns == null)
+                        statusSetting.spawns == null || statusSetting.spawns.Length == 0)
                     {
-                        continue;
+                        return null;
                     }
 
                     /*
@@ -149,9 +150,9 @@ namespace UJam.Runtime.Phase
                     // 해당 Status 설정으로 생성할 Enemy들을 확인
                     foreach (SpawnJson spawn in statusSetting.spawns)
                     {
-                        if (spawn == null)
+                        if (spawn == null || spawn.x < 0 || spawn.z < 0 || spawn.waitTime < 0f || !float.IsFinite(spawn.waitTime))
                         {
-                            continue;
+                            return null;
                         }
 
                         // JSON에서 읽은 Prefab, 좌표, 대기시간으로
@@ -182,7 +183,8 @@ namespace UJam.Runtime.Phase
             int leftNumber = GetWaveNumber(left);
             int rightNumber = GetWaveNumber(right);
 
-            return leftNumber.CompareTo(rightNumber);
+            int comparison = leftNumber.CompareTo(rightNumber);
+            return comparison != 0 ? comparison : string.CompareOrdinal(left, right);
         }
 
         // 파일 이름에서 Wave 번호를 추출
@@ -210,7 +212,7 @@ namespace UJam.Runtime.Phase
 
         // JSON 파일 하나의 전체 구조
         [Serializable]
-        private sealed class WaveJson
+        private class WaveJson
         {
             // 해당 Wave에 등장할 적 종류 목록
             public EnemyJson[] enemies;
@@ -218,7 +220,7 @@ namespace UJam.Runtime.Phase
 
         // 적 한 종류에 대한 정보
         [Serializable]
-        private sealed class EnemyJson
+        private class EnemyJson
         {
             // 생성할 Enemy Prefab의 이름
             public string prefabName;
@@ -230,7 +232,7 @@ namespace UJam.Runtime.Phase
         // 하나의 Status 설정과
         // 해당 설정으로 생성될 Enemy들의 정보
         [Serializable]
-        private sealed class StatusSettingJson
+        private class StatusSettingJson
         {
             // Prefab 기본 Status에 더하거나 뺄 변화량
             // 요구사항에 따라 실제 Enemy에는 적용하지 않음
@@ -243,7 +245,7 @@ namespace UJam.Runtime.Phase
 
         // Prefab의 기본 Status에서 변경할 값
         [Serializable]
-        private sealed class StatusDeltaJson
+        private class StatusDeltaJson
         {
             // 이동속도 변화량
             public float speed;
@@ -254,7 +256,7 @@ namespace UJam.Runtime.Phase
 
         // Enemy 하나의 생성 정보
         [Serializable]
-        private sealed class SpawnJson
+        private class SpawnJson
         {
             // Grid의 col 좌표
             public int x;
@@ -262,7 +264,7 @@ namespace UJam.Runtime.Phase
             // Grid의 row 좌표
             public int z;
 
-            // Wave 시작 후 활성화까지 기다릴 시간
+            // Wave 시작 후 실제 생성까지 기다릴 시간
             public float waitTime;
         }
     }
