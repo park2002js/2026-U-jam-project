@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UJam.Runtime.Item;
+using Ujam.Runtime.Item;
 using UJam.Runtime.Player;
 
 namespace UJam.Runtime.UI
@@ -69,8 +69,8 @@ namespace UJam.Runtime.UI
             foreach (var entry in _inventory.Items)
             {
                 if (_spawnedIcons.Count >= 8) break;
-                ItemData item = ItemData.Load(entry.Key);
-                if (item == null || item.Icon == null)
+                ItemMeta item = ItemCatalog.GetMeta(entry.Key);
+                if (item == null || item.ItemSprite == null)
                 {
                     Debug.LogWarning($"[UIPlayerItems] '{entry.Key}'의 ItemData 또는 Icon이 연결되지 않았습니다.", this);
                     continue;
@@ -79,7 +79,7 @@ namespace UJam.Runtime.UI
                 for (int count = 0; count < entry.Value && _spawnedIcons.Count < 8; count++)
                 {
                     UIItemIcon icon = Instantiate(_itemPrefab, _root, false);
-                    icon.SetIcon(item.Icon);
+                    icon.SetIcon(item.ItemSprite);
                     icon.gameObject.SetActive(true);
                     _spawnedIcons.Add(icon);
                 }

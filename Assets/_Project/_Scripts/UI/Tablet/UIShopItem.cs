@@ -1,6 +1,6 @@
 using System;
 using TMPro;
-using UJam.Runtime.Item;
+using Ujam.Runtime.Item;
 using UnityEngine;
 using UnityEngine.UI;
 using UJam.Runtime.Shop;
@@ -16,7 +16,7 @@ namespace UJam.Runtime.UI
         [SerializeField] private TMP_Text _priceText;
         [SerializeField] private Button _buyButton;
 
-        private ItemData _item;
+        private ItemMeta _item;
         private int _slot;
         private Action<int> _buy;
 
@@ -35,17 +35,17 @@ namespace UJam.Runtime.UI
         /// <summary>
         /// ItemData의 아이콘과 가격을 표시합니다. Item_null은 아이콘만 표시하고 구매를 차단합니다.
         /// </summary>
-        public void SetItem(ItemData item, int slot, Action<int> buy)
+        public void SetItem(ItemMeta item, int slot, Action<int> buy)
         {
             _item = item;
             _slot = slot;
-            _buy = item != null && !ShopBuy.IsPlaceholder(item.Id) ? buy : null;
+            _buy = item != null && !ShopBuy.IsPlaceholder(item.GUID) ? buy : null;
             if (_icon != null)
             {
-                _icon.sprite = item != null ? item.Icon : null;
+                _icon.sprite = item != null ? item.ItemSprite : null;
                 _icon.enabled = _icon.sprite != null;
             }
-            if (_priceText != null) _priceText.text = item != null && !ShopBuy.IsPlaceholder(item.Id) ? $"{item.Cost:N0} $" : "-";
+            if (_priceText != null) _priceText.text = item != null && !ShopBuy.IsPlaceholder(item.GUID) ? $"{item.Price:N0} $" : "-";
             if (_buyButton != null) _buyButton.interactable = _buy != null;
         }
 

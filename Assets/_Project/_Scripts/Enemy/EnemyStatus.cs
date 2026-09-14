@@ -1,6 +1,7 @@
 using System;
 using UJam.Runtime.Enemy.Movement;
 using UnityEngine;
+using UJam.Runtime.Systems;
 
 namespace UJam.Runtime.Enemy
 {
@@ -69,9 +70,9 @@ namespace UJam.Runtime.Enemy
         public String EnemyName => _enemyName;
         public int Credits => _credits;
         public float HP => _hp;
-        public float Speed => _sp;
-        public float AttackDamage => _ad;
-        public float AttackSpeed => _as;
+        public float Speed => _sp * TemporaryBuffs.Instance.Multiplier(this, BuffStat.MovementSpeed);
+        public float AttackDamage => _ad * TemporaryBuffs.Instance.Multiplier(this, BuffStat.AttackDamage);
+        public float AttackSpeed => _as * TemporaryBuffs.Instance.Multiplier(this, BuffStat.AttackSpeed);
         public float AttackRange => _range;
         public EnemyMovement Movement => _movement;
 
@@ -108,6 +109,7 @@ namespace UJam.Runtime.Enemy
             
             // 혹은 피해량이 유효하지 않은 값이면 0을 반환하는 것으로 종료
             if (damage <= 0f || !float.IsFinite(damage)) return 0f;
+            damage *= TemporaryBuffs.Instance.Multiplier(this, BuffStat.DamageTaken);
 
             // 체력 감소 이행, 만약 깎인 채력이 0보다 작으면 0으로 보정
             float previousHp = _hp;

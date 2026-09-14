@@ -56,6 +56,7 @@ namespace UJam.Runtime.Player
         public Transform BulletSpawnPoint { get { return _bulletSpawnPoint; } }
         public GameObject BulletPrefab { get { return _bulletPrefab; } }
         public PlayerStatus PlayerStatus { get { return _playerStatus; } }
+        public PlayerSkillManager SkillManager => _playerSkillManager;
 
         private void Awake()
         {

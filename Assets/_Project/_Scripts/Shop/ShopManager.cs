@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using UJam.Runtime.Player;
+using Ujam.Runtime.Item;
 
 namespace UJam.Runtime.Shop
 {
@@ -31,8 +32,7 @@ namespace UJam.Runtime.Shop
 
         private void Initialize()
         {
-            // 추후에 아이템 아이디 리스트 파일을 읽고 리스트를 채울 것
-            implementedItemIds.Add("Item_001");
+            foreach (var meta in ItemCatalog.AllMeta) implementedItemIds.Add(meta.GUID);
             if (playerInventory == null) playerInventory = FindFirstObjectByType<PlayerInventory>();
             shopBuy = new ShopBuy(implementedItemIds);
             shopFusion = new ShopFusion();

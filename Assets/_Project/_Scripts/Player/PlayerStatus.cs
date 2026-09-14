@@ -1,6 +1,8 @@
 using System;
 using UnityEngine;
 using UJam.Runtime.Combat;
+using Ujam.Runtime.Item;
+using UJam.Runtime.Systems;
 
 namespace UJam.Runtime.Player
 {
@@ -13,7 +15,7 @@ namespace UJam.Runtime.Player
 
         public event Action<float, float> HealthChanged;
 
-        public float AttackDamage { get { return _attackDamage; } }
+        public float AttackDamage => _attackDamage * TemporaryBuffs.Instance.Multiplier(this, BuffStat.AttackDamage);
         public float MaxHealth { get { return _maxHealth; } }
         public float CurrentHealth { get { return _currentHealth; } }
 
@@ -46,6 +48,8 @@ namespace UJam.Runtime.Player
             Debug.Log($"[PlayerStatus] HP: {_currentHealth:0.##}/{_maxHealth:0.##} ({_currentHealth / _maxHealth * 100f:0.#}%), 받은 피해: {appliedDamage:0.##}, 공격자: {info.Source}", this);
 
             HealthChanged?.Invoke(_currentHealth, _maxHealth);
+            CombatEvents.Instance.Publish(new ItemUseContext(ItemTrigger.HealthChanged, this,
+                currentHealth: _currentHealth, maxHealth: _maxHealth));
 
             if (_currentHealth <= 0f)
             {

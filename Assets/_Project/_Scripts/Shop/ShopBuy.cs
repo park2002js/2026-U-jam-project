@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UJam.Runtime.Item;
+using Ujam.Runtime.Item;
 using UJam.Runtime.Player;
 
 namespace UJam.Runtime.Shop
@@ -59,9 +59,9 @@ namespace UJam.Runtime.Shop
                 return false;
             }
 
-            ItemData item = ItemData.Load(itemId);
+            ItemMeta item = ItemCatalog.GetMeta(itemId);
             if (item == null) return false;
-            int cost = item.Cost;
+            int cost = item.Price;
             if (cost < 0 || wallet.Gold < cost || inventory.GetCount(itemId) == int.MaxValue) return false;
 
             // 재화/보유 변경 이벤트에서 다시 구매하거나 리롤하여 같은 상품을 중복 처리하지 못하게 한다.

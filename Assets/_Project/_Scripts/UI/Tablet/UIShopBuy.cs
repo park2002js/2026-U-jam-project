@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UJam.Runtime.Shop;
-using UJam.Runtime.Item;
+using Ujam.Runtime.Item;
 
 namespace UJam.Runtime.UI
 {
@@ -90,8 +90,8 @@ namespace UJam.Runtime.UI
             if (_items == null) return;
             for (int slot = 0; slot < _items.Count; slot++)
             {
-                ItemData item = FindItem(_items[slot]);
-                if (item == null && !string.IsNullOrWhiteSpace(_items[slot])) Debug.LogWarning($"[UIShopBuy] '{_items[slot]}'에 해당하는 ItemData가 없습니다.", this);
+                ItemMeta item = FindItem(_items[slot]);
+                if (item == null && !ShopBuy.IsPlaceholder(_items[slot])) Debug.LogWarning($"[UIShopBuy] '{_items[slot]}'에 해당하는 ItemMeta가 없습니다.", this);
                 UIShopItem view = Instantiate(_itemPrefab, _itemRoot, false);
                 view.SetItem(item, slot, BuyItem);
                 if (_items[slot] == null) view.SetSoldOut();
@@ -101,7 +101,7 @@ namespace UJam.Runtime.UI
         }
 
         /// <summary>ShopBuy의 문자열 ID에 대응하는 아이콘과 가격용 ItemData를 찾습니다.</summary>
-        private ItemData FindItem(string itemId) => itemId == null ? null : ItemData.Load(itemId);
+        private ItemMeta FindItem(string itemId) => itemId == null ? null : ItemCatalog.GetMeta(itemId);
 
         /// <summary>Editor 미리보기 슬롯을 포함한 Layout 하위 자식을 모두 정리합니다. 프리팹 에셋은 유지합니다.</summary>
         private void ClearItems()

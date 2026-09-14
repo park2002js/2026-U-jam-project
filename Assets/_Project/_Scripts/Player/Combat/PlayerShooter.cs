@@ -3,7 +3,9 @@ using System;
 using UnityEngine;
 using UJam.Runtime.Combat;
 using UJam.Runtime.Enemy;
-using UJam.Runtime.Item;
+using Ujam.Runtime.Item;
+using UJam.Runtime.Systems;
+using System.Collections.Generic;
 
 namespace UJam.Runtime.Player
 {
@@ -76,7 +78,9 @@ namespace UJam.Runtime.Player
             // 2. Ray를 통해 투사체를 날려보낼 방향 계산
             Ray ray = _aimCamera.ScreenPointToRay(Input.mousePosition); // 카메라 중앙에서 마우스의 커서를 투영시킨 곳으로 Ray를 발사
             Vector3 endPoint = ray.origin + ray.direction * _maxDistance;
-            ItemUseContext hitContext = default;
+            ItemUseContext hitContext = null;
+            List<EnemyBase> hitEnemies = null;
+            DamageInfo damageInfo = new DamageInfo(damage, name, DamageSourceKind.Player);
 
             // RayCast에 처음 맞은 대상의 IDamageable 클래스를 통해 TakeDamage를 호출하여 데미지를 입힘
             if (Physics.Raycast(ray, out RaycastHit hit, _maxDistance, _hitLayers, QueryTriggerInteraction.Ignore))
@@ -85,16 +89,23 @@ namespace UJam.Runtime.Player
                 IDamageable target = hit.collider.GetComponentInParent<IDamageable>();
                 if (target != null)
                 {
-                    DamageInfo damageInfo = new DamageInfo(damage, name, DamageSourceKind.Player);
                     EnemyBase enemy = target as EnemyBase;
                     GameObject hitEnemy = enemy != null ? enemy.gameObject : null;
-                    if (hitEnemy != null) hitContext = new ItemUseContext(gameObject, hitEnemy, damageInfo, hit.point);
+                    if (hitEnemy != null)
+                    {
+                        hitEnemies = new List<EnemyBase> { enemy };
+                        hitContext = new ItemUseContext(ItemTrigger.Shooting, _playerStatus, hit.point,
+                            hitEnemies, damageInfo: damageInfo);
+                    }
                     target.TakeDamage(damageInfo);
                 }
             }
 
             // 명중 지점과 발사 당시 피해량을 보존하므로 원래 적이 죽거나 움직여도 도착 효과는 같은 지점에서 실행된다.
-            if (_bulletPrefab != null || hitContext.IsShootingHit)
+            // 중앙 Shooting은 Ray 판정마다 한 번 통지한다. 빗나간 경우 Enemies = null.
+            CombatEvents.Instance.Publish(new ItemUseContext(ItemTrigger.Shooting, _playerStatus, endPoint,
+                hitEnemies, damageInfo: damageInfo));
+            if (_bulletPrefab != null || hitContext != null)
             {
                 Vector3 start = _bulletSpawnPoint != null ? _bulletSpawnPoint.position : ray.origin;
                 SpawnBulletVisual(start, endPoint, hitContext);
@@ -123,7 +134,7 @@ namespace UJam.Runtime.Player
         {
             float elapsed = 0f;
             // 적에게 맞은 총알은 수명 설정이 짧아도 명중 지점까지 도착한다. 빗나간 총알만 기존 수명으로 제한한다.
-            float lifetime = hitContext.IsShootingHit ? travelTime : Mathf.Min(travelTime, _bulletVisualLifetime);
+            float lifetime = hitContext != null ? travelTime : Mathf.Min(travelTime, _bulletVisualLifetime);
             while (elapsed < lifetime)
             {
                 yield return null;
@@ -132,7 +143,7 @@ namespace UJam.Runtime.Player
             }
 
             if (bullet != null) Destroy(bullet);
-            if (hitContext.IsShootingHit) OnShootingHit?.Invoke(hitContext);
+            if (hitContext != null) OnShootingHit?.Invoke(hitContext);
         }
 
         /// <summary>
