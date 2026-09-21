@@ -78,7 +78,7 @@ namespace UJam.Runtime.Enemy.Movement
         /// </summary>
         public override void Exit()
         {
-            if (!isMoving && coroutine != null)
+            if (coroutine != null)
             {
                 isMoving = false;
                 StopCoroutine(coroutine);
@@ -103,6 +103,7 @@ namespace UJam.Runtime.Enemy.Movement
             // 코루틴 내에서 매 프레임마다 움직임을 반복
             while (isMoving)
             {
+                if (_enemyBase.Status.IsStunned) { yield return null; continue; }
                 // Enemy의 현 정보를 얻어옴 : 현 위치 월드 좌표, 이번 프레임에 이동할 칸 수 (=초당 이동 칸수 * deltaTime)
                 Vector3 pos = _enemyBase.transform.position;
                 float moveCells = _enemyBase.Status.Speed * Time.deltaTime;

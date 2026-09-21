@@ -39,13 +39,13 @@ namespace UJam.Runtime.UI
         {
             _item = item;
             _slot = slot;
-            _buy = item != null && !ShopBuy.IsPlaceholder(item.GUID) ? buy : null;
+            _buy = item != null ? buy : null;
             if (_icon != null)
             {
                 _icon.sprite = item != null ? item.ItemSprite : null;
                 _icon.enabled = _icon.sprite != null;
             }
-            if (_priceText != null) _priceText.text = item != null && !ShopBuy.IsPlaceholder(item.GUID) ? $"{item.Price:N0} $" : "-";
+            if (_priceText != null) _priceText.text = item != null ? $"{item.Price:N0} $" : "-";
             if (_buyButton != null) _buyButton.interactable = _buy != null;
         }
 

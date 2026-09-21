@@ -1,68 +1,25 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UJam.Runtime.Systems;
+using UJam.Runtime.Enemy;
 using UnityEngine;
+using ItemElement = UJam.Runtime.Systems.ElementType;
 
 namespace Ujam.Runtime.Item
 {
-    // GUID 33, 장판 B: 첫 Overlap + 이후 Collider Enter/Exit. 적마다 모든 피해가 증가한다.
+    /// <summary>안개: 장판 B 안에 있는 동안에만 DamageTaken 보정을 적용한다. Exit/장판 소멸 시 이 장판의 효과만 해제한다.</summary>
     public sealed class FogEffect : ItemEffect
     {
-        public float Radius { get; }
-        public float Percent { get; }
-        public float Duration { get; }
+        private readonly float radius, percent, duration;
         private readonly string prefabPath;
-        private GameObject prefab;
-        private readonly HashSet<GameObject> areas = new();
-
-        public FogEffect(float radius, float percent, float duration, string prefabPath = ItemPrefabs.AreaPath)
+        /// <summary>Catalog에서 반경/보정률/지속 시간/단위 Collider Prefab 경로를 정한다.</summary>
+        public FogEffect(float radius, float percent, float duration, string prefabPath)
+        { this.radius = radius; this.percent = percent; this.duration = duration; this.prefabPath = prefabPath; }
+        /// <summary>중앙 SkillUse가 호출한다. 처음에는 Overlap, 이후에는 TriggerEnter/Exit로 판정한다.</summary>
+        public override void Execute(ItemUseContext c)
         {
-            if (!float.IsFinite(radius) || radius <= 0 || !float.IsFinite(percent) || percent < 0 ||
-                !float.IsFinite(duration) || duration <= 0) throw new ArgumentOutOfRangeException(nameof(radius));
-            Radius = radius; Percent = percent; Duration = duration; this.prefabPath = prefabPath;
-        }
-        public override void OnEquip(ItemRuntime runtime)
-        {
-            runtime.Run(ItemPrefabs.LoadAsync(prefabPath, loaded =>
-            {
-                if (!runtime.IsEquipped) return;
-                if (loaded != null && loaded.GetComponent<AreaTrigger>() != null) prefab = loaded;
-                else Debug.LogError("[FogEffect] 장판 Prefab 루트에 AreaTrigger가 필요합니다.");
-            }));
-        }
-        public override bool CanExecute(ItemUseContext context) => prefab != null;
-        public override void Execute(ItemUseContext context)
-        {
-            var area = UnityEngine.Object.Instantiate(prefab, context.Position, Quaternion.identity);
-            area.transform.localScale = Vector3.one * (Radius * 2f); // Prefab SphereCollider.radius = 0.5
-            areas.Add(area);
-            float until = Time.time + Duration;
-            var source = new object(); // 겹치는 장판이 서로의 디버프를 해제하지 않는다.
-            area.GetComponent<AreaTrigger>().Initialize(context.Runtime.EnemyMask,
-                enemy =>
-                {
-                    float remaining = until - Time.time;
-                    if (remaining > 0) TemporaryBuffs.Instance.Apply(enemy.Status, source, BuffStat.DamageTaken, Percent, remaining);
-                },
-                enemy =>
-                {
-                    if (enemy != null) TemporaryBuffs.Instance.Remove(enemy.Status, source, BuffStat.DamageTaken);
-                });
-            context.Runtime.Run(Expire(area, source));
-        }
-        private IEnumerator Expire(GameObject area, object source)
-        {
-            yield return new WaitForSeconds(Duration);
-            TemporaryBuffs.Instance.RemoveSource(source);
-            if (area != null) { area.SetActive(false); UnityEngine.Object.Destroy(area); }
-            areas.Remove(area);
-        }
-        public override void OnUnequip(ItemRuntime runtime)
-        {
-            foreach (var area in areas)
-                if (area != null) { area.SetActive(false); UnityEngine.Object.Destroy(area); }
-            areas.Clear();
+            /* VFX: 안개 장판 생성 표현을 추가한다. 지속 표현은 생성된 장판의 자식에 붙인다. */
+            c.Run(ItemWorld.ConditionArea(c, prefabPath, radius, duration, BuffStat.DamageTaken, percent));
         }
     }
 }

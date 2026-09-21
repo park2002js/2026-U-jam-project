@@ -6,31 +6,19 @@ using UnityEngine;
 
 namespace Ujam.Runtime.Item
 {
+    /// <summary>A형 장판: 설치 시와 이후 0.5초마다 OverlapSphere로 현재 적을 다시 수집한다. Collider를 생성하지 않는다.</summary>
     public static class PeriodicArea
     {
-        // 장판 A. Effect에서 runtime.Run(PeriodicArea.Run(...))으로 사용하며 Collider를 만들지 않는다.
-        public static IEnumerator Run(Vector3 position, float radius, float duration, float interval,
-            LayerMask layers, Action<IReadOnlyList<EnemyBase>> apply)
+        /// <summary>새 A형 Effect의 Execute에서 context.Run(Run(...))으로 사용한다. tick에는 해당 아이템의 실제 효과만 전달한다.</summary>
+        public static IEnumerator Run(ItemUseContext context, float radius, float duration, Action<IReadOnlyList<EnemyBase>> tick)
         {
-            if (!float.IsFinite(radius) || radius <= 0 || !float.IsFinite(duration) || duration <= 0 ||
-                !float.IsFinite(interval) || interval <= 0 || apply == null) throw new ArgumentException("장판 A 인자 오류");
+            if (radius <= 0 || duration <= 0 || tick == null) throw new ArgumentException("장판 A 인자를 확인하세요.");
             float until = Time.time + duration;
             do
             {
-                apply(Overlap(position, radius, layers));
-                yield return new WaitForSeconds(interval);
+                tick(ItemWorld.Circle(context.Position, radius, context.EnemyMask));
+                yield return new WaitForSeconds(0.5f);
             } while (Time.time < until);
-        }
-        public static List<EnemyBase> Overlap(Vector3 position, float radius, LayerMask layers)
-        {
-            Physics.SyncTransforms();
-            var enemies = new HashSet<EnemyBase>();
-            foreach (var hit in Physics.OverlapSphere(position, radius, layers, QueryTriggerInteraction.Collide))
-            {
-                var enemy = hit.GetComponentInParent<EnemyBase>();
-                if (enemy != null && enemy.Status != null && enemy.Status.HP > 0) enemies.Add(enemy);
-            }
-            return new List<EnemyBase>(enemies);
         }
     }
 }

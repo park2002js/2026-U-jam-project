@@ -52,7 +52,7 @@ namespace UJam.Runtime.Enemy.Projectiles
             // UnityEngine.Object 참조를 통해 실제 게임 오브젝트의 생존 여부를 확인한다.
             if (_pastTargetObject == null || _pastTarget == null) return;
 
-            DamageInfo damageInfo = new DamageInfo(_owner.Status.AttackDamage, _owner.name, DamageSourceKind.Enemy);
+            DamageInfo damageInfo = new DamageInfo(_owner.Status.OutgoingDamage, _owner.name, DamageSourceKind.Enemy);
 
             _pastTarget.TakeDamage(damageInfo);
         }

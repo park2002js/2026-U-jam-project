@@ -18,7 +18,8 @@ namespace UJam.Runtime.Player
     /// </summary>
     public class PlayerShooter : MonoBehaviour
     {
-        public event Action<ItemUseContext> OnShootingHit; // Ray 명중 순간이 아닌 총알 도착 순간에 통지한다.
+        public event Action<ItemEvent> OnShootingHit; // 시각적 총알 도착 통지. 아이템 발동은 중앙 Shooting 이벤트를 사용한다.
+        private float nextShotAt;
 
         // Ray를 쏠 카메라 오브젝트
         private Camera _aimCamera;
@@ -61,6 +62,7 @@ namespace UJam.Runtime.Player
         /// </summary>
         public void TryShoot()
         {
+            if (Time.time < nextShotAt || _playerStatus == null || _playerStatus.CurrentHealth <= 0) return;
             // 투사체 발사를 위한 최소 조건을 충족하고 있는지 확인
             if (_aimCamera == null || _playerStatus == null || (_bulletPrefab != null && _bulletSpawnPoint == null)
                 || !IsPositiveFinite(_playerStatus.AttackDamage) || !IsPositiveFinite(_maxDistance)
@@ -72,15 +74,17 @@ namespace UJam.Runtime.Player
 
             // 1. 데미지 산정
 
-            float damage = _playerStatus.AttackDamage;
+            float damage = _playerStatus.AttackDamage * _playerStatus.DamageMultiplier;
+            nextShotAt = Time.time + 1f / _playerStatus.AttackSpeed;
 
 
             // 2. Ray를 통해 투사체를 날려보낼 방향 계산
             Ray ray = _aimCamera.ScreenPointToRay(Input.mousePosition); // 카메라 중앙에서 마우스의 커서를 투영시킨 곳으로 Ray를 발사
             Vector3 endPoint = ray.origin + ray.direction * _maxDistance;
-            ItemUseContext hitContext = null;
+            ItemEvent hitContext = null;
             List<EnemyBase> hitEnemies = null;
-            DamageInfo damageInfo = new DamageInfo(damage, name, DamageSourceKind.Player);
+            float appliedDamage = 0;
+            DamageInfo damageInfo = new DamageInfo(damage, name, DamageSourceKind.Player, _playerStatus);
 
             // RayCast에 처음 맞은 대상의 IDamageable 클래스를 통해 TakeDamage를 호출하여 데미지를 입힘
             if (Physics.Raycast(ray, out RaycastHit hit, _maxDistance, _hitLayers, QueryTriggerInteraction.Ignore))
@@ -94,17 +98,19 @@ namespace UJam.Runtime.Player
                     if (hitEnemy != null)
                     {
                         hitEnemies = new List<EnemyBase> { enemy };
-                        hitContext = new ItemUseContext(ItemTrigger.Shooting, _playerStatus, hit.point,
-                            hitEnemies, damageInfo: damageInfo);
                     }
-                    target.TakeDamage(damageInfo);
+                    appliedDamage = target.TakeDamage(damageInfo);
                 }
             }
 
             // 명중 지점과 발사 당시 피해량을 보존하므로 원래 적이 죽거나 움직여도 도착 효과는 같은 지점에서 실행된다.
             // 중앙 Shooting은 Ray 판정마다 한 번 통지한다. 빗나간 경우 Enemies = null.
-            CombatEvents.Instance.Publish(new ItemUseContext(ItemTrigger.Shooting, _playerStatus, endPoint,
-                hitEnemies, damageInfo: damageInfo));
+            var shot = new ItemEvent(ItemTrigger.Shooting, _playerStatus, endPoint, hitEnemies) { AppliedDamage = appliedDamage };
+            EventManager.Instance.Publish(shot);
+            // 은화살/출혈 등 즉시 부가 피해까지 처리된 실제 합계를 흡혈에 전달한다.
+            EventManager.Instance.Publish(new ItemEvent(ItemTrigger.ShootingResolved, _playerStatus, endPoint, hitEnemies)
+                { AppliedDamage = shot.AppliedDamage });
+            if (hitEnemies != null) hitContext = shot;
             if (_bulletPrefab != null || hitContext != null)
             {
                 Vector3 start = _bulletSpawnPoint != null ? _bulletSpawnPoint.position : ray.origin;
@@ -118,7 +124,7 @@ namespace UJam.Runtime.Player
         /// Ballet이 발사될 위치에서, Ray가 도착한 지점을 향하는 벡터를 따라 일직선으로 이동하는 Projectile을 생성한 뒤,
         /// 이를 발사하는 코루틴을 호출하는 함수이다.
         /// </summary>
-        private void SpawnBulletVisual(Vector3 start, Vector3 end, ItemUseContext hitContext)
+        private void SpawnBulletVisual(Vector3 start, Vector3 end, ItemEvent hitContext)
         {
             Vector3 direction = end - start;
             Quaternion rotation = direction.sqrMagnitude > 0f ? Quaternion.LookRotation(direction.normalized) : Quaternion.identity;
@@ -130,7 +136,7 @@ namespace UJam.Runtime.Player
         /// <summary>
         /// 거리/속도로 계산한 시간 동안 총알을 이동시키고 도착한 프레임에 명중 효과를 실행한다.
         /// </summary>
-        private IEnumerator MoveBulletVisual(GameObject bullet, Vector3 start, Vector3 end, float travelTime, ItemUseContext hitContext)
+        private IEnumerator MoveBulletVisual(GameObject bullet, Vector3 start, Vector3 end, float travelTime, ItemEvent hitContext)
         {
             float elapsed = 0f;
             // 적에게 맞은 총알은 수명 설정이 짧아도 명중 지점까지 도착한다. 빗나간 총알만 기존 수명으로 제한한다.

@@ -70,9 +70,12 @@ namespace UJam.Runtime.Enemy
         public String EnemyName => _enemyName;
         public int Credits => _credits;
         public float HP => _hp;
-        public float Speed => _sp * TemporaryBuffs.Instance.Multiplier(this, BuffStat.MovementSpeed);
-        public float AttackDamage => _ad * TemporaryBuffs.Instance.Multiplier(this, BuffStat.AttackDamage);
-        public float AttackSpeed => _as * TemporaryBuffs.Instance.Multiplier(this, BuffStat.AttackSpeed);
+        public float MaxHealth => _maxHealth;
+        public bool IsStunned => BuffManager.Instance.Percent(this, BuffStat.Stun) > 0;
+        public float Speed => IsStunned ? 0 : _sp * BuffManager.Instance.Multiplier(this, BuffStat.MovementSpeed);
+        public float AttackDamage => _ad * BuffManager.Instance.Multiplier(this, BuffStat.AttackDamage);
+        public float OutgoingDamage => AttackDamage * BuffManager.Instance.Multiplier(this, BuffStat.Damage);
+        public float AttackSpeed => IsStunned ? 0 : _as * BuffManager.Instance.Multiplier(this, BuffStat.AttackSpeed);
         public float AttackRange => _range;
         public EnemyMovement Movement => _movement;
 
@@ -84,6 +87,7 @@ namespace UJam.Runtime.Enemy
         /// </summary>
         public void init()
         {
+            _isDead = false;
             // 1. 기본 값 최종 변경 사항 반영
             SetDefaults();
 
@@ -96,7 +100,7 @@ namespace UJam.Runtime.Enemy
         }
 
         // Enemy가 TakeDamage로 데미지를 입을 때마다 호출하는 함수. 인자만큼 체력을 깎고 죽었는지 여부를 체크한다.
-        public float ApplyDamage(float damage)
+        public float ApplyDamage(float damage, bool ignoreDamageTaken = false)
         {
             // 이미 사망한 대상은 다시 피해를 받지 않도록 하기 위해 0을 반환하는 것으로 종료
             if (_isDead) return 0f;
@@ -109,7 +113,7 @@ namespace UJam.Runtime.Enemy
             
             // 혹은 피해량이 유효하지 않은 값이면 0을 반환하는 것으로 종료
             if (damage <= 0f || !float.IsFinite(damage)) return 0f;
-            damage *= TemporaryBuffs.Instance.Multiplier(this, BuffStat.DamageTaken);
+            if (!ignoreDamageTaken) damage *= BuffManager.Instance.Multiplier(this, BuffStat.DamageTaken);
 
             // 체력 감소 이행, 만약 깎인 채력이 0보다 작으면 0으로 보정
             float previousHp = _hp;

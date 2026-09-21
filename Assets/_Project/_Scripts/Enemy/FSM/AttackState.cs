@@ -51,6 +51,7 @@ namespace UJam.Runtime.Enemy.FSM
             // TargetValidator가 True를 내보내면 계속 공격을 진행
             while (_fsm.state == EnemyStateType.Attack && _fsm.TGV.Check())
             {
+                if (_enemy.Status.IsStunned) { yield return null; continue; }
                 // 공격 대상이 달라졌다면 그 대상을 바라보도록 Enemy의 Y축 방향을 조정
                 if(target != _fsm.Targets[_fsm.Targets.Count - 1])
                 {

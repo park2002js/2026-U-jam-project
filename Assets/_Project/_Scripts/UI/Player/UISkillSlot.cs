@@ -2,6 +2,7 @@ using UnityEngine;
 using Ujam.Runtime.Item;
 using UnityEngine.UI;
 using UJam.Runtime.Player;
+using RuntimeItem = Ujam.Runtime.Item.Item;
 
 namespace UJam.Runtime.UI
 {
@@ -71,12 +72,12 @@ namespace UJam.Runtime.UI
         /// <summary>
         /// 자신의 슬롯에 전달된 스킬의 이미지를 표시하며, null이면 장착 해제로 처리하여 아이콘을 비웁니다.
         /// </summary>
-        private void OnSkillChanged(int slot, ItemData skill)
+        private void OnSkillChanged(int slot, RuntimeItem skill)
         {
             if (slot != _slotIndex) return;
             if (_skillIcon != null)
             {
-                _skillIcon.sprite = skill != null ? skill.SkillIcon : null;
+                _skillIcon.sprite = skill != null ? skill.Meta.SkillIcon : null;
                 _skillIcon.enabled = _skillIcon.sprite != null;
             }
             SetCooldown(0f);
@@ -85,12 +86,10 @@ namespace UJam.Runtime.UI
         /// <summary>
         /// 사용한 스킬의 보정 완료된 CoolTime을 그대로 읽어 해당 시간 동안 자신의 슬롯 아이콘을 어둡게 표시합니다.
         /// </summary>
-        private void OnSkillUsed(int slot, ItemData skill)
+        private void OnSkillUsed(int slot, RuntimeItem skill)
         {
             if (slot != _slotIndex || skill == null) return;
-            float coolTime = skill.CoolTime;
-            if (float.IsNaN(coolTime) || float.IsInfinity(coolTime)) coolTime = 0f;
-            SetCooldown(Time.time + Mathf.Max(0f, coolTime));
+            SetCooldown(_skillManager.GetCooldownEndTime(slot));
         }
 
         /// <summary>
@@ -98,7 +97,7 @@ namespace UJam.Runtime.UI
         /// </summary>
         private void RefreshSlot()
         {
-            ItemData skill = _skillManager != null ? _skillManager.GetSkill(_slotIndex) : null;
+            RuntimeItem skill = _skillManager != null ? _skillManager.GetSkill(_slotIndex) : null;
             OnSkillChanged(_slotIndex, skill);
             SetCooldown(skill != null ? _skillManager.GetCooldownEndTime(_slotIndex) : 0f);
         }

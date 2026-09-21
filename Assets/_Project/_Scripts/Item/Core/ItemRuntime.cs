@@ -7,102 +7,89 @@ using UnityEngine;
 
 namespace Ujam.Runtime.Item
 {
-    public sealed class ItemRuntime : IDisposable
+    /// <summary>선택된 Trigger를 Execute에 연결하고 장착 수명을 관리한다. 쿨타임 판단은 SkillManager의 책임이다.</summary>
+    public sealed class ItemRuntime
     {
-        public ItemData Item { get; internal set; }
-        public PlayerStatus Owner { get; private set; }
-        public bool IsEquipped { get; private set; }
         public ItemTrigger Trigger { get; }
-        public ItemPreviewMode PreviewMode { get; }
-        public ItemPreviewDefinition Preview { get; }
-        public float Cooldown { get; }
-        public float RemainingCooldown { get; private set; }
         public ItemEffect Effect { get; }
+        public PlayerStatus Owner { get; private set; }
         public LayerMask EnemyMask { get; private set; }
-        public Func<ItemUseContext, bool> Condition { get; }
+        public Item Item { get; internal set; }
+        private bool equipped;
         private readonly List<IEnumerator> routines = new();
-        private readonly List<Action> cleanup = new();
+        private readonly List<GameObject> objects = new();
         private bool executing;
 
-        public ItemRuntime(ItemTrigger trigger, ItemEffect effect, float cooldown = 0,
-            ItemPreviewMode previewMode = ItemPreviewMode.None, ItemPreviewDefinition preview = null,
-            Func<ItemUseContext, bool> condition = null)
-        {
-            if (!float.IsFinite(cooldown) || cooldown < 0) throw new ArgumentOutOfRangeException(nameof(cooldown));
-            if (previewMode != ItemPreviewMode.None && preview == null) throw new ArgumentNullException(nameof(preview));
-            Trigger = trigger; Effect = effect ?? throw new ArgumentNullException(nameof(effect));
-            Cooldown = cooldown; PreviewMode = previewMode; Preview = preview; Condition = condition;
-        }
+        /// <summary>Catalog에서 트리거 하나와 해당 아이템 전용 Effect를 지정한다.</summary>
+        public ItemRuntime(ItemTrigger trigger, ItemEffect effect)
+        { Trigger = trigger; Effect = effect ?? throw new ArgumentNullException(nameof(effect)); }
 
-        public void Equip(PlayerStatus owner, LayerMask enemyMask)
+        internal void Equip(PlayerStatus owner, LayerMask enemyMask)
         {
-            if (IsEquipped) throw new InvalidOperationException("이미 장착된 Runtime입니다.");
-            if (owner == null) throw new ArgumentNullException(nameof(owner));
-            Owner = owner; EnemyMask = enemyMask; IsEquipped = true;
+            if (owner == null || equipped) throw new InvalidOperationException("소유자를 확인하거나 먼저 장착 해제하세요.");
+            equipped = true;
+            Owner = owner; EnemyMask = enemyMask;
             RuntimeTimer.Ensure();
-            CombatEvents.Instance.Subscribe(Trigger, OnTrigger);
-            RuntimeTimer.Instance.Tick += Tick;
-            try { Effect.OnEquip(this); }
-            catch { Dispose(); throw; }
-        }
-
-        private void OnTrigger(ItemUseContext signal)
-        {
-            if (!IsEquipped || executing || Owner == null || signal.Player != Owner || RemainingCooldown > 0) return;
-            if (Item.Meta.Kind == ItemKind.Active && signal.SkillItem != Item) return;
-            var context = new ItemUseContext(signal.Trigger, signal.Player, signal.Position, signal.Enemies,
-                signal.SkillItem, signal.DamageInfo, signal.CurrentHealth, signal.MaxHealth) { Runtime = this };
-            if (Condition != null && !Condition(context) || !Effect.CanExecute(context)) return;
-            executing = true;
+            EventManager.Instance.Subscribe(Trigger, Execute);
+            var context = new ItemUseContext(Item, new ItemEvent(ItemTrigger.Equipped, owner));
             try
             {
-                Effect.Execute(context);
-                RemainingCooldown = Cooldown;
-                signal.Executed = true;
+                Effect.OnEquip(context);
+                if (Trigger == ItemTrigger.Equipped) Execute(context.Signal);
             }
+            catch { Unequip(); throw; }
+        }
+
+        /// <summary>중앙 이벤트가 자동 호출한다. 소유자와 액티브 아이템 식별 후 Effect를 실행한다.</summary>
+        public void Execute(ItemEvent signal)
+        {
+            // 폭발이 만든 새 처치도 집계한다. 그 외 이벤트의 재진입은 중복 발동을 막는다.
+            if (Owner == null || signal.Player != Owner || (executing && signal.Trigger != ItemTrigger.EnemyKilled)) return;
+            if (Item.Meta.Kind == ItemKind.Active && signal.SkillItem != Item) return;
+            if (signal.Trigger == ItemTrigger.BeforeDeath && signal.DeathPrevented) return;
+            var context = new ItemUseContext(Item, signal);
+            if (!Effect.CanExecute(context)) return;
+            executing = true;
+            try { Effect.Execute(context); signal.Executed = true; }
             finally { executing = false; }
         }
 
-        private void Tick(float deltaTime)
-        {
-            if (Owner == null) { Dispose(); return; }
-            RemainingCooldown = Mathf.Max(0, RemainingCooldown - deltaTime *
-                TemporaryBuffs.Instance.Multiplier(Owner, BuffStat.CooldownRate));
-        }
-
-        // ItemEffect에서 MonoBehaviour 없이 코루틴 사용. 장착 해제 시 모두 중지한다.
+        /// <summary>Effect의 지연 작업을 등록한다. Unequip에서 중지하고 IEnumerator의 finally도 실행한다.</summary>
         public void Run(IEnumerator routine)
         {
-            if (!IsEquipped) return;
+            if (Owner == null) return;
             IEnumerator tracked = null;
-            tracked = Track(routine, () => routines.Remove(tracked));
+            tracked = TrackRoutine(routine, () => routines.Remove(tracked));
             routines.Add(tracked);
-            RuntimeTimer.Instance.StartCoroutine(tracked);
+            RuntimeTimer.Ensure().StartCoroutine(tracked);
+        }
+        private IEnumerator TrackRoutine(IEnumerator routine, Action done)
+        {
+            try { while (Owner != null && routine.MoveNext()) yield return routine.Current; }
+            finally { (routine as IDisposable)?.Dispose(); done(); }
         }
 
-        private IEnumerator Track(IEnumerator routine, Action finished)
-        {
-            try { while (IsEquipped && routine.MoveNext()) yield return routine.Current; }
-            finally { (routine as IDisposable)?.Dispose(); finished(); }
-        }
+        /// <summary>효과가 만든 장판/미끼/VFX를 등록하여 장착 해제 시 남지 않도록 한다.</summary>
+        public void Track(GameObject instance) { if (instance != null) { objects.RemoveAll(x => x == null); objects.Add(instance); } }
 
-        public void OnCleanup(Action action) => cleanup.Add(action);
-
-        public void Dispose()
+        internal void Unequip()
         {
-            if (!IsEquipped) return;
-            IsEquipped = false;
-            CombatEvents.Instance.Unsubscribe(Trigger, OnTrigger);
-            if (RuntimeTimer.Instance != null)
+            if (!equipped) return;
+            equipped = false;
+            var owner = Owner;
+            EventManager.Instance.Unsubscribe(Trigger, Execute);
+            Owner = null;
+            foreach (var routine in routines.ToArray())
             {
-                RuntimeTimer.Instance.Tick -= Tick;
-                foreach (var routine in routines.ToArray()) RuntimeTimer.Instance.StopCoroutine(routine);
+                if (RuntimeTimer.Instance != null) RuntimeTimer.Instance.StopCoroutine(routine);
+                (routine as IDisposable)?.Dispose();
             }
             routines.Clear();
-            foreach (var action in cleanup) action();
-            cleanup.Clear();
-            Effect.OnUnequip(this);
-            Owner = null;
+            foreach (var instance in objects)
+                if (instance != null) { instance.SetActive(false); UnityEngine.Object.Destroy(instance); }
+            objects.Clear();
+            if (owner != null) Effect.OnUnequip(new ItemUseContext(Item, new ItemEvent(ItemTrigger.Equipped, owner)));
+            BuffManager.Instance.RemoveSource(Item);
         }
     }
 }

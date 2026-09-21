@@ -5,6 +5,9 @@ using UJam.Runtime.Phase;
 using UJam.Runtime.Shop;
 using Unity.VisualScripting;
 using UnityEngine;
+using UJam.Runtime.Player;
+using UJam.Runtime.Systems;
+using Ujam.Runtime.Item;
 
 namespace UJam.Runtime.Enemy
 {
@@ -15,6 +18,7 @@ namespace UJam.Runtime.Enemy
 
         // 사용할 Status 객체 [Inspector에서 할당]
         [SerializeField] private EnemyStatus _status;
+        private PlayerStatus lastAttacker;
 
         #endregion
 
@@ -49,6 +53,7 @@ namespace UJam.Runtime.Enemy
         // Status와 Component를 준비하고 FSM 생성
         protected virtual void Awake()
         {
+            if (_status == null) _status = GetComponent<EnemyStatus>();
             // EnemyBase 자신의 객체를 전달하여 FSM 생성
             _fsm = new EnemyFSM(this);
 
@@ -105,6 +110,7 @@ namespace UJam.Runtime.Enemy
         // Attack의 기본 공통 행동 정의
         public virtual void Attack()
         {
+            if (_status.IsStunned) return;
             // 우선 공격 대상을 담는 Stack이 "GameObject"타입을 담는 것으로 정의되어 있기 때문에, TakeDamage를 호출하기 위해서 IDamageable로 형변환을 시도
             GameObject target = _fsm.Targets[_fsm.Targets.Count - 1];
             IDamageable damageable = target.GetComponent<IDamageable>();
@@ -116,7 +122,7 @@ namespace UJam.Runtime.Enemy
                 return;
             }
 
-            damageable.TakeDamage(new DamageInfo(_status.AttackDamage, name, DamageSourceKind.Enemy));
+            damageable.TakeDamage(new DamageInfo(_status.OutgoingDamage, name, DamageSourceKind.Enemy));
         }
 
         // Dead의 기본 공통 행동 정의
@@ -136,7 +142,8 @@ namespace UJam.Runtime.Enemy
             // 3. Wallet에 돈 추가
             if (Wallet.Instance != null)
             {
-                Wallet.Instance.AddCurrency(_status.Credits);
+                var player = lastAttacker != null ? lastAttacker : PlayerStatus.Instance;
+                Wallet.Instance.AddCurrency(player != null ? player.KillReward(_status.Credits) : _status.Credits);
             }
 
             // 4. WaveController에 사망 정보 보내기
@@ -177,8 +184,24 @@ namespace UJam.Runtime.Enemy
 
         public float TakeDamage(DamageInfo info)
         {
-            Debug.Log("[EnemyBase] : TakeDamage 호출됨");
-            return _status.ApplyDamage(info.Damage);
+            if (_status == null || _status.HP <= 0) return 0;
+            Vector3 deathPosition = transform.position;
+            lastAttacker = info.SourceKind == DamageSourceKind.Player ?
+                (info.Attacker != null ? info.Attacker : PlayerStatus.Instance) : null;
+            float applied = _status.ApplyDamage(info.Damage, info.IgnoreDamageTaken);
+            if (applied > 0 && _status.HP <= 0 && lastAttacker != null)
+                EventManager.Instance.Publish(new ItemEvent(ItemTrigger.EnemyKilled, lastAttacker, deathPosition, new[] { this }));
+            return applied;
+        }
+
+        /// <summary>파도 등 강제 이동 효과에서 호출한다. 현재 목적지를 새 위치 기준으로 다시 계산한다.</summary>
+        public void Knockback(Vector3 offset)
+        {
+            if (_status == null || _status.HP <= 0) return;
+            transform.position += offset;
+            if (_fsm == null) return;
+            if (_fsm.state == EnemyStateType.Move) _movement.Enter();
+            else ReTargeting();
         }
 
         /// <summary>

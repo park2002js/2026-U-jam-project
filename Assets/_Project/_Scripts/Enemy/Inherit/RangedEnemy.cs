@@ -21,6 +21,7 @@ namespace UJam.Runtime.Enemy
 
         public override void Attack()
         {
+            if (Status.IsStunned) return;
             if (_projectilePrefab == null || _projectileMovement == null || _firePoint == null)
             {
                 Debug.LogError($"{name}의 원거리 공격 설정이 완료되지 않았습니다.", this);

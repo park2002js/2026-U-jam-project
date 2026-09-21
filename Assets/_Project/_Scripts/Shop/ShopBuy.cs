@@ -7,7 +7,7 @@ namespace UJam.Runtime.Shop
 {
     public class ShopBuy
     {
-        public static bool IsPlaceholder(string itemId) => string.IsNullOrWhiteSpace(itemId) || itemId == ItemData.NullId;
+        public static bool IsPlaceholder(string itemId) => string.IsNullOrWhiteSpace(itemId) || itemId == Ujam.Runtime.Item.Item.NullId;
 
         // ShopManager의 원본 목록을 공유하며 구매 성공 시에만 원소를 제거한다.
         private readonly List<string> allItemIds;
@@ -34,14 +34,14 @@ namespace UJam.Runtime.Shop
             if (currentShopItems.Count != itemCount)
             {
                 currentShopItems.Clear();
-                for (int i = 0; i < itemCount; i++) currentShopItems.Add(ItemData.NullId);
+                for (int i = 0; i < itemCount; i++) currentShopItems.Add(Ujam.Runtime.Item.Item.NullId);
             }
 
             int itemIndex = 0;
             for (int slot = 0; slot < currentShopItems.Count; slot++)
             {
                 if (currentShopItems[slot] == null) continue; // Sold Out 위치는 리롤 대상에서 제외한다.
-                currentShopItems[slot] = itemIndex < allItemIds.Count ? allItemIds[itemIndex++] : ItemData.NullId;
+                currentShopItems[slot] = itemIndex < allItemIds.Count ? allItemIds[itemIndex++] : Ujam.Runtime.Item.Item.NullId;
             }
             return new List<string>(currentShopItems);
         }

@@ -32,7 +32,7 @@ namespace UJam.Runtime.Shop
 
         private void Initialize()
         {
-            foreach (var meta in ItemCatalog.AllMeta) implementedItemIds.Add(meta.GUID);
+            implementedItemIds.AddRange(ItemCatalog.IDs);
             if (playerInventory == null) playerInventory = FindFirstObjectByType<PlayerInventory>();
             shopBuy = new ShopBuy(implementedItemIds);
             shopFusion = new ShopFusion();

@@ -9,6 +9,8 @@ namespace UJam.Runtime.Systems
     [RequireComponent(typeof(SphereCollider), typeof(Rigidbody))]
     public sealed class AreaTrigger : MonoBehaviour
     {
+        /// <summary>현재 영역에 들어와 있는 적 목록. 여러 Collider를 가진 적도 하나로 집계한다.</summary>
+        public IReadOnlyCollection<EnemyBase> Enemies => counts.Keys;
         private readonly Dictionary<Collider, EnemyBase> contacts = new();
         private readonly Dictionary<EnemyBase, int> counts = new();
         private readonly List<Collider> stale = new();
@@ -16,6 +18,7 @@ namespace UJam.Runtime.Systems
         private Action<EnemyBase> exit;
         private LayerMask layers;
 
+        /// <summary>Prefab 인스턴스 크기를 설정한 뒤 호출한다. 설치 순간에는 Overlap, 이후에는 Enter/Exit를 전달한다.</summary>
         public void Initialize(LayerMask enemyLayers, Action<EnemyBase> onEnter, Action<EnemyBase> onExit)
         {
             layers = enemyLayers; enter = onEnter; exit = onExit;
