@@ -73,7 +73,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -6236548848200438998, guid: 61281542103592f4fb8ba0631a6028be, type: 3}
       propertyPath: m_Name
-      value: Teemo
+      value: Tee
       objectReference: {fileID: 0}
     - target: {fileID: -6236548848200438998, guid: 61281542103592f4fb8ba0631a6028be, type: 3}
       propertyPath: m_Layer
@@ -306,6 +306,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -6236548848200438998, guid: 61281542103592f4fb8ba0631a6028be, type: 3}
       insertIndex: -1
       addedObject: {fileID: -862947021822026434}
+    - targetCorrespondingSourceObject: {fileID: -6236548848200438998, guid: 61281542103592f4fb8ba0631a6028be, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2875946819606430859}
   m_SourcePrefab: {fileID: -6924169913242556111, guid: 61281542103592f4fb8ba0631a6028be, type: 3}
 --- !u!1 &214267930281238900 stripped
 GameObject:
@@ -382,6 +385,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb80471890427b841aa9d8ff4cb5def5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &2875946819606430859
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 214267930281238900}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 012d5de27c7a8bb43bbd6cfeeacfd4fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _status: {fileID: 0}
+  _flashColor: {r: 1, g: 0, b: 0, a: 1}
+  _flashTime: 0.1
 --- !u!4 &4021645171301757241 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2037219848808102759, guid: 61281542103592f4fb8ba0631a6028be, type: 3}

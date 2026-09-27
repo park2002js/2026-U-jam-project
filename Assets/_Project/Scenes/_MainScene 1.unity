@@ -6421,6 +6421,7 @@ RectTransform:
   - {fileID: 2125195266}
   - {fileID: 1568535317}
   - {fileID: 1380190255}
+  - {fileID: 1075019422}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -6891,6 +6892,41 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4021645171301757241, guid: b052646694e3fb0428a60911633c0540, type: 3}
   m_PrefabInstance: {fileID: 1060829523}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1075019421
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1075019422}
+  m_Layer: 5
+  m_Name: EnemyHealthBarRoot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1075019422
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1075019421}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1000063086}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1099435333 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6407313854787646678, guid: aec97dd808bd379409771f631d8dc184, type: 3}
@@ -7386,6 +7422,7 @@ GameObject:
   - component: {fileID: 1457450726}
   - component: {fileID: 1457450725}
   - component: {fileID: 1457450728}
+  - component: {fileID: 1457450729}
   m_Layer: 0
   m_Name: PlayerCombatSystem
   m_TagString: Untagged
@@ -7479,6 +7516,22 @@ MonoBehaviour:
   inventory: {fileID: 1365220344}
   shooter: {fileID: 1457450725}
   maxActiveEffects: 2
+--- !u!114 &1457450729
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1457450723}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8dd6f8b96477e547abd44bfe71e3c1f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _shooter: {fileID: 1457450725}
+  _enemyImpactFx: {fileID: 8500920156052182585, guid: 830e92a3f95c4b04caf8edd648aed9bd, type: 3}
+  _worldImpactFx: {fileID: 7045889733438899885, guid: 14078f8f7064d894fad9a68275c46f31, type: 3}
+  _fxLifetime: 1
 --- !u!1001 &1561976600
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8126,6 +8179,7 @@ GameObject:
   - component: {fileID: 1637894993}
   - component: {fileID: 1637894995}
   - component: {fileID: 1637894994}
+  - component: {fileID: 1637894996}
   m_Layer: 0
   m_Name: UIManager
   m_TagString: Untagged
@@ -8190,6 +8244,24 @@ MonoBehaviour:
     _show: []
     _hide: []
   _gameOverView: {fileID: 2076666062}
+--- !u!114 &1637894996
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1637894992}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ccdfcf1cda712f45a98e3edc96a1c66, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _camera: {fileID: 0}
+  _barParent: {fileID: 1075019422}
+  _barPrefab: {fileID: 7782926079160768337, guid: 74c8f212e3d11274fabf22da0fe10ce0, type: 3}
+  _worldOffset: {x: 0, y: 2, z: 0}
+  _hideDelay: 3
+  _prewarmCount: 8
 --- !u!1001 &1800191796
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9645,15 +9717,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1995920097712247088, guid: dc35a6dbc0522f54eacedf229880accb, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.8660254
+      value: 0.92387956
       objectReference: {fileID: 0}
     - target: {fileID: 1995920097712247088, guid: dc35a6dbc0522f54eacedf229880accb, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.5
+      value: 0.38268343
       objectReference: {fileID: 0}
     - target: {fileID: 1995920097712247088, guid: dc35a6dbc0522f54eacedf229880accb, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 60
+      value: 45
       objectReference: {fileID: 0}
     - target: {fileID: 2692732825897074982, guid: dc35a6dbc0522f54eacedf229880accb, type: 3}
       propertyPath: m_CameraType
@@ -9673,7 +9745,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5453426341110195817, guid: dc35a6dbc0522f54eacedf229880accb, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 30
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 5453426341110195817, guid: dc35a6dbc0522f54eacedf229880accb, type: 3}
       propertyPath: m_LocalPosition.z

@@ -8,7 +8,7 @@ namespace UJam.Runtime.Enemy
     /// 외부에 의해 변화할 수 있는, Enemy의 기본 수치들을 관리하고 정의하는 Class
     /// </summary>
     [Serializable]
-    public class EnemyStatus : MonoBehaviour
+    public class EnemyStatus : MonoBehaviour, UJam.Runtime.Combat.IStatModifiable
     {
         #region 기본 수치 값 & 속성들
         // Enemy 이름
@@ -35,7 +35,6 @@ namespace UJam.Runtime.Enemy
         // 이동 알고리즘 (Component로 넣은 객체를 할당)
         [SerializeField] private EnemyMovement _movement;
 
-
         // 죽었는지 여부를 나타내는 속성
         private bool _isDead = false;
 
@@ -44,6 +43,9 @@ namespace UJam.Runtime.Enemy
 
         // 외부에게 체력 변경을 알리는 이벤트 (현재 체력, 최대 체력) (UI 용)
         public event Action<float, float> OnEnemyHpChanged;
+
+        // 피해가 적용될 때마다 외부(UI 등)에 알리는 전역 통지 (대상, 현재 체력, 최대 체력, 이번 피해량)
+        public static event Action<EnemyStatus, float, float, float> DamageReported;
 
         #endregion
 
@@ -77,6 +79,28 @@ namespace UJam.Runtime.Enemy
 
         #endregion
 
+        #region IStatModifiable 구현 (버프/디버프 공통 인터페이스)
+
+        // 이동 속도 증감
+        public void ModifySpeed(float delta)
+        {
+            SetRuntimeSpeed(delta);
+        }
+
+        // 공격 속도 증감
+        public void ModifyAttackSpeed(float delta)
+        {
+            SetRuntimeAttackSpeed(delta);
+        }
+
+        // 공격력 증감
+        public void ModifyAttackDamage(float delta)
+        {
+            SetRuntimeAttackDamage(delta);
+        }
+
+        #endregion
+
         /// <summary>
         /// 모든 기본 수치 값을 실시간 수치 값으로 전환하는 초기화 함수
         /// Idle 상태에서 호출한다.
@@ -105,21 +129,22 @@ namespace UJam.Runtime.Enemy
                 별도의 Damage 감소 정책이 존재한다면 이곳에 정의
             */
 
-            
+
             // 혹은 피해량이 유효하지 않은 값이면 0을 반환하는 것으로 종료
-            if (damage <= 0f || !float.IsFinite(damage)) return 0f;
+            if (damage <= 0f) return 0f;
 
             // 체력 감소 이행, 만약 깎인 채력이 0보다 작으면 0으로 보정
-            float previousHp = _hp;
             _hp = Math.Max(0f, _hp - damage);
-            float appliedDamage = previousHp - _hp;
 
             // 피해를 받은 객체와 실제 피해량과 남은 체력 출력
-            Debug.Log($"[Health] {gameObject.name} 데미지 {appliedDamage} 받음 ({_hp}/{_maxHealth})");
+            Debug.Log( $"[Health] {gameObject.name} 데미지 {damage} 받음 " + $"({_hp}/{_maxHealth})");
 
 
             // 실제 체력 변화 이후의 상태를 한번만 통지
             OnEnemyHpChanged?.Invoke(_hp, _maxHealth);
+
+            // UI 등 외부 시스템에 피해 사실을 전역으로 통지
+            DamageReported?.Invoke(this, _hp, _maxHealth, damage);
 
             // 이번 피해로 처음 사망했는지 확인
             if (_hp <= 0f && !_isDead)
@@ -130,7 +155,7 @@ namespace UJam.Runtime.Enemy
             }
 
             // 최종 받은 피해량 반환
-            return appliedDamage;
+            return damage;
         }
 
         #region 기본 수치 값 버프/디버프
