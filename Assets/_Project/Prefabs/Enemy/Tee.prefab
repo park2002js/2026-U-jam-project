@@ -397,7 +397,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 012d5de27c7a8bb43bbd6cfeeacfd4fa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _status: {fileID: 0}
+  _status: {fileID: 6781197939546333379}
   _flashColor: {r: 1, g: 0, b: 0, a: 1}
   _flashTime: 0.1
 --- !u!4 &4021645171301757241 stripped
