@@ -1,7 +1,6 @@
 using UJam.Runtime.Systems;
 using UJam.Runtime.Enemy;
 using UnityEngine;
-using ItemElement = UJam.Runtime.Systems.ElementType;
 
 namespace Ujam.Runtime.Item
 {
@@ -18,7 +17,7 @@ namespace Ujam.Runtime.Item
             foreach (var enemy in c.Enemies)
             {
                 if (Random.value * 100f >= chance) continue;
-                c.Element(enemy, ItemElement.Burn);
+                c.Element(enemy, ElementType.Burn);
                 /* VFX: 화염 탄환의 속성 적중 표현을 이곳에 추가한다. */
             }
         }

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UJam.Runtime.Systems;
 using UJam.Runtime.Enemy;
 using UnityEngine;
-using ItemElement = UJam.Runtime.Systems.ElementType;
 
 namespace Ujam.Runtime.Item
 {
@@ -20,7 +19,7 @@ namespace Ujam.Runtime.Item
             /* VFX: 낙하 예고나 화염구 투사체를 이곳에서 시작한다. */
             yield return new WaitForSeconds(delay);
             var enemies = ItemWorld.Circle(c.Position, radius, c.EnemyMask);
-            foreach (var enemy in enemies) { c.Damage(enemy, damagePercent); c.Element(enemy, ItemElement.Burn); }
+            foreach (var enemy in enemies) { c.Damage(enemy, damagePercent); c.Element(enemy, ElementType.Burn); }
             /* VFX: 착탄/화염 폭발 표현을 이곳에 추가한다. */
             c.ReportHits(enemies);
         }

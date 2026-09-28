@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UJam.Runtime.Systems;
 using UJam.Runtime.Enemy;
 using UnityEngine;
-using ItemElement = UJam.Runtime.Systems.ElementType;
 
 namespace Ujam.Runtime.Item
 {
@@ -29,7 +28,7 @@ namespace Ujam.Runtime.Item
                 {
                     if (!affected.Add(enemy)) continue;
                     enemy.Knockback(Vector3.forward * (push * ItemWorld.CellHeight));
-                    c.Element(enemy, ItemElement.Freeze);
+                    c.Element(enemy, ElementType.Freeze);
                     newHits.Add(enemy);
                 }
                 c.ReportHits(newHits);

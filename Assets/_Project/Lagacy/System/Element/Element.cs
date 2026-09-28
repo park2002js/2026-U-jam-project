@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public enum ElementType { None, Fire, Water, Earth, Wind, Lightning }
+public enum LegacyElementType { None, Fire, Water, Earth, Wind, Lightning }
 
 // ✨ [핵심] 콤보의 종류를 인스펙터에서 드롭다운으로 고를 수 있게 만듭니다!
 public enum ComboType 
@@ -16,7 +16,7 @@ public enum ComboType
 [System.Serializable]
 public struct ComboReaction
 {
-    public ElementType incomingElement;
+    public LegacyElementType incomingElement;
     
     [Header("Combo Type Settings")]
     public ComboType comboType; // ✨ 여기서 콤보 방식을 고릅니다.
@@ -35,7 +35,7 @@ public struct ComboReaction
 [CreateAssetMenu(fileName = "New Element", menuName = "Defenses/Element")]
 public class Element : ScriptableObject
 {
-    public ElementType elementType;
+    public LegacyElementType elementType;
     public float damagePerSecond;
     public float duration;
     public GameObject baseEffectPrefab;
@@ -49,7 +49,7 @@ public class Element : ScriptableObject
     [Header("Combo Reactions")]
     public List<ComboReaction> comboReactions;
 
-    public bool TryGetComboReaction(ElementType incoming, out ComboReaction reaction)
+    public bool TryGetComboReaction(LegacyElementType incoming, out ComboReaction reaction)
     {
         foreach (var r in comboReactions)
         {

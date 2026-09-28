@@ -1,6 +1,6 @@
 using System.Collections;
 using UnityEngine;
-using ItemElement = UJam.Runtime.Systems.ElementType;
+using UJam.Runtime.Systems;
 
 namespace Ujam.Runtime.Item
 {
@@ -35,7 +35,7 @@ namespace Ujam.Runtime.Item
             yield return new WaitForSeconds(delay);
             c.Run(Visuals(c));
             var enemies = ItemWorld.Circle(c.Position, radius, c.EnemyMask);
-            foreach (var enemy in enemies) { c.Damage(enemy, damagePercent); c.Element(enemy, ItemElement.Shock); }
+            foreach (var enemy in enemies) { c.Damage(enemy, damagePercent); c.Element(enemy, ElementType.Shock); }
             c.ReportHits(enemies);
         }
         private IEnumerator Visuals(ItemUseContext c)

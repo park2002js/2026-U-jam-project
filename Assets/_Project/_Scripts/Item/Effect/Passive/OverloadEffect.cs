@@ -1,7 +1,6 @@
 using UJam.Runtime.Systems;
 using UJam.Runtime.Enemy;
 using UnityEngine;
-using ItemElement = UJam.Runtime.Systems.ElementType;
 
 namespace Ujam.Runtime.Item
 {
@@ -24,7 +23,7 @@ namespace Ujam.Runtime.Item
             {
                 if (!c.Player.ClaimSkillBonus(c.Signal.Cast, c.Item, enemy)) continue;
                 c.Damage(enemy, damagePercent);
-                c.Element(enemy, ItemElement.Shock);
+                c.Element(enemy, ElementType.Shock);
                 /* VFX: 과부화 폭발/감전 표현을 이곳에 추가한다. */
             }
         }

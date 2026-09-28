@@ -5,7 +5,6 @@ using UJam.Runtime.Enemy;
 using UJam.Runtime.Systems;
 using Ujam.Runtime.Item;
 using UnityEngine;
-using RuntimeItem = Ujam.Runtime.Item.Item;
 
 namespace UJam.Runtime.Player
 {
@@ -125,7 +124,7 @@ namespace UJam.Runtime.Player
         public void RemoveSkillCounter(object source) => skillCounters.Remove(source);
 
         /// <summary>SkillManager가 유효한 시전 직전에 호출한다. 자기 버프는 임계치에서 대기하고 다음 적 대상 시전에 보너스를 예약한다.</summary>
-        public SkillCast BeginSkill(RuntimeItem item)
+        public SkillCast BeginSkill(Item item)
         {
             var cast = new SkillCast();
             foreach (var source in new List<object>(skillCounters.Keys))

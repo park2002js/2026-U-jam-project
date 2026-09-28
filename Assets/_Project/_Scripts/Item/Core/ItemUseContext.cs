@@ -58,7 +58,7 @@ namespace Ujam.Runtime.Item
         }
 
         /// <summary>속성을 부여한다. 출혈이 즉시 터진 경우 그 피해도 Shooting 최종 피해에 포함한다.</summary>
-        public void Element(EnemyBase enemy, UJam.Runtime.Systems.ElementType element)
+        public void Element(EnemyBase enemy, ElementType element)
         {
             float damage = ElementManager.Instance.Apply(enemy, element, Player);
             if (Signal.Trigger == ItemTrigger.Shooting) Signal.AppliedDamage += damage;

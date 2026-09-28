@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Ujam.Runtime.Item;
 using UnityEngine;
-using RuntimeItem = Ujam.Runtime.Item.Item;
 
 namespace UJam.Runtime.Player
 {
@@ -13,11 +12,11 @@ namespace UJam.Runtime.Player
         [SerializeField] private PlayerCombatManager _combatManager;
         [SerializeField] private PlayerSkillManager _skillManager;
         private readonly Dictionary<string, int> counts = new();
-        private readonly List<RuntimeItem> equipped = new();
+        private readonly List<Item> equipped = new();
         private bool changing;
         public event Action OnItemsChanged;
         public IReadOnlyDictionary<string, int> Items => counts;
-        public IReadOnlyList<RuntimeItem> EquippedItems => equipped.AsReadOnly();
+        public IReadOnlyList<Item> EquippedItems => equipped.AsReadOnly();
 
         /// <summary>상점/테스트에서 ID별 보유 수량을 확인한다.</summary>
         public int GetCount(string id) => counts.TryGetValue(ItemCatalog.Normalize(id), out int count) ? count : 0;
@@ -41,7 +40,7 @@ namespace UJam.Runtime.Player
             if (changing || !isActiveAndEnabled || meta == null || amount <= 0 || GetCount(id) > int.MaxValue - amount || !ResolvePlayer()) return false;
             if (meta.Kind == ItemKind.Active && (_skillManager == null || _skillManager.EmptySlots < amount)) return false;
             changing = true;
-            var added = new List<RuntimeItem>();
+            var added = new List<Item>();
             try
             {
                 for (int i = 0; i < amount; i++)
@@ -76,7 +75,7 @@ namespace UJam.Runtime.Player
         }
 
         /// <summary>소모 횟수 종료/부활처럼 정확한 보유 개체를 삭제한다. 동일 ID의 다른 개체는 유지한다.</summary>
-        public bool Remove(RuntimeItem item)
+        public bool Remove(Item item)
         {
             if (changing || item == null || !equipped.Contains(item)) return false;
             changing = true;

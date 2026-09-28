@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UJam.Runtime.Systems;
 using UJam.Runtime.Enemy;
 using UnityEngine;
-using ItemElement = UJam.Runtime.Systems.ElementType;
 
 namespace Ujam.Runtime.Item
 {
@@ -23,7 +22,7 @@ namespace Ujam.Runtime.Item
             foreach (var enemy in enemies)
             {
                 BuffManager.Instance.SetTimed(enemy.Status, c.Item, BuffStat.Stun, 100, stunDuration);
-                c.Element(enemy, ItemElement.Freeze);
+                c.Element(enemy, ElementType.Freeze);
             }
             c.ReportHits(enemies);
         }

@@ -6,7 +6,7 @@ namespace Defense
     {
         [Header("Base Settings")]
         public string buildingName;
-        public ElementType myElement;
+        public LegacyElementType myElement;
         public int baseCost;
 
         [Header("Level Settings")]

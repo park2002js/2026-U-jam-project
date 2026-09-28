@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UJam.Runtime.Systems;
 using UJam.Runtime.Enemy;
 using UnityEngine;
-using ItemElement = UJam.Runtime.Systems.ElementType;
 
 namespace Ujam.Runtime.Item
 {
@@ -18,7 +17,7 @@ namespace Ujam.Runtime.Item
         {
             var enemies = ItemWorld.Circle(c.Position, radius, c.EnemyMask);
             /* VFX: 돌풍 표현을 이곳에 추가한다. */
-            foreach (var enemy in enemies) c.Element(enemy, ItemElement.Wind);
+            foreach (var enemy in enemies) c.Element(enemy, ElementType.Wind);
             c.ReportHits(enemies);
         }
     }
