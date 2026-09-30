@@ -14,6 +14,7 @@ namespace UJam.Runtime.Shop
         private readonly List<string> currentShopItems = new();
         private bool isPurchasing;
 
+        /// <summary>ShopManager가 Catalog에서 받아온 상점용 ID 목록을 저장한다. 새 복사본을 만들지 않고 같은 목록을 공유한다.</summary>
         public ShopBuy(List<string> itemIds) => allItemIds = itemIds;
 
         // 다음 정비에서는 판매 완료 칸만 초기화하고 구매로 줄어든 원본 목록은 유지한다.
@@ -22,6 +23,7 @@ namespace UJam.Runtime.Shop
         // UI를 다시 열어도 기존 진열 및 Sold Out 상태를 보존한다.
         public List<string> CreateInitialShop(int itemCount) => currentShopItems.Count == itemCount ? new List<string>(currentShopItems) : Reroll(itemCount);
 
+        /// <summary>최초 진열 또는 리롤 시 남은 판매 후보 ID를 섞어 진열 칸을 채운다. 후보가 부족하면 Item_null을 넣고, 판매 완료 칸은 유지한다.</summary>
         public List<string> Reroll(int itemCount)
         {
             if (isPurchasing) return new List<string>(currentShopItems);

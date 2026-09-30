@@ -1,11 +1,9 @@
 using UJam.Runtime.Systems;
-using UJam.Runtime.Enemy;
-using UnityEngine;
 
 namespace Ujam.Runtime.Item
 {
     /// <summary>수전노: 보유 중 CurrencyGain 수치를 합연산으로 보정한다. 해제 시 기본 수치로 정확히 돌아간다.</summary>
-    public sealed class MiserEffect : ItemEffect
+    public class MiserEffect : ItemEffect
     {
         private readonly float percent;
         /// <summary>Catalog에서 증가/감소 보정률을 지정한다.</summary>

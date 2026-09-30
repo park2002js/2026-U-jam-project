@@ -74,7 +74,7 @@ namespace UJam.Runtime.UI
         {
             if (!isActiveAndEnabled || _shopManager == null || _items == null || slot < 0 || slot >= _items.Count) return;
             string itemId = _items[slot];
-            if (ShopBuy.IsPlaceholder(itemId) || FindItem(itemId) == null) return;
+            if (ShopBuy.IsPlaceholder(itemId) || ItemCatalog.GetMeta(itemId) == null) return;
             if (!_shopManager.BuyItem(slot)) return;
 
             _items[slot] = null;
@@ -82,15 +82,18 @@ namespace UJam.Runtime.UI
         }
 
         /// <summary>
-        /// ShopBuy의 ID를 ItemData에 연결하여 UI 컴포넌트 프리팹을 복제합니다. Grid Layout Group 설정은 변경하지 않습니다.
+        /// ShopManager에서 받은 ID 목록을 Catalog에서 일괄 조회하고, 같은 순번의 메타데이터를 UIShopItem에 전달합니다.
+        /// 빈 칸이나 판매 완료 칸도 순번을 유지합니다. Grid Layout Group 설정은 변경하지 않습니다.
         /// </summary>
         private void RefreshItems()
         {
             ClearItems();
             if (_items == null) return;
+
+            List<ItemMeta> items = ItemCatalog.GetMetaList(_items);
             for (int slot = 0; slot < _items.Count; slot++)
             {
-                ItemMeta item = FindItem(_items[slot]);
+                ItemMeta item = items[slot];
                 if (item == null && !ShopBuy.IsPlaceholder(_items[slot])) Debug.LogWarning($"[UIShopBuy] '{_items[slot]}'에 해당하는 ItemMeta가 없습니다.", this);
                 UIShopItem view = Instantiate(_itemPrefab, _itemRoot, false);
                 view.SetItem(item, slot, BuyItem);
@@ -99,9 +102,6 @@ namespace UJam.Runtime.UI
                 view.gameObject.SetActive(true);
             }
         }
-
-        /// <summary>ShopBuy의 문자열 ID에 대응하는 아이콘과 가격용 ItemData를 찾습니다.</summary>
-        private ItemMeta FindItem(string itemId) => itemId == null ? null : ItemCatalog.GetMeta(itemId);
 
         /// <summary>Editor 미리보기 슬롯을 포함한 Layout 하위 자식을 모두 정리합니다. 프리팹 에셋은 유지합니다.</summary>
         private void ClearItems()

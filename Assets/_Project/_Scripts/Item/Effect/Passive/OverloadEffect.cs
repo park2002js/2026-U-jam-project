@@ -1,11 +1,9 @@
 using UJam.Runtime.Systems;
-using UJam.Runtime.Enemy;
-using UnityEngine;
 
 namespace Ujam.Runtime.Item
 {
     /// <summary>과부화: 모든 액티브 사용을 세고 임계 시전의 적중 대상에게 추가 피해 후 감전을 적용한다.</summary>
-    public sealed class OverloadEffect : ItemEffect
+    public class OverloadEffect : ItemEffect
     {
         private readonly int uses;
         private readonly float damagePercent;
@@ -19,9 +17,11 @@ namespace Ujam.Runtime.Item
         public override void Execute(ItemUseContext c)
         {
             if (c.Enemies == null) return;
+
             foreach (var enemy in c.Enemies)
             {
                 if (!c.Player.ClaimSkillBonus(c.Signal.Cast, c.Item, enemy)) continue;
+
                 c.Damage(enemy, damagePercent);
                 c.Element(enemy, ElementType.Shock);
                 /* VFX: 과부화 폭발/감전 표현을 이곳에 추가한다. */

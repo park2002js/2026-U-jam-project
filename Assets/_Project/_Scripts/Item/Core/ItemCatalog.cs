@@ -13,6 +13,7 @@ namespace Ujam.Runtime.Item
     {
         private static readonly Item[] definitions =
         {
+            #region ActiveItem
             // 1. 집중 사격
             new Item("1", new ItemMeta("집중 사격", "스킬, 원형", price: 100, cooldown: 10f,
                 grade: 1, kind: ItemKind.Active, castType: ItemCastType.Instant, target: ItemTarget.Enemies,
@@ -56,9 +57,9 @@ namespace Ujam.Runtime.Item
                 new ItemRuntime(ItemTrigger.SkillUse, new CoolingEffect(radius: 1f, delay: 1f, stunDuration: 1f))),
 
             // 8. 가로 폭격
-            new Item("8", new ItemMeta("가로 폭격", "스킬, 가로선", price: 200, cooldown: 10f,
+            new Item("8", new ItemMeta("가로 폭격", "스킬, 가로선", price: 0, cooldown: 10f,
                 grade: 2, kind: ItemKind.Active, castType: ItemCastType.Instant, target: ItemTarget.Enemies,
-                description: "전장의 가로줄에다가 폭격을 가해 적들을 쓸어버립니다."),
+                description: "전장의 가로줄에다가 폭격을 가해 적들을 쓸어버립니다.", iconName: "horizon"),
                 new ItemRuntime(ItemTrigger.SkillUse, new HorizontalBombardmentEffect(thickness: 1f, delay: 2f, damagePercent: 150f))),
 
             // 9. 십자 폭격
@@ -105,7 +106,10 @@ namespace Ujam.Runtime.Item
                 grade: 2, kind: ItemKind.Active, castType: ItemCastType.Instant, target: ItemTarget.Player,
                 description: "플레이어의 현재 체력을 대가로, 일시적으로 강력한 공격을 가할 수 있게 됩니다. 체력이 부족한 상황에서 해당 스킬 사용시 사망할 수 있습니다."),
                 new ItemRuntime(ItemTrigger.SkillUse, new LifeConversionEffect(healthCost: 5f, damagePercent: 10f, duration: 20f))),
+            #endregion
 
+            /*-----------------------------------------------------------------------------------------------------------------------------*/
+            #region PassiveItem
             // 16. 은화살
             new Item("16", new ItemMeta("은화살", "슈팅추가효과, 스택", price: 100, cooldown: 0f,
                 grade: 1, kind: ItemKind.Passive, castType: ItemCastType.Instant, target: ItemTarget.Player,
@@ -195,8 +199,10 @@ namespace Ujam.Runtime.Item
                 grade: 1, kind: ItemKind.Passive, castType: ItemCastType.Instant, target: ItemTarget.Player,
                 description: "적을 쓰러뜨려서 얻는 획득 재화량이 증가합니다. 소수점 이하는 반올림합니다."),
                 new ItemRuntime(ItemTrigger.Equipped, new MiserEffect(percent: 10f)))
+            #endregion
         };
         private static readonly Dictionary<string, Item> byId = BuildIndex();
+        /// <summary>Catalog의 정적 초기화 때 아이템 정의를 ID별로 등록한다. IDs와 GetMeta 등의 조회는 이 사전을 사용한다.</summary>
         private static Dictionary<string, Item> BuildIndex()
         {
             var result = new Dictionary<string, Item>(StringComparer.Ordinal);
@@ -208,6 +214,20 @@ namespace Ujam.Runtime.Item
         public static IEnumerable<string> IDs => byId.Keys;
         /// <summary>Shop/Inventory UI는 실행 객체를 만들지 않고 이 API로 메타만 조회한다.</summary>
         public static ItemMeta GetMeta(string id) => byId.TryGetValue(Normalize(id), out var item) ? item.Meta : null;
+
+        /// <summary>
+        /// ID 배열이나 목록을 받아 같은 순서와 개수의 메타데이터 목록을 반환한다.
+        /// null, Item_null, 미등록 ID는 해당 위치에 null을 넣어 원래 칸의 순서를 유지한다.
+        /// </summary>
+        public static List<ItemMeta> GetMetaList(IReadOnlyList<string> ids)
+        {
+            if (ids == null) throw new ArgumentNullException(nameof(ids));
+
+            var result = new List<ItemMeta>(ids.Count);
+            foreach (string id in ids) result.Add(GetMeta(id));
+            return result;
+        }
+
         /// <summary>외부 도구가 Trigger/Effect 설정을 조회할 때 사용한다. 보유 아이템의 상태는 Inventory의 Item.Runtime에서 읽는다.</summary>
         public static ItemRuntime GetRuntime(string id) => Create(id)?.Runtime;
         /// <summary>구매/테스트 시 새 보유 개체를 만든다. 같은 ID도 Runtime과 카운터는 공유하지 않는다.</summary>
@@ -219,14 +239,20 @@ namespace Ujam.Runtime.Item
         {
             if (item == null || item.IsEquipped) throw new ArgumentException("장착되지 않은 정의가 필요합니다.");
             if (item.ID != Normalize(item.ID)) throw new ArgumentException("Item.ID에는 정규화된 ID를 사용하세요.");
+
             byId.Add(item.ID, item);
         }
-        /// <summary>기존 Item001/Item_001 표기를 CSV의 숫자 문자열 ID로 통일한다.</summary>
+        /// <summary>
+        /// 인자로 전달된 id를 규격에 맞게 변환해주는 도구
+        /// 레거시로 남아있는 Item###/Item_### 표기를 CSV의 숫자 문자열 ID로 통일해준다. 모든 ID 체계가 잡히면 제거해도 될 부분
+        /// </summary>
         public static string Normalize(string id)
         {
             if (string.IsNullOrWhiteSpace(id)) return "";
+
             string value = id.Trim();
             if (value.StartsWith("Item", StringComparison.OrdinalIgnoreCase)) value = value.Substring(4).TrimStart('_');
+
             return int.TryParse(value, out int number) ? number.ToString() : id.Trim();
         }
     }

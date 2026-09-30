@@ -5,7 +5,7 @@ using UJam.Runtime.Systems;
 namespace Ujam.Runtime.Item
 {
     /// <summary>낙뢰: 기존 LightningSkill의 LineRenderer 번개와 지면 ParticleSystem 표현을 옮겼다. CSV 규칙대로 지연 후 피해→감전을 처리한다.</summary>
-    public sealed class LightningEffect : ItemEffect
+    public class LightningEffect : ItemEffect
     {
         private readonly float radius, damagePercent, delay, strikeHeight, boltWidth, boltLifetime, jitter, groundScale, groundLifetime;
         private readonly int segments;
@@ -16,6 +16,7 @@ namespace Ujam.Runtime.Item
             float strikeHeight, float boltWidth, float boltLifetime, float jitter, float groundScale, float groundLifetime, int segments)
         {
             this.radius = radius; this.damagePercent = damagePercent; this.delay = delay;
+
             this.boltPath = boltPath; this.groundPath = groundPath; this.strikeHeight = strikeHeight;
             this.boltWidth = boltWidth; this.boltLifetime = boltLifetime; this.jitter = jitter;
             this.groundScale = groundScale; this.groundLifetime = groundLifetime; this.segments = Mathf.Max(1, segments);
@@ -33,9 +34,12 @@ namespace Ujam.Runtime.Item
         {
             /* VFX: 시전 예고 표현이 필요하면 이곳에 추가한다. */
             yield return new WaitForSeconds(delay);
+
             c.Run(Visuals(c));
+
             var enemies = ItemWorld.Circle(c.Position, radius, c.EnemyMask);
             foreach (var enemy in enemies) { c.Damage(enemy, damagePercent); c.Element(enemy, ElementType.Shock); }
+
             c.ReportHits(enemies);
         }
         private IEnumerator Visuals(ItemUseContext c)
@@ -46,12 +50,14 @@ namespace Ujam.Runtime.Item
             {
                 var bolt = Object.Instantiate(boltPrefab, c.Position, Quaternion.identity);
                 c.Item.Runtime.Track(bolt);
+
                 var line = bolt.GetComponent<LineRenderer>();
                 if (line != null)
                 {
                     line.useWorldSpace = true;
                     line.textureMode = LineTextureMode.Tile;
                     line.positionCount = segments + 1;
+
                     Vector3 top = c.Position + Vector3.up * strikeHeight;
                     for (int i = 0; i <= segments; i++)
                     {
@@ -59,20 +65,25 @@ namespace Ujam.Runtime.Item
                         if (i != 0 && i != segments) { point.x += Random.Range(-jitter, jitter); point.z += Random.Range(-jitter, jitter); }
                         line.SetPosition(i, point);
                     }
+
                     line.startWidth = boltWidth; line.endWidth = boltWidth; line.numCapVertices = 2;
                 }
+
                 Object.Destroy(bolt, boltLifetime);
             }
+
             yield return ItemAssets.LoadAsync(groundPath, loaded => groundPrefab = loaded);
             if (groundPrefab != null)
             {
                 var ground = Object.Instantiate(groundPrefab, c.Position, Quaternion.identity);
                 c.Item.Runtime.Track(ground);
+
                 foreach (var particle in ground.GetComponentsInChildren<ParticleSystem>())
                 {
                     var main = particle.main;
                     main.scalingMode = ParticleSystemScalingMode.Hierarchy;
                 }
+
                 ground.transform.localScale = Vector3.one * (radius * ItemWorld.CellWidth * groundScale);
                 Object.Destroy(ground, groundLifetime);
             }

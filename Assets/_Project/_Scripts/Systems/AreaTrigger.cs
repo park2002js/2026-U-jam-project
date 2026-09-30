@@ -6,8 +6,9 @@ using UnityEngine;
 namespace UJam.Runtime.Systems
 {
     // OnTrigger 메시지를 일반 C# 효과에 전달하는 물리 어댑터.
+    // 이 스크립트를 추가할 때 같은 GameObject에 SphereCollider와 Rigidbody가 없으면 Unity가 함께 추가한다.
     [RequireComponent(typeof(SphereCollider), typeof(Rigidbody))]
-    public sealed class AreaTrigger : MonoBehaviour
+    public class AreaTrigger : MonoBehaviour
     {
         /// <summary>현재 영역에 들어와 있는 적 목록. 여러 Collider를 가진 적도 하나로 집계한다.</summary>
         public IReadOnlyCollection<EnemyBase> Enemies => counts.Keys;
@@ -22,10 +23,12 @@ namespace UJam.Runtime.Systems
         public void Initialize(LayerMask enemyLayers, Action<EnemyBase> onEnter, Action<EnemyBase> onExit)
         {
             layers = enemyLayers; enter = onEnter; exit = onExit;
+
             var sphere = GetComponent<SphereCollider>();
             sphere.isTrigger = true;
             var body = GetComponent<Rigidbody>();
             body.isKinematic = true; body.useGravity = false;
+
             Physics.SyncTransforms();
             // 생성 시에만 Overlap. 이후에는 Enter/Exit만 사용한다.
             float radius = sphere.radius * Mathf.Abs(transform.lossyScale.x);
@@ -36,18 +39,23 @@ namespace UJam.Runtime.Systems
         private void OnTriggerEnter(Collider other)
         {
             if (enter == null || contacts.ContainsKey(other) || (layers.value & (1 << other.gameObject.layer)) == 0) return;
+
             var enemy = other.GetComponentInParent<EnemyBase>();
             if (enemy == null || enemy.Status == null || enemy.Status.HP <= 0) return;
+
             contacts.Add(other, enemy);
             counts.TryGetValue(enemy, out int count);
             counts[enemy] = count + 1;
+
             if (count == 0) enter(enemy);
         }
         private void OnTriggerExit(Collider other)
         {
             if (!contacts.TryGetValue(other, out var enemy)) return;
+
             contacts.Remove(other);
             if (--counts[enemy] > 0) return;
+
             counts.Remove(enemy);
             exit?.Invoke(enemy);
         }
@@ -58,11 +66,13 @@ namespace UJam.Runtime.Systems
             foreach (var pair in contacts)
                 if (pair.Key == null || !pair.Key.enabled || !pair.Key.gameObject.activeInHierarchy ||
                     pair.Value == null || pair.Value.Status == null || pair.Value.Status.HP <= 0) stale.Add(pair.Key);
+
             foreach (var collider in stale) OnTriggerExit(collider);
         }
         private void OnDisable()
         {
             foreach (var enemy in new List<EnemyBase>(counts.Keys)) exit?.Invoke(enemy);
+
             contacts.Clear(); counts.Clear(); enter = null; exit = null;
         }
     }

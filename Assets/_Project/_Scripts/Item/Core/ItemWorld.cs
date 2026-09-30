@@ -34,8 +34,10 @@ namespace Ujam.Runtime.Item
             float columns = grid != null && grid.IsInitialized ? grid.ColumnCount : 32;
             float rows = grid != null && grid.IsInitialized ? grid.RowCount : 32;
             Vector3 origin = grid != null && grid.IsInitialized ? grid.Origin : new Vector3(-15.5f, 0, -15.5f);
+
             if (horizontal) cursor.x = origin.x + (columns - 1) * CellWidth / 2f;
             else cursor.z = origin.z + (rows - 1) * CellHeight / 2f;
+
             return Box(cursor, horizontal ? columns : thickness, horizontal ? thickness : rows, mask);
         }
         private static List<EnemyBase> Unique(Collider[] colliders)
@@ -46,6 +48,7 @@ namespace Ujam.Runtime.Item
                 var enemy = collider.GetComponentInParent<EnemyBase>();
                 if (enemy != null && enemy.Status != null && enemy.Status.HP > 0) enemies.Add(enemy);
             }
+
             return new List<EnemyBase>(enemies);
         }
 
@@ -56,11 +59,14 @@ namespace Ujam.Runtime.Item
             GameObject prefab = null;
             yield return ItemAssets.LoadAsync(prefabPath, loaded => prefab = loaded);
             if (prefab == null || !context.Item.IsEquipped) yield break;
+
             var area = UnityEngine.Object.Instantiate(prefab, context.Position, Quaternion.identity);
             context.Item.Runtime.Track(area);
             area.transform.localScale = Vector3.one * (radius * CellWidth * 2);
+
             var relay = area.GetComponent<AreaTrigger>();
             if (relay == null) { UnityEngine.Object.Destroy(area); throw new InvalidOperationException("장판 Prefab에 AreaTrigger가 필요합니다."); }
+
             relay.Initialize(context.EnemyMask,
                 enemy =>
                 {
@@ -68,6 +74,7 @@ namespace Ujam.Runtime.Item
                     context.ReportHits(new[] { enemy });
                 },
                 enemy => { if (enemy != null) BuffManager.Instance.Remove(enemy.Status, area, stat); });
+
             /* VFX: area의 자식으로 장판 표현을 붙인다. 판정 Collider와 시각 크기를 분리한다. */
             try { yield return new WaitForSeconds(seconds); }
             finally
@@ -90,11 +97,14 @@ namespace Ujam.Runtime.Item
         public static IEnumerator LoadAsync(string path, Action<GameObject> loaded)
         {
             if (cache.TryGetValue(path, out var existing) && existing != null) { loaded(existing); yield break; }
+
             var request = Resources.LoadAsync<GameObject>(path);
             yield return request;
+
             var prefab = request.asset as GameObject;
             if (prefab != null) cache[path] = prefab;
             if (prefab == null) Debug.LogError($"[ItemAssets] Resources/{path}.prefab 로드 실패");
+
             loaded(prefab);
         }
     }

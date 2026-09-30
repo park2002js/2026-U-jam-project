@@ -9,7 +9,7 @@ namespace UJam.Runtime.Systems
     public enum ElementType { Burn, Freeze, Shock, Bleed, Wind }
 
     /// <summary>적 하나의 속성과 스택. 한 적은 하나의 속성만 보유한다.</summary>
-    public sealed class ElementState
+    public class ElementState
     {
         public ElementType Type { get; internal set; }
         public int Stacks { get; internal set; }
@@ -23,7 +23,7 @@ namespace UJam.Runtime.Systems
     /// 미지정 수치는 5초, 화상 1초 주기, 출혈 5스택/최대 체력 5%/상한 1000으로 정했다.
     /// 속성 조합은 보류하며 바람은 속성 보유만 기록한다.
     /// </summary>
-    public sealed class ElementManager
+    public class ElementManager
     {
         public static ElementManager Instance { get; private set; } = new();
         public float Duration { get; set; } = 5f;
@@ -40,16 +40,20 @@ namespace UJam.Runtime.Systems
         public float Apply(EnemyBase enemy, ElementType type, PlayerStatus player = null)
         {
             if (!Alive(enemy)) return 0;
+
             RuntimeTimer.Ensure();
             player = player != null ? player : PlayerStatus.Instance;
+
             if (!states.TryGetValue(enemy, out var state) || state.Type != type || state.ExpiresAt < Time.time)
             {
                 if (state != null) BuffManager.Instance.RemoveSource(state);
                 state = new ElementState { Type = type, NextTick = Time.time + Mathf.Max(0.01f, BurnInterval) };
                 states[enemy] = state;
             }
+
             state.Player = player;
             state.ExpiresAt = Time.time + Mathf.Max(0.01f, Duration);
+
             switch (type)
             {
                 case ElementType.Freeze:
@@ -99,11 +103,13 @@ namespace UJam.Runtime.Systems
                         state.NextTick += Mathf.Max(0.01f, BurnInterval);
                         var player = state.Player;
                         if (player == null) continue;
+
                         float coefficient = BurnAttackPercent + BuffManager.Instance.Percent(player, BuffStat.BurnCoefficient);
                         float damage = player.AttackDamage * Mathf.Max(0, coefficient) / 100f * player.ElementDamageMultiplier;
                         enemy.TakeDamage(new DamageInfo(damage, "화상", DamageSourceKind.Player, player));
                     }
                 }
+
                 if (!Alive(enemy) || state.ExpiresAt <= Time.time)
                 {
                     if (states.TryGetValue(enemy, out var current) && ReferenceEquals(current, state)) states.Remove(enemy);
@@ -112,6 +118,9 @@ namespace UJam.Runtime.Systems
             }
         }
         private static bool Alive(EnemyBase enemy) => enemy != null && enemy.isActiveAndEnabled && enemy.Status != null && enemy.Status.HP > 0;
+
+        // Unity가 실행 시작 시 첫 씬을 불러오기 전에 이 static 메서드를 자동 호출한다.
+        // SubsystemRegistration 시점에 정적 상태를 초기화하여 Domain Reload를 꺼도 이전 플레이의 상태가 남지 않게 한다.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Reset() => Instance = new ElementManager();
     }
