@@ -1,11 +1,10 @@
 using UJam.Runtime.Systems;
 using UJam.Runtime.Enemy;
-using UnityEngine;
 
 namespace Ujam.Runtime.Item
 {
     /// <summary>집념: 같은 적 연속 적중 임계치에 도달하면 공격속도 버프를 갱신한다.</summary>
-    public sealed class TenacityEffect : ItemEffect
+    public class TenacityEffect : ItemEffect
     {
         private readonly int hits;
         private readonly float percent, duration;
@@ -16,6 +15,7 @@ namespace Ujam.Runtime.Item
         {
             EnemyBase target = c.Enemies != null && c.Enemies.Count > 0 ? c.Enemies[0] : null;
             if (!c.Player.ConsecutiveHit(c.Item, target, hits)) return;
+
             BuffManager.Instance.SetTimed(c.Player, c.Item, BuffStat.AttackSpeed, percent, duration);
             /* VFX: 플레이어 공격속도 강화 표현을 이곳에 추가한다. */
         }

@@ -18,6 +18,7 @@ namespace UJam.Runtime.Shop
         private readonly List<string> implementedItemIds = new();
         [SerializeField] private PlayerInventory playerInventory;
 
+        /// <summary>Unity가 게임 시작 시 호출한다. 대표 ShopManager를 등록하고 상점 데이터를 초기화한다.</summary>
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -30,6 +31,7 @@ namespace UJam.Runtime.Shop
             Initialize();
         }
 
+        /// <summary>Catalog의 전체 ID를 상점용 목록에 복사하고 ShopBuy에 전달한다. 구매/조합/강화 기능을 준비한 뒤 초기화 완료를 표시한다.</summary>
         private void Initialize()
         {
             implementedItemIds.AddRange(ItemCatalog.IDs);
@@ -51,6 +53,7 @@ namespace UJam.Runtime.Shop
         // 상점 초기 생성
         // ==========================
 
+        /// <summary>UI가 상점을 열 때 호출한다. 최초에는 상품 ID를 선정하고, 이후에는 현재 진열 목록을 반환한다.</summary>
         public List<string> OpenShop(int count)
         {
             return shopBuy.CreateInitialShop(count);

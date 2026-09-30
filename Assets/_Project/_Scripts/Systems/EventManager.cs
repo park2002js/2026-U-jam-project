@@ -6,7 +6,7 @@ using UnityEngine;
 namespace UJam.Runtime.Systems
 {
     /// <summary>플레이어별 인자를 전달하는 중앙 이벤트 허브. 구독은 Item.Equip, 해제는 Item.Unequip이 수행한다.</summary>
-    public sealed class EventManager
+    public class EventManager
     {
         public static EventManager Instance { get; private set; } = new();
         private readonly Dictionary<ItemTrigger, Action<ItemEvent>> handlers = new();
@@ -24,12 +24,16 @@ namespace UJam.Runtime.Systems
         {
             if (signal == null) throw new ArgumentNullException(nameof(signal));
             if (!handlers.TryGetValue(signal.Trigger, out var current) || current == null) return;
+
             foreach (Action<ItemEvent> handler in current.GetInvocationList())
             {
                 try { handler(signal); }
                 catch (Exception exception) { Debug.LogException(exception); }
             }
         }
+
+        // Unity가 실행 시작 시 첫 씬을 불러오기 전에 이 static 메서드를 자동 호출한다.
+        // SubsystemRegistration 시점에 정적 상태를 초기화하여 Domain Reload를 꺼도 이전 플레이의 상태가 남지 않게 한다.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Reset() => Instance = new EventManager();
     }

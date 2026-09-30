@@ -34,18 +34,27 @@ namespace UJam.Runtime.Player
         {
             if (slot < 0 || slot >= slots.Length || item == null || !item.IsEquipped || item.Meta.Kind != ItemKind.Active ||
                 slots[slot] != null || Array.IndexOf(slots, item) >= 0) return false;
+
             slots[slot] = item; readyAt[slot] = 0;
+
             OnSkillChanged?.Invoke(slot, item);
             return true;
         }
         /// <summary>구매/테스트 시 첫 빈 스킬칸을 사용한다.</summary>
         public bool EquipFirstEmpty(Item item)
-        { for (int i = 0; i < slots.Length; i++) if (slots[i] == null) return Equip(i, item); return false; }
-        /// <summary>슬롯만 해제한다. 보유 개체/구독의 제거는 Inventory.Remove 또는 Item.Unequip에서 처리한다.</summary>
+        {
+            for (int i = 0; i < slots.Length; i++) if (slots[i] == null) return Equip(i, item);
+
+            return false;
+        }
+        /// <summary>슬롯만 해제한다. 보유 개체/구독의 제거는 Inventory.RemoveAt/TryRemove 또는 Item.Unequip에서 처리한다.</summary>
         public void UnEquip(int slot)
         {
             if (GetSkill(slot) == null) return;
-            slots[slot] = null; readyAt[slot] = 0; OnSkillChanged?.Invoke(slot, null);
+
+            slots[slot] = null; readyAt[slot] = 0;
+
+            OnSkillChanged?.Invoke(slot, null);
         }
         /// <summary>Inventory에서 특정 개체가 사라질 때 해당 슬롯을 정리한다.</summary>
         public void Remove(Item item) { int slot = Array.IndexOf(slots, item); if (slot >= 0) UnEquip(slot); }
@@ -55,6 +64,7 @@ namespace UJam.Runtime.Player
         {
             var item = GetSkill(slot);
             if (!CanUse(slot, item) || EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
+
             Vector3 position = item.Runtime.Owner.transform.position;
             if (item.Meta.Target == ItemTarget.Enemies)
             {
@@ -64,6 +74,7 @@ namespace UJam.Runtime.Player
                     combat.GroundMask, QueryTriggerInteraction.Ignore)) return;
                 position = hit.point;
             }
+
             // Preview 도입 지점: Normal이면 위치 선택을 시작하고 나중에 ConfirmUse를 호출한다.
             ConfirmUse(slot, position);
         }
@@ -73,14 +84,18 @@ namespace UJam.Runtime.Player
         {
             var item = GetSkill(slot);
             if (!CanUse(slot, item)) return false;
+
             var player = item.Runtime.Owner;
             var probe = new ItemEvent(ItemTrigger.SkillUse, player, position, skillItem: item);
             if (!item.Runtime.Effect.CanExecute(new ItemUseContext(item, probe))) return false;
+
             var signal = new ItemEvent(ItemTrigger.SkillUse, player, position, skillItem: item, cast: player.BeginSkill(item));
             float previous = readyAt[slot];
             readyAt[slot] = Time.time + item.Meta.Cooldown * player.CooldownMultiplier;
+
             EventManager.Instance.Publish(signal);
             if (!signal.Executed) { readyAt[slot] = previous; return false; }
+
             if (slots[slot] == item) OnSkillUsed?.Invoke(slot, item); // 소모 아이템은 이미 슬롯에서 사라졌을 수 있다.
             return true;
         }
