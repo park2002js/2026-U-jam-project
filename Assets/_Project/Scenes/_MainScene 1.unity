@@ -7520,6 +7520,11 @@ MonoBehaviour:
   _enemyImpactFx: {fileID: 8500920156052182585, guid: 830e92a3f95c4b04caf8edd648aed9bd, type: 3}
   _worldImpactFx: {fileID: 7045889733438899885, guid: 14078f8f7064d894fad9a68275c46f31, type: 3}
   _fxLifetime: 1
+  _enemyHitClips: []
+  _worldHitClips: []
+  _volume: 0.7
+  _pitchRange: {x: 0.95, y: 1.05}
+  _spatialBlend: 1
 --- !u!1001 &1561976600
 PrefabInstance:
   m_ObjectHideFlags: 0
