@@ -47,6 +47,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6121122452837600335}
+  - component: {fileID: 8815967270714574413}
   m_Layer: 5
   m_Name: LevelSelectScene_UI
   m_TagString: Untagged
@@ -75,6 +76,21 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 1920, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &8815967270714574413
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4207936013517149837}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fbed054a2374a76b4194a212abb0895, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  level1SceneName: _MainScene 1
+  level2SceneName: 2
+  level3SceneName: 3
 --- !u!1 &7158259133734015459
 GameObject:
   m_ObjectHideFlags: 0
@@ -383,6 +399,38 @@ PrefabInstance:
     - target: {fileID: 5073278926631967422, guid: 9df0ca5466f25bb47b02ce74eda50a34, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5354248301957937096, guid: 9df0ca5466f25bb47b02ce74eda50a34, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5354248301957937096, guid: 9df0ca5466f25bb47b02ce74eda50a34, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 5354248301957937096, guid: 9df0ca5466f25bb47b02ce74eda50a34, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 8815967270714574413}
+    - target: {fileID: 5354248301957937096, guid: 9df0ca5466f25bb47b02ce74eda50a34, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5354248301957937096, guid: 9df0ca5466f25bb47b02ce74eda50a34, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: LevelSelect
+      objectReference: {fileID: 0}
+    - target: {fileID: 5354248301957937096, guid: 9df0ca5466f25bb47b02ce74eda50a34, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: UILevelSelectManager, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 5354248301957937096, guid: 9df0ca5466f25bb47b02ce74eda50a34, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_IntArgument
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5354248301957937096, guid: 9df0ca5466f25bb47b02ce74eda50a34, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
     - target: {fileID: 5593693026010868671, guid: 9df0ca5466f25bb47b02ce74eda50a34, type: 3}
       propertyPath: m_Name
