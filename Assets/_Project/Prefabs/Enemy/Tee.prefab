@@ -423,11 +423,11 @@ MonoBehaviour:
     fitToTargetSize: 0
     sizeMultiplier: 3
   - type: 1
-    prefab: {fileID: 176822597162087251, guid: 46009f57772e5e743bec9df57a49ed66, type: 3}
+    prefab: {fileID: 1920325297268671343, guid: 640eb64818a12ae43a6e0a60f513f2e3, type: 3}
     offset: {x: 0, y: 1, z: 0}
     rotation: {x: 0, y: 0, z: 0}
     fitToTargetSize: 0
-    sizeMultiplier: 0.5
+    sizeMultiplier: 3
   - type: 2
     prefab: {fileID: 7251879486380165639, guid: c2f6a8962aac3814aa56cb9647c93470, type: 3}
     offset: {x: 0, y: 1, z: 0}
