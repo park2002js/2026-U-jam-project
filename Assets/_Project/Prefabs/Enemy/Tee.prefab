@@ -309,6 +309,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -6236548848200438998, guid: 61281542103592f4fb8ba0631a6028be, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2875946819606430859}
+    - targetCorrespondingSourceObject: {fileID: -6236548848200438998, guid: 61281542103592f4fb8ba0631a6028be, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -3214546834516256102}
   m_SourcePrefab: {fileID: -6924169913242556111, guid: 61281542103592f4fb8ba0631a6028be, type: 3}
 --- !u!1 &214267930281238900 stripped
 GameObject:
@@ -400,6 +403,40 @@ MonoBehaviour:
   _status: {fileID: 6781197939546333379}
   _flashColor: {r: 1, g: 0, b: 0, a: 1}
   _flashTime: 0.1
+--- !u!114 &-3214546834516256102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 214267930281238900}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cf6ae0188297fd418bfc15f59c68293, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _entries:
+  - type: 0
+    prefab: {fileID: 2375589281258290619, guid: 8a152916881715246911e22ca8e53284, type: 3}
+    offset: {x: 0, y: 1, z: 0}
+    fitToTargetSize: 0
+    sizeMultiplier: 1
+  - type: 1
+    prefab: {fileID: 176822597162087251, guid: 46009f57772e5e743bec9df57a49ed66, type: 3}
+    offset: {x: 0, y: 1, z: 0}
+    fitToTargetSize: 0
+    sizeMultiplier: 0.5
+  - type: 2
+    prefab: {fileID: 7251879486380165639, guid: c2f6a8962aac3814aa56cb9647c93470, type: 3}
+    offset: {x: 0, y: 1, z: 0}
+    fitToTargetSize: 0
+    sizeMultiplier: 3
+  - type: 3
+    prefab: {fileID: 0}
+    offset: {x: 0, y: 0, z: 0}
+    fitToTargetSize: 0
+    sizeMultiplier: 1
+  _attachPoint: {fileID: 0}
 --- !u!4 &4021645171301757241 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2037219848808102759, guid: 61281542103592f4fb8ba0631a6028be, type: 3}
