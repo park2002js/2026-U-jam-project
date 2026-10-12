@@ -22,6 +22,7 @@ namespace Ujam.Runtime.Item
         }
         /// <summary>장착 시 VFX를 미리 비동기 로드한다. Effect에 소유자 상태를 저장하지 않는다.</summary>
         public override void OnEquip(ItemUseContext c) => c.Run(Preload());
+        public override float PreviewRadiusCells => radius;
         private IEnumerator Preload()
         {
             yield return ItemAssets.LoadAsync(boltPath, _ => { });

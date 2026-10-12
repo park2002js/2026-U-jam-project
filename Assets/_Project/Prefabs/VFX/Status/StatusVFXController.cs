@@ -25,6 +25,7 @@ namespace UJam.Runtime.Combat
             public StatusType type;
             public GameObject prefab;                            // 지속되는 동안 반복 재생될 이펙트
             public Vector3 offset = new Vector3(0f, 1f, 0f);     // 부착 위치 보정
+            public Vector3 rotation;                             // 대상 기준 회전 보정 (오일러 각)
             public bool fitToTargetSize = true;                  // 대상 콜라이더 크기에 맞춰 스케일
             public float sizeMultiplier = 1f;                    // 크기 미세 조정 배율
         }
@@ -52,8 +53,12 @@ namespace UJam.Runtime.Combat
             }
 
             Transform parent = _attachPoint != null ? _attachPoint : transform;
+
             GameObject fx = Instantiate(entry.prefab, parent.position + entry.offset, Quaternion.identity);
             fx.transform.SetParent(parent);   // 대상을 따라다니게 함
+
+            // 대상 기준 회전. 적이 돌면 이펙트 방향도 함께 돈다.
+            fx.transform.localRotation = Quaternion.Euler(entry.rotation);
 
             ApplyScale(fx, entry);
 

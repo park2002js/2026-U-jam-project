@@ -7462,6 +7462,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7cc879dff6ed8dd46afa794c697be2a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  previewPrefab: {fileID: 0}
 --- !u!114 &1457450727
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7484,7 +7485,7 @@ MonoBehaviour:
   _playerStatus: {fileID: 1365220345}
   _playerShooter: {fileID: 1457450725}
   _playerSkillManager: {fileID: 1457450726}
-  _playerSkillPreviewPrefab: {fileID: 2878677094038920207, guid: 353ec16418688a14082fc65cca70bea0, type: 3}
+  _playerSkillPreviewPrefab: {fileID: 166050, guid: 6e033fec805c77243aceb05946593ef1, type: 3}
   _bulletSpawnPoint: {fileID: 2043943969}
   _bulletPrefab: {fileID: 1940170559750460442, guid: d84b19498b00985489578140a1293605, type: 3}
 --- !u!114 &1457450728
@@ -8216,6 +8217,8 @@ MonoBehaviour:
   _preparationHotspot: {x: 0, y: 0}
   _combatCursor: {fileID: 2800000, guid: bc850e9092ab88145a78bea196c3e496, type: 3}
   _combatHotspot: {x: 0, y: 0}
+  _skillManager: {fileID: 0}
+  _skillCursor: {fileID: 0}
 --- !u!114 &1637894995
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8310,15 +8313,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8fda81358badd094682e6ac6cb9f26ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _targetRoots:
-  - {fileID: 1921170767}
-  - {fileID: 801454074}
-  _refreshOnInput: 1
+  _targetRoots: []
+  _includeInactive: 1
   _shockKey: 49
   _freezeKey: 50
   _burnKey: 51
-  _bleedKey: 32
-  _clearKey: 52
+  _bleedKey: 52
+  _clearKey: 48
   _duration: 0
 --- !u!4 &1732308802
 Transform:

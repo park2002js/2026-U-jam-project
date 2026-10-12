@@ -15,5 +15,8 @@ namespace Ujam.Runtime.Item
         public virtual void OnEquip(ItemUseContext context) { }
         /// <summary>장착 해제 시 효과 고유의 정리가 필요한 경우만 재정의한다. 버프/오브젝트는 공통으로 정리된다.</summary>
         public virtual void OnUnequip(ItemUseContext context) { }
+
+        /// <summary>Preview가 표시할 적용 반경(칸 단위). 원형이 아니거나 표시가 불필요하면 0을 반환한다.</summary>
+        public virtual float PreviewRadiusCells => 0f;
     }
 }

@@ -24,7 +24,14 @@ namespace UJam.Runtime.Player
             // 마우스 '우'클릭 시 Shooting 발동
             if (Input.GetMouseButtonDown(1))
             {
-                _playerCombatSystem.DefaultAttack();
+                // 마우스 '우'클릭 시 Shooting 발동 (스킬 조준 중에는 취소 입력으로만 쓰인다)
+                if (Input.GetMouseButtonDown(1))
+                {
+                    if (_playerCombatSystem.SkillManager == null || !_playerCombatSystem.SkillManager.IsAiming)
+                    {
+                        _playerCombatSystem.DefaultAttack();
+                    }
+                }
             }
 
             // 키보드 'D' 키를 누를 시 1번 슬롯의 스킬 발동
