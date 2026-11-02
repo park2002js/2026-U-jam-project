@@ -1,13 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
 using UJam.Runtime.Systems;
-using UJam.Runtime.Enemy;
-using UnityEngine;
 
 namespace Ujam.Runtime.Item
 {
     /// <summary>약화: 장판 B 안에 있는 동안에만 AttackDamage 보정을 적용한다. Exit/장판 소멸 시 이 장판의 효과만 해제한다.</summary>
-    public sealed class WeakenEffect : ItemEffect
+    public class WeakenEffect : ItemEffect
     {
         private readonly float radius, percent, duration;
         private readonly string prefabPath;

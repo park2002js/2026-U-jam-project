@@ -1,13 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
 using UJam.Runtime.Systems;
-using UJam.Runtime.Enemy;
-using UnityEngine;
 
 namespace Ujam.Runtime.Item
 {
     /// <summary>아드레날린: 일정 시간 공격력/공격속도를 높인다. 같은 아이템 출처는 중첩 대신 갱신된다.</summary>
-    public sealed class AdrenalineEffect : ItemEffect
+    public class AdrenalineEffect : ItemEffect
     {
         private readonly float attack, speed, duration;
         /// <summary>Catalog에서 공격력/공격속도 증가율과 시간을 정한다.</summary>

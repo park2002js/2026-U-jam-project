@@ -6,7 +6,7 @@ using UJam.Runtime.Player;
 namespace UJam.Runtime.UI
 {
     /// <summary>
-    /// Player_Items_UI에 부착하여 PlayerInventory의 보유 아이템을 최대 8개의 UI 프리팹으로 표시합니다.
+    /// Player_Items_UI에 부착하여 PlayerInventory가 전달한 ID 목록의 보유 아이템을 UI 프리팹으로 표시합니다.
     /// </summary>
     public class UIPlayerItems : MonoBehaviour
     {
@@ -39,7 +39,7 @@ namespace UJam.Runtime.UI
         private void OnEnable()
         {
             if (_inventory != null) _inventory.OnItemsChanged += OnSetItems;
-            OnSetItems();
+            OnSetItems(_inventory != null ? _inventory.Items : null);
         }
 
         /// <summary>
@@ -59,30 +59,27 @@ namespace UJam.Runtime.UI
         }
 
         /// <summary>
-        /// PlayerInventory의 ID와 수량에 맞춰 UI 프리팹 전체를 Root 아래에 복제하고 아이콘만 설정합니다.
+        /// 전달받은 ID를 ItemCatalog에서 조회하여 아이콘을 표시합니다. 빈 칸은 표시하지 않습니다.
         /// </summary>
-        private void OnSetItems()
+        private void OnSetItems(IReadOnlyList<string> itemIds)
         {
             ClearItems();
-            if (_inventory == null || _root == null || _itemPrefab == null) return;
+            if (itemIds == null || _root == null || _itemPrefab == null) return;
 
-            foreach (var entry in _inventory.Items)
+            foreach (string id in itemIds)
             {
-                if (_spawnedIcons.Count >= 8) break;
-                ItemMeta item = ItemCatalog.GetMeta(entry.Key);
-                if (item == null || item.ItemSprite == null)
+                if (id == Item.NullId) continue;
+                ItemMeta item = ItemCatalog.GetMeta(id);
+                if (item == null)
                 {
-                    Debug.LogWarning($"[UIPlayerItems] '{entry.Key}'의 ItemData 또는 Icon이 연결되지 않았습니다.", this);
+                    Debug.LogWarning($"[UIPlayerItems] '{id}'의 ItemMeta가 없습니다.", this);
                     continue;
                 }
 
-                for (int count = 0; count < entry.Value && _spawnedIcons.Count < 8; count++)
-                {
-                    UIItemIcon icon = Instantiate(_itemPrefab, _root, false);
-                    icon.SetIcon(item.ItemSprite);
-                    icon.gameObject.SetActive(true);
-                    _spawnedIcons.Add(icon);
-                }
+                UIItemIcon icon = Instantiate(_itemPrefab, _root, false);
+                icon.SetIcon(item.ItemSprite);
+                icon.gameObject.SetActive(true);
+                _spawnedIcons.Add(icon);
             }
         }
 

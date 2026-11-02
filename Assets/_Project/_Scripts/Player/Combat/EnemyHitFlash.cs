@@ -18,6 +18,7 @@ namespace UJam.Runtime.Enemy
         private void Awake()
         {
             if (_status == null) _status = GetComponentInParent<EnemyStatus>();
+
             _renderers = GetComponentsInChildren<Renderer>();
             _block = new MaterialPropertyBlock();
 
@@ -36,6 +37,7 @@ namespace UJam.Runtime.Enemy
         private void OnDisable()
         {
             if (_status != null) _status.OnEnemyHpChanged -= HandleHpChanged;
+
             ClearFlash();
         }
 
@@ -51,6 +53,7 @@ namespace UJam.Runtime.Enemy
             // 머티리얼을 복제하지 않고 렌더러의 색만 덮어씀
             _block.Clear();
             _block.SetColor(_colorId, _flashColor);
+
             foreach (Renderer r in _renderers)
                 if (r != null) r.SetPropertyBlock(_block);
 
@@ -64,6 +67,7 @@ namespace UJam.Runtime.Enemy
         private void ClearFlash()
         {
             if (_renderers == null) return;
+
             foreach (Renderer r in _renderers)
                 if (r != null) r.SetPropertyBlock(null);
         }

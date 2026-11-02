@@ -1,13 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
-using UJam.Runtime.Systems;
-using UJam.Runtime.Enemy;
-using UnityEngine;
-
 namespace Ujam.Runtime.Item
 {
     /// <summary>긴급 수리: 최대 체력 비율 회복. 사용 횟수는 PlayerStatus에 저장하고 소진 시 이 보유 개체를 삭제한다.</summary>
-    public sealed class EmergencyRepairEffect : ItemEffect
+    public class EmergencyRepairEffect : ItemEffect
     {
         private readonly float healPercent;
         private readonly int uses;
@@ -18,6 +12,7 @@ namespace Ujam.Runtime.Item
         {
             c.Player.Heal(c.Player.MaxHealth * healPercent / 100f);
             /* VFX: 거점 수리/회복 표현을 이곳에 추가한다. */
+
             if (c.Player.Increment(c.Item) >= uses) c.Item.Consume();
         }
     }

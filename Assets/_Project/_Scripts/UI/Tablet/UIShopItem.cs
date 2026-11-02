@@ -33,7 +33,9 @@ namespace UJam.Runtime.UI
         }
 
         /// <summary>
-        /// ItemData의 아이콘과 가격을 표시합니다. Item_null은 아이콘만 표시하고 구매를 차단합니다.
+        /// UIShopBuy가 Catalog에서 조회한 메타데이터의 아이콘과 가격을 표시합니다.
+        /// 아이콘을 지정하지 않은 아이템도 ItemMeta 생성자가 선택한 기본 null 이미지를 표시합니다.
+        /// 메타데이터가 null이면 아이콘을 비우고 가격을 '-'로 표시하며 구매를 차단합니다.
         /// </summary>
         public void SetItem(ItemMeta item, int slot, Action<int> buy)
         {
@@ -55,6 +57,7 @@ namespace UJam.Runtime.UI
             if (_item != null) _buy?.Invoke(_slot);
         }
 
+        /// <summary>판매 완료된 ID 칸을 Sold Out으로 표시하고 구매 버튼을 비활성화합니다.</summary>
         public void SetSoldOut()
         {
             _buy = null;

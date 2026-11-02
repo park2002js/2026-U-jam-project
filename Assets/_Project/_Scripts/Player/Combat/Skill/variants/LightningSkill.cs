@@ -40,6 +40,7 @@ namespace UJam.Runtime.Player
         public override void Init(PlayerCombatManager combatManager)
         {
             base.Init(combatManager);
+
             EffectRadius = zoneRadius;
             CastType = SkillCastType.Normal; // 일반 시전 정의
             CoolTime = skillCoolTime;
@@ -116,6 +117,7 @@ namespace UJam.Runtime.Player
                     var main = ps.main;
                     main.scalingMode = ParticleSystemScalingMode.Hierarchy;
                 }
+
                 fx.transform.localScale = Vector3.one * (zoneRadius * effectScale);
 
                 Destroy(fx, effectLifetime);

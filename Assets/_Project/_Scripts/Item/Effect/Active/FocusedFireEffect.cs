@@ -1,13 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
-using UJam.Runtime.Systems;
-using UJam.Runtime.Enemy;
-using UnityEngine;
-
 namespace Ujam.Runtime.Item
 {
     /// <summary>집중 사격: 시전 순간 원 안의 각 적에게 슈팅과 같은 직접 피해를 여러 번 준다. 슈팅 이벤트는 추가 발행하지 않는다.</summary>
-    public sealed class FocusedFireEffect : ItemEffect
+    public class FocusedFireEffect : ItemEffect
     {
         private readonly float radius, damagePercent;
         private readonly int shots;
@@ -19,6 +13,7 @@ namespace Ujam.Runtime.Item
             var enemies = ItemWorld.Circle(c.Position, radius, c.EnemyMask);
             /* VFX: 이 위치에 집중 사격의 총탄/적중 표현을 추가한다. */
             foreach (var enemy in enemies) for (int i = 0; i < shots; i++) c.Damage(enemy, damagePercent);
+
             c.ReportHits(enemies);
         }
     }

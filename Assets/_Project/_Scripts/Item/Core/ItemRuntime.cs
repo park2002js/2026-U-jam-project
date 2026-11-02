@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Ujam.Runtime.Item
 {
     /// <summary>선택된 Trigger를 Execute에 연결하고 장착 수명을 관리한다. 쿨타임 판단은 SkillManager의 책임이다.</summary>
-    public sealed class ItemRuntime
+    public class ItemRuntime
     {
         public ItemTrigger Trigger { get; }
         public ItemEffect Effect { get; }
@@ -27,10 +27,13 @@ namespace Ujam.Runtime.Item
         internal void Equip(PlayerStatus owner, LayerMask enemyMask)
         {
             if (owner == null || equipped) throw new InvalidOperationException("소유자를 확인하거나 먼저 장착 해제하세요.");
+
             equipped = true;
             Owner = owner; EnemyMask = enemyMask;
+
             RuntimeTimer.Ensure();
             EventManager.Instance.Subscribe(Trigger, Execute);
+
             var context = new ItemUseContext(Item, new ItemEvent(ItemTrigger.Equipped, owner));
             try
             {
@@ -47,8 +50,10 @@ namespace Ujam.Runtime.Item
             if (Owner == null || signal.Player != Owner || (executing && signal.Trigger != ItemTrigger.EnemyKilled)) return;
             if (Item.Meta.Kind == ItemKind.Active && signal.SkillItem != Item) return;
             if (signal.Trigger == ItemTrigger.BeforeDeath && signal.DeathPrevented) return;
+
             var context = new ItemUseContext(Item, signal);
             if (!Effect.CanExecute(context)) return;
+
             executing = true;
             try { Effect.Execute(context); signal.Executed = true; }
             finally { executing = false; }
@@ -58,6 +63,7 @@ namespace Ujam.Runtime.Item
         public void Run(IEnumerator routine)
         {
             if (Owner == null) return;
+
             IEnumerator tracked = null;
             tracked = TrackRoutine(routine, () => routines.Remove(tracked));
             routines.Add(tracked);
@@ -75,19 +81,23 @@ namespace Ujam.Runtime.Item
         internal void Unequip()
         {
             if (!equipped) return;
+
             equipped = false;
             var owner = Owner;
             EventManager.Instance.Unsubscribe(Trigger, Execute);
             Owner = null;
+
             foreach (var routine in routines.ToArray())
             {
                 if (RuntimeTimer.Instance != null) RuntimeTimer.Instance.StopCoroutine(routine);
                 (routine as IDisposable)?.Dispose();
             }
             routines.Clear();
+
             foreach (var instance in objects)
                 if (instance != null) { instance.SetActive(false); UnityEngine.Object.Destroy(instance); }
             objects.Clear();
+
             if (owner != null) Effect.OnUnequip(new ItemUseContext(Item, new ItemEvent(ItemTrigger.Equipped, owner)));
             BuffManager.Instance.RemoveSource(Item);
         }

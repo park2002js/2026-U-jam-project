@@ -13,6 +13,7 @@ namespace Ujam.Runtime.Item
         public static IEnumerator Run(ItemUseContext context, float radius, float duration, Action<IReadOnlyList<EnemyBase>> tick)
         {
             if (radius <= 0 || duration <= 0 || tick == null) throw new ArgumentException("장판 A 인자를 확인하세요.");
+
             float until = Time.time + duration;
             do
             {

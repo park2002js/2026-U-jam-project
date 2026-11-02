@@ -13,7 +13,7 @@ namespace UJam.Runtime.Systems
     }
 
     /// <summary>한 대상에 적용된 합연산 보정. ExpiresAt이 무한대이면 조건 유지형이며 Remove로 해제한다.</summary>
-    public sealed class BuffEntry
+    public class BuffEntry
     {
         public UnityEngine.Object Target { get; internal set; }
         public object Source { get; internal set; }
@@ -26,7 +26,7 @@ namespace UJam.Runtime.Systems
     /// 모든 플레이어 버프/적 디버프의 수명 관리자. 같은 대상+Source+Stat은 갱신하며 다른 Source는 합연산한다.
     /// 영구 보유 효과와 장판 B에는 SetCondition, T초짜리 효과에는 SetTimed를 사용한다.
     /// </summary>
-    public sealed class BuffManager
+    public class BuffManager
     {
         public static BuffManager Instance { get; private set; } = new();
         private readonly List<BuffEntry> playerBuffs = new();
@@ -55,6 +55,7 @@ namespace UJam.Runtime.Systems
         private void Set(List<BuffEntry> list, UnityEngine.Object target, object source, BuffStat stat, float percent, float until)
         {
             if (target == null || source == null || !float.IsFinite(percent)) throw new ArgumentException("버프 인자를 확인하세요.");
+
             RuntimeTimer.Ensure();
             var entry = list.Find(x => x.Target == target && ReferenceEquals(x.Source, source) && x.Stat == stat);
             if (entry == null)
@@ -62,7 +63,9 @@ namespace UJam.Runtime.Systems
                 entry = new BuffEntry { Target = target, Source = source, Stat = stat };
                 list.Add(entry);
             }
+
             entry.Percent = percent; entry.ExpiresAt = until;
+
             if (stat == BuffStat.MaxHealth && target is PlayerStatus player) player.RefreshHealth();
         }
 
@@ -83,6 +86,7 @@ namespace UJam.Runtime.Systems
         {
             var list = target is PlayerStatus ? playerBuffs : enemyBuffs;
             int removed = list.RemoveAll(x => x.Target == target && ReferenceEquals(x.Source, source) && x.Stat == stat);
+
             if (removed > 0 && stat == BuffStat.MaxHealth && target is PlayerStatus player) player.RefreshHealth();
         }
 
@@ -92,8 +96,10 @@ namespace UJam.Runtime.Systems
             var changed = new HashSet<PlayerStatus>();
             foreach (var entry in playerBuffs)
                 if (ReferenceEquals(entry.Source, source) && entry.Stat == BuffStat.MaxHealth && entry.Target is PlayerStatus player) changed.Add(player);
+
             playerBuffs.RemoveAll(x => ReferenceEquals(x.Source, source));
             enemyBuffs.RemoveAll(x => ReferenceEquals(x.Source, source));
+
             foreach (var player in changed) if (player != null) player.RefreshHealth();
         }
 
@@ -103,11 +109,15 @@ namespace UJam.Runtime.Systems
             var changed = new HashSet<PlayerStatus>();
             foreach (var entry in playerBuffs)
                 if (entry.ExpiresAt <= Time.time && entry.Stat == BuffStat.MaxHealth && entry.Target is PlayerStatus player) changed.Add(player);
+
             playerBuffs.RemoveAll(x => x.Target == null || x.ExpiresAt <= Time.time);
             enemyBuffs.RemoveAll(x => x.Target == null || x.ExpiresAt <= Time.time);
+
             foreach (var player in changed) if (player != null) player.RefreshHealth();
         }
 
+        // Unity가 실행 시작 시 첫 씬을 불러오기 전에 이 static 메서드를 자동 호출한다.
+        // SubsystemRegistration 시점에 정적 상태를 초기화하여 Domain Reload를 꺼도 이전 플레이의 상태가 남지 않게 한다.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Reset() => Instance = new BuffManager();
     }

@@ -7,8 +7,9 @@ using UnityEngine;
 namespace UJam.Runtime.Systems
 {
     /// <summary>미끼 자체의 체력/수명/도발을 관리한다. ItemEffect는 위치/체력/수명만 정하고 이 컴포넌트에 맡긴다.</summary>
+    // 이 스크립트를 추가할 때 같은 GameObject에 영역 감지를 담당하는 AreaTrigger가 없으면 Unity가 함께 추가한다.
     [RequireComponent(typeof(AreaTrigger))]
-    public sealed class DecoyController : MonoBehaviour, IDamageable
+    public class DecoyController : MonoBehaviour, IDamageable
     {
         private float maxHealth, health, duration;
         private LayerMask enemyMask;
@@ -26,27 +27,33 @@ namespace UJam.Runtime.Systems
         private void OnEnable()
         {
             if (!initialized) return;
+
             health = maxHealth;
             GetComponent<AreaTrigger>().Initialize(enemyMask, Taunt, Release);
         }
         private void Update()
         {
             if (!initialized) return;
+
             health = Mathf.Max(0, health - maxHealth / duration * Time.deltaTime);
+
             if (health <= 0) { gameObject.SetActive(false); Destroy(gameObject); }
         }
         private void Taunt(EnemyBase enemy)
         {
             if (enemy.FSM == null || !taunted.Add(enemy)) return;
+
             enemy.FSM.Targets.Remove(gameObject);
             enemy.FSM.Targets.Add(gameObject);
             enemy.ReTargeting();
+
             onTaunt?.Invoke(enemy);
         }
         private void Release(EnemyBase enemy)
         {
             taunted.Remove(enemy);
             if (enemy == null || enemy.FSM == null) return;
+
             enemy.FSM.Targets.Remove(gameObject);
             if (enemy.Status.HP > 0 && enemy.FSM.Targets.Count > 0) enemy.ReTargeting();
         }
@@ -58,8 +65,10 @@ namespace UJam.Runtime.Systems
         public float TakeDamage(DamageInfo info)
         {
             if (!float.IsFinite(info.Damage) || info.Damage <= 0 || health <= 0) return 0;
+
             float applied = Mathf.Min(health, info.Damage);
             health -= applied;
+
             if (health <= 0) { gameObject.SetActive(false); Destroy(gameObject); }
             return applied;
         }

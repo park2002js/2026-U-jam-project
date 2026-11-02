@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using UJam.Runtime.Combat;
 using UJam.Runtime.Enemy;
 using UJam.Runtime.Player;
 using UJam.Runtime.Systems;
@@ -9,7 +8,7 @@ using UnityEngine;
 namespace Ujam.Runtime.Item
 {
     /// <summary>중앙 이벤트의 인자. Shooting 미적중 Enemies는 null이고 AppliedDamage는 부가 효과까지 누적한 실제 피해다.</summary>
-    public sealed class ItemEvent
+    public class ItemEvent
     {
         public ItemTrigger Trigger { get; }
         public PlayerStatus Player { get; }
@@ -28,12 +27,13 @@ namespace Ujam.Runtime.Item
             IReadOnlyList<EnemyBase> enemies = null, Item skillItem = null, SkillCast cast = null)
         {
             Trigger = trigger; Player = player; Position = position; Enemies = enemies; SkillItem = skillItem; Cast = cast;
+
             if (player != null) { CurrentHealth = player.CurrentHealth; MaxHealth = player.MaxHealth; }
         }
     }
 
     /// <summary>Effect가 사용하는 실행 인자. 공유 이벤트와 실행 중인 보유 Item을 분리해 지연 효과의 소유자를 보존한다.</summary>
-    public sealed class ItemUseContext
+    public class ItemUseContext
     {
         public Item Item { get; }
         public ItemEvent Signal { get; }
@@ -52,6 +52,7 @@ namespace Ujam.Runtime.Item
         public float Damage(EnemyBase enemy, float attackPercent)
         {
             if (Player == null) return 0;
+
             float damage = Player.DealDamage(enemy, attackPercent, Item.ID);
             if (Signal.Trigger == ItemTrigger.Shooting) Signal.AppliedDamage += damage;
             return damage;
@@ -68,12 +69,13 @@ namespace Ujam.Runtime.Item
         public void ReportHits(IReadOnlyList<EnemyBase> enemies)
         {
             if (Signal.Cast == null || Player == null || enemies == null || enemies.Count == 0) return;
+
             EventManager.Instance.Publish(new ItemEvent(ItemTrigger.SkillHit, Player, Position, enemies, Item, Signal.Cast));
         }
     }
 
     /// <summary>시전 한 번의 식별 정보. 지연된 스킬도 시전 순서대로 정해진 과부화 보너스와 중복 방지 목록을 보존한다.</summary>
-    public sealed class SkillCast
+    public class SkillCast
     {
         internal readonly Dictionary<object, HashSet<EnemyBase>> Bonuses = new();
     }

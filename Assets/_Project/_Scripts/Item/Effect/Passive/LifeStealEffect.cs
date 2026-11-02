@@ -1,11 +1,7 @@
-using UJam.Runtime.Systems;
-using UJam.Runtime.Enemy;
-using UnityEngine;
-
 namespace Ujam.Runtime.Item
 {
     /// <summary>생명력 흡수: 슈팅의 기본 피해와 부가 효과 처리가 끝난 뒤 실제 피해 일부를 회복한다. 과잉 피해는 포함하지 않는다.</summary>
-    public sealed class LifeStealEffect : ItemEffect
+    public class LifeStealEffect : ItemEffect
     {
         private readonly float percent;
         /// <summary>Catalog에서 실제 피해 대비 회복 비율을 지정한다.</summary>

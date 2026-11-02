@@ -4,7 +4,7 @@ using UnityEngine;
 namespace UJam.Runtime.Systems
 {
     /// <summary>일반 C# 효과의 코루틴 호스트이며 BuffManager/ElementManager를 매 프레임 갱신한다. 씬 배치가 필요 없다.</summary>
-    public sealed class RuntimeTimer : MonoBehaviour
+    public class RuntimeTimer : MonoBehaviour
     {
         public static RuntimeTimer Instance { get; private set; }
         /// <summary>지속적으로 갱신할 시스템에서 구독한다. 해제 시 반드시 구독을 제거한다.</summary>
@@ -24,9 +24,13 @@ namespace UJam.Runtime.Systems
         {
             BuffManager.Instance.Update();
             ElementManager.Instance.Update();
+
             Tick?.Invoke(Time.deltaTime);
         }
         private void OnDestroy() { if (Instance == this) Instance = null; }
+
+        // Unity가 실행 시작 시 첫 씬을 불러오기 전에 이 static 메서드를 자동 호출한다.
+        // SubsystemRegistration 시점에 정적 상태를 초기화하여 Domain Reload를 꺼도 이전 플레이의 상태가 남지 않게 한다.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Reset() => Instance = null;
     }

@@ -1,5 +1,4 @@
 using UnityEngine;
-using UJam.Runtime.Phase;
 
 namespace UJam.Runtime.Player
 {

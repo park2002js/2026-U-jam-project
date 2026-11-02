@@ -35,9 +35,11 @@ namespace UJam.Runtime.Player
         private void Awake()
         {
             Instance = this;
+
             if (!Positive(_attackDamage)) _attackDamage = 10;
             if (!Positive(_maxHealth)) _maxHealth = 100;
             if (!Positive(_attackSpeed)) _attackSpeed = 5;
+
             _currentHealth = MaxHealth;
         }
         private void OnDestroy() { if (Instance == this) Instance = null; }
@@ -46,14 +48,17 @@ namespace UJam.Runtime.Player
         public float TakeDamage(DamageInfo info)
         {
             if (!Positive(info.Damage) || _currentHealth <= 0 || resolvingDeath) return 0;
+
             float applied = Mathf.Min(_currentHealth, info.Damage);
             _currentHealth -= applied;
+
             if (_currentHealth <= 0)
             {
                 resolvingDeath = true;
                 try { EventManager.Instance.Publish(new ItemEvent(ItemTrigger.BeforeDeath, this)); }
                 finally { resolvingDeath = false; }
             }
+
             RefreshHealth();
             if (_currentHealth <= 0 && GameManager.Instance != null) GameManager.Instance.GameOver();
             return applied;
@@ -63,8 +68,10 @@ namespace UJam.Runtime.Player
         public float Heal(float amount)
         {
             if (!Positive(amount) || _currentHealth <= 0) return 0;
+
             float before = _currentHealth;
             _currentHealth = Mathf.Min(MaxHealth, _currentHealth + amount);
+
             RefreshHealth();
             return _currentHealth - before;
         }
@@ -73,6 +80,7 @@ namespace UJam.Runtime.Player
         public bool Revive(float percent)
         {
             if (!resolvingDeath || _currentHealth > 0 || !Positive(percent)) return false;
+
             _currentHealth = MaxHealth * Mathf.Clamp01(percent / 100f);
             return true;
         }
@@ -81,6 +89,7 @@ namespace UJam.Runtime.Player
         public void RefreshHealth()
         {
             _currentHealth = Mathf.Clamp(_currentHealth, 0, MaxHealth);
+
             HealthChanged?.Invoke(_currentHealth, MaxHealth);
             EventManager.Instance.Publish(new ItemEvent(ItemTrigger.HealthChanged, this));
         }
@@ -92,6 +101,7 @@ namespace UJam.Runtime.Player
         public float DealDamage(EnemyBase enemy, float attackPercent, string source)
         {
             if (enemy == null || enemy.Status == null || enemy.Status.HP <= 0 || !Positive(attackPercent)) return 0;
+
             return enemy.TakeDamage(new DamageInfo(AttackDamage * attackPercent / 100f * DamageMultiplier,
                 source, DamageSourceKind.Player, this));
         }
@@ -135,6 +145,7 @@ namespace UJam.Runtime.Player
                 { cast.Bonuses[source] = new HashSet<EnemyBase>(); count = 0; }
                 skillCounters[source] = (counter.threshold, count);
             }
+
             return cast;
         }
 
@@ -145,6 +156,9 @@ namespace UJam.Runtime.Player
         /// <summary>인벤토리에서 아이템 개체를 완전히 제거할 때 카운터 참조를 정리한다.</summary>
         public void ForgetItem(object source) { counters.Remove(source); streaks.Remove(source); skillCounters.Remove(source); }
         private static bool Positive(float value) => float.IsFinite(value) && value > 0;
+
+        // Unity가 실행 시작 시 첫 씬을 불러오기 전에 이 static 메서드를 자동 호출한다.
+        // SubsystemRegistration 시점에 정적 상태를 초기화하여 Domain Reload를 꺼도 이전 플레이의 상태가 남지 않게 한다.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Reset() => Instance = null;
     }

@@ -100,6 +100,7 @@ namespace UJam.Runtime.Player
                 endPoint = hit.point;
                 landedHit = hit;
                 result = ShotResult.World;         // 맞은 것 = 기본값 일단 환경
+
                 IDamageable target = hit.collider.GetComponentInParent<IDamageable>();
                 if (target != null)
                 {
@@ -110,6 +111,7 @@ namespace UJam.Runtime.Player
                         hitEnemies = new List<EnemyBase> { enemy };
                         result = ShotResult.Enemy;
                     }
+
                     appliedDamage = target.TakeDamage(damageInfo);
                 }
             }
@@ -118,10 +120,12 @@ namespace UJam.Runtime.Player
             // 중앙 Shooting은 Ray 판정마다 한 번 통지한다. 빗나간 경우 Enemies = null.
             var shot = new ItemEvent(ItemTrigger.Shooting, _playerStatus, endPoint, hitEnemies) { AppliedDamage = appliedDamage };
             EventManager.Instance.Publish(shot);
+
             // 은화살/출혈 등 즉시 부가 피해까지 처리된 실제 합계를 흡혈에 전달한다.
             EventManager.Instance.Publish(new ItemEvent(ItemTrigger.ShootingResolved, _playerStatus, endPoint, hitEnemies)
                 { AppliedDamage = shot.AppliedDamage });
             if (hitEnemies != null) hitContext = shot;
+
             // 총알 프리팹이 없어도 벽/적에 도착하면 착탄 이펙트를 통지한다.
             Vector3 start = _bulletSpawnPoint != null ? _bulletSpawnPoint.position : ray.origin;
             SpawnBulletVisual(start, endPoint, hitContext, result, landedHit);
@@ -138,6 +142,7 @@ namespace UJam.Runtime.Player
             Vector3 direction = end - start;
             Quaternion rotation = direction.sqrMagnitude > 0f ? Quaternion.LookRotation(direction.normalized) : Quaternion.identity;
             GameObject bullet = _bulletPrefab != null ? Instantiate(_bulletPrefab, start, rotation) : null;
+
             float travelTime = direction.magnitude / _bulletVisualSpeed;
             StartCoroutine(MoveBulletVisual(bullet, start, end, travelTime, hitContext, result, landedHit));   // 인자 추가
         }
@@ -158,6 +163,7 @@ namespace UJam.Runtime.Player
             }
 
             if (bullet != null) Destroy(bullet);
+
             if (result != ShotResult.Miss) OnShotLanded?.Invoke(result, landedHit);   // 착탄 결과 통지
             if (hitContext != null) OnShootingHit?.Invoke(hitContext);
         }

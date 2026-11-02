@@ -1,0 +1,6 @@
+Kenney Particle Pack
+https://kenney.nl/assets/particle-pack
+Original textures: circle_05.png, twirl_03.png, magic_02.png
+License: CC0 1.0 Universal; personal and commercial use allowed; credit optional.
+Textures are unmodified; color is applied by Unity materials.
+Static placeholder for a later VFX replacement.

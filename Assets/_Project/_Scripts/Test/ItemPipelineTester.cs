@@ -16,7 +16,7 @@ namespace Ujam.Runtime.Item
     {
         [SerializeField] private PlayerInventory inventory;
         [UnityEngine.Serialization.FormerlySerializedAs("itemGuids")]
-        [SerializeField] private List<string> itemIds = new() { "11", "13" };
+        [SerializeField] private List<string> itemIds = new() { "11", "20" };
         [SerializeField] private bool equipOnStart = true;
         private void Start() { if (equipOnStart) EquipItems(); }
 

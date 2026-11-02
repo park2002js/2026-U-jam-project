@@ -1,11 +1,9 @@
 using UJam.Runtime.Systems;
-using UJam.Runtime.Enemy;
-using UnityEngine;
 
 namespace Ujam.Runtime.Item
 {
     /// <summary>염화: 화상 공격력 계수에 퍼센트포인트를 더한다. 111%+20은 131%이며 별도 1.2배가 아니다.</summary>
-    public sealed class FlameEnhancementEffect : ItemEffect
+    public class FlameEnhancementEffect : ItemEffect
     {
         private readonly float percent;
         /// <summary>Catalog에서 화상 계수에 더할 퍼센트포인트를 지정한다.</summary>
