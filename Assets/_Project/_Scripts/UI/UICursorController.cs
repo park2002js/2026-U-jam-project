@@ -1,5 +1,6 @@
 using UJam.Runtime.Phase;
 using UnityEngine;
+using UJam.Runtime.Player;
 
 namespace UJam.Runtime.UI
 {
@@ -18,6 +19,14 @@ namespace UJam.Runtime.UI
         [SerializeField, Tooltip("전투 중 사용할 Cursor 텍스처입니다. 비어 있으면 기본 커서를 사용합니다.")]
         private Texture2D _combatCursor;
         [SerializeField] private Vector2 _combatHotspot;
+        
+        [Header("Skill Aiming")]
+        [SerializeField, Tooltip("스킬 조준 상태를 읽을 SkillManager입니다. 비어 있으면 씬에서 찾습니다.")]
+        private PlayerSkillManager _skillManager;
+        [SerializeField, Tooltip("조준 중 사용할 Cursor 텍스처입니다. 비어 있으면 커서를 숨깁니다.")]
+        private Texture2D _skillCursor;
+
+        private bool _wasAiming;   // 조준 상태가 바뀐 프레임에만 커서를 갱신하기 위한 값
 
         private GameManager _gameManager;
 
@@ -30,11 +39,24 @@ namespace UJam.Runtime.UI
         }
 
         /// <summary>
+        /// 조준 상태가 바뀐 순간에만 커서를 갱신합니다. 매 프레임 SetCursor를 호출하지 않습니다.
+        /// </summary>
+        private void Update()
+        {
+            bool aiming = _skillManager != null && _skillManager.IsAiming;
+            if (aiming == _wasAiming) return;
+
+            _wasAiming = aiming;
+            RefreshCursor();
+        }
+
+        /// <summary>
         /// GameManager.Awake가 늦게 실행된 경우에도 씬 시작 시 싱글톤 연결을 완료합니다.
         /// </summary>
         private void Start()
         {
             if (_gameManager == null) BindGameManager();
+            if (_skillManager == null) _skillManager = FindAnyObjectByType<PlayerSkillManager>();
         }
 
         /// <summary>
@@ -85,13 +107,32 @@ namespace UJam.Runtime.UI
         /// <summary>
         /// 전투에는 전투 커서, 정비와 게임 오버에는 정비 커서를 적용합니다. 다음 변경까지 Unity가 유지합니다.
         /// </summary>
+        /// <summary>
+        /// 조준 중에는 스킬 커서를 쓰거나 숨기고, 그 외에는 Phase에 맞는 커서를 적용합니다.
+        /// </summary>
         private void RefreshCursor()
         {
+            // 스킬 조준 중에는 Preview가 위치를 보여주므로 커서를 교체하거나 숨긴다
+            if (_skillManager != null && _skillManager.IsAiming)
+            {
+                if (_skillCursor != null)
+                {
+                    Vector2 skillHotspot = new Vector2(_skillCursor.width / 2f, _skillCursor.height / 2f);
+                    Cursor.SetCursor(_skillCursor, skillHotspot, CursorMode.Auto);
+                    Cursor.visible = true;
+                }
+                else
+                {
+                    Cursor.visible = false;
+                }
+                Cursor.lockState = CursorLockMode.None;
+                return;
+            }
+
             if (_gameManager == null) return;
             bool isCombat = !_gameManager.IsGameOver && _gameManager.CurrentPhase == PhaseState.Combat;
             Texture2D texture = isCombat ? _combatCursor : _preparationCursor;
-            Vector2 hotspot = isCombat ? _combatHotspot : _preparationHotspot;
-            hotspot = texture != null ? new Vector2(texture.width / 2f, texture.height / 2f) : Vector2.zero;
+            Vector2 hotspot = texture != null ? new Vector2(texture.width / 2f, texture.height / 2f) : Vector2.zero;
             Cursor.SetCursor(texture, hotspot, CursorMode.Auto);
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
