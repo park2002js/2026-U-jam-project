@@ -1,5 +1,6 @@
 using System.Collections;
 using UJam.Runtime.Combat;
+using UJam.Runtime.Grid;
 using UnityEngine;
 
 namespace UJam.Runtime.Enemy.Projectiles
@@ -12,8 +13,11 @@ namespace UJam.Runtime.Enemy.Projectiles
         private Vector3 _destination;
         private float _speed;
         private ProjectileMovement _movement;
+        private Vector3 _targetPosition;
+        private bool _targetWasBaseCore;
 
-        public void Launch(EnemyBase owner, IDamageable pastTarget, Vector3 destination, float speed, ProjectileMovement movement)
+        public void Launch(EnemyBase owner, IDamageable pastTarget, Vector3 destination, float speed, ProjectileMovement movement,
+            Vector3? targetPosition = null, bool targetWasBaseCore = false)
         {
             _owner = owner;
             _pastTarget = pastTarget;
@@ -21,6 +25,8 @@ namespace UJam.Runtime.Enemy.Projectiles
             _destination = destination;
             _speed = speed;
             _movement = movement;
+            _targetPosition = targetPosition ?? destination;
+            _targetWasBaseCore = targetWasBaseCore;
 
             StartCoroutine(Fly());
         }
@@ -51,6 +57,19 @@ namespace UJam.Runtime.Enemy.Projectiles
             // 인터페이스 참조는 대상이 파괴되어도 CLR null로 바뀌지 않으므로
             // UnityEngine.Object 참조를 통해 실제 게임 오브젝트의 생존 여부를 확인한다.
             if (_pastTargetObject == null || _pastTarget == null) return;
+            if (_pastTargetObject is Behaviour receiver)
+            {
+                if (!receiver.isActiveAndEnabled) return;
+                if (!_targetWasBaseCore)
+                {
+                    GridSystem grid = GridSystem.Instance;
+                    Vector3 offset = receiver.transform.position - _targetPosition;
+                    Vector2 moved = grid != null && grid.IsInitialized
+                        ? new Vector2(offset.x / grid.CellWidth, offset.z / grid.CellHeight)
+                        : new Vector2(offset.x, offset.z);
+                    if (moved.sqrMagnitude > .01f) return;
+                }
+            }
 
             DamageInfo damageInfo = new DamageInfo(_owner.Status.OutgoingDamage, _owner.name, DamageSourceKind.Enemy);
 

@@ -1,7 +1,7 @@
 {
   "enemies": [
     {
-      "prefabName": "Tee",
+      "prefabName": "Sniper_Eyebeast",
       "statusSettings": [
         {
           "spawns": [
@@ -11,18 +11,90 @@
       ]
     },
     {
-      "prefabName": "Kog",
+      "prefabName": "Big_Golem",
       "statusSettings": [
         {
           "spawns": [
-            { "x": 6, "z": 5, "waitTime": 1 },
-            { "x": 7, "z": 4, "waitTime": 1 },
-            { "x": 8, "z": 3, "waitTime": 1 },
-            { "x": 9, "z": 2, "waitTime": 1 },
-            { "x": 10, "z": 1, "waitTime": 1 },
-            { "x": 11, "z": 6, "waitTime": 1 },
-            { "x": 12, "z": 7, "waitTime": 1 },
-            { "x": 13, "z": 8, "waitTime": 1 },
+            { "x": 6, "z": 5, "waitTime": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Skeleton",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 7, "z": 4, "waitTime": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Slime",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 8, "z": 3, "waitTime": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Rollbug",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 9, "z": 2, "waitTime": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Golem",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 10, "z": 1, "waitTime": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Skeleton",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 11, "z": 6, "waitTime": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Slime",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 12, "z": 7, "waitTime": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Rollbug",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 13, "z": 8, "waitTime": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Golem",
+      "statusSettings": [
+        {
+          "spawns": [
             { "x": 14, "z": 9, "waitTime": 1 }
           ]
         }

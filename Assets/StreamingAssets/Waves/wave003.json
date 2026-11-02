@@ -1,20 +1,47 @@
 {
   "enemies": [
     {
-      "prefabName": "Tee",
+      "prefabName": "Witch",
       "statusSettings": [
         {
           "spawns": [
-            { "x": 1, "z": 1, "waitTime": 1 },
-            { "x": 3, "z": 3, "waitTime": 1 },
-            { "x": 7, "z": 7, "waitTime": 1 },
+            { "x": 1, "z": 1, "waitTime": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Eyebeast",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 3, "z": 3, "waitTime": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Sniper_Eyebeast",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 7, "z": 7, "waitTime": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Witch",
+      "statusSettings": [
+        {
+          "spawns": [
             { "x": 10, "z": 10, "waitTime": 1 }
           ]
         }
       ]
     },
     {
-      "prefabName": "Kog",
+      "prefabName": "Big_Golem",
       "statusSettings": [
         {
           "spawns": [

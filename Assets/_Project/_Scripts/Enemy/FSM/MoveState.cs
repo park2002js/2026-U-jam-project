@@ -20,6 +20,11 @@ namespace UJam.Runtime.Enemy.FSM
         // 이동 시작
         public void Enter()
         {
+            if (!_fsm.TGV.TryGetTarget(out _))
+            {
+                _enemy.Animation?.Play("Idle");
+                return;
+            }
             // 우선 공격 대상이 사거리 안에 존재하지 않으면(=False) Move 함수 발동
             if(!_fsm.TGV.Check()) _enemy.Move();
             // 사거리 내에 존재하면 바로 Attack 상태로 전환한다.
@@ -29,7 +34,7 @@ namespace UJam.Runtime.Enemy.FSM
         public void Exit()
         {
             // Movement의 Exit를 호출하여 Move 로직의 종료를 구현
-            _enemy.Movement.Exit();
+            _enemy.Movement?.Exit();
         }
     }
 }

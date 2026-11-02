@@ -1,7 +1,7 @@
 {
   "enemies": [
     {
-      "prefabName": "Tee",
+      "prefabName": "Eyebeast",
       "statusSettings": [
         {
           "spawns": [
@@ -11,7 +11,7 @@
       ]
     },
     {
-      "prefabName": "Kog",
+      "prefabName": "Golem",
       "statusSettings": [
         {
           "spawns": [

@@ -9,16 +9,11 @@ namespace UJam.Runtime.UI
         [SerializeField] private TMP_Text _text;
         [SerializeField] private CanvasGroup _group;
 
-        public RectTransform Rect { get; private set; }
+        public RectTransform Rect => (RectTransform)transform;
 
         // 생성 시점의 월드 좌표. 적을 따라가지 않고 이 자리에 남는다.
         public Vector3 WorldPos { get; set; }
         public float Elapsed { get; set; }
-
-        private void Awake()
-        {
-            Rect = (RectTransform)transform;
-        }
 
         public void SetValue(float damage, Color color)
         {
