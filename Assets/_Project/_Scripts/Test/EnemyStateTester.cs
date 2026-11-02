@@ -208,9 +208,6 @@ namespace UJam.Runtime.Enemy
                 return;
             }
 
-            // 이전 상태에서 실행 중이던 Coroutine이 새 테스트에 남지 않도록 정리
-            _enemy.StopAllCoroutines();
-
             // 자동 전이 이후 Move 상태를 다시 테스트할 경우 시작 위치 복구
             if (state == EnemyStateType.Move)
             {

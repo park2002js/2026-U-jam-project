@@ -107,7 +107,7 @@ namespace UJam.Runtime.Enemy
 
         /// <summary>
         /// 모든 기본 수치 값을 실시간 수치 값으로 전환하는 초기화 함수
-        /// Idle 상태에서 호출한다.
+        /// Init 상태에서 한 번 호출한다.
         /// </summary>
         public void init()
         {
@@ -121,6 +121,18 @@ namespace UJam.Runtime.Enemy
             _ad = _attackDamage;
             _as = _attackSpeed;
             _range = _attackRange;
+        }
+
+        public void ConfigureSpawnStats(float maxHealth, float attackDamage, int credits)
+        {
+            if (!float.IsFinite(maxHealth) || maxHealth <= 0f ||
+                !float.IsFinite(attackDamage) || attackDamage < 0f || credits < 0)
+                throw new ArgumentOutOfRangeException(nameof(maxHealth), "소환된 적의 능력치를 확인하세요.");
+            _maxHealth = maxHealth;
+            _attackDamage = attackDamage;
+            _credits = credits;
+            _hp = maxHealth;
+            _ad = attackDamage;
         }
 
         // Enemy가 TakeDamage로 데미지를 입을 때마다 호출하는 함수. 인자만큼 체력을 깎고 죽었는지 여부를 체크한다.

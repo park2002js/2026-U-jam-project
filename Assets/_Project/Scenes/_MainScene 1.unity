@@ -8989,6 +8989,22 @@ MonoBehaviour:
     _prefab: {fileID: 214267930281238900, guid: b052646694e3fb0428a60911633c0540, type: 3}
   - _name: Kog
     _prefab: {fileID: 3906313082937284737, guid: 86d314c594857774e98aa86538ef559d, type: 3}
+  - _name: Golem
+    _prefab: {fileID: 104701421769652672, guid: eeef73a3f884e0a42b0b275a441495ec, type: 3}
+  - _name: Big_Golem
+    _prefab: {fileID: 6953027838160505631, guid: 0ac997213eb94134da015513335c19dd, type: 3}
+  - _name: Eyebeast
+    _prefab: {fileID: 3327700369383855136, guid: b4b79317d37acb14ca8b4c107116c095, type: 3}
+  - _name: Sniper_Eyebeast
+    _prefab: {fileID: 1456856074196641978, guid: a5e531275a92a3141871bb6c0a2a5c0c, type: 3}
+  - _name: Witch
+    _prefab: {fileID: 7646192120243376198, guid: 847aaa6f8c17bd04bb56493280b6cf7d, type: 3}
+  - _name: Skeleton
+    _prefab: {fileID: 5188747273017191362, guid: ea922871b46db1549ac42ae753b0c9c6, type: 3}
+  - _name: Slime
+    _prefab: {fileID: 898103911622944060, guid: e9aeed2f0aa8878449926378cdff33b4, type: 3}
+  - _name: Rollbug
+    _prefab: {fileID: 1612247933420139533, guid: 6924429f3f414a641865b7f819add9be, type: 3}
   _activeEnemyRoot: {fileID: 0}
 --- !u!114 &1899954524
 MonoBehaviour:

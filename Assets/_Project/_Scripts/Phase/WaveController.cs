@@ -273,6 +273,17 @@ namespace UJam.Runtime.Phase
             return true;
         }
 
+        /// <summary>소환·분열로 추가된 개체만 집계한다. 예정된 Wave 개체는 이미 남은 수에 포함돼 있다.</summary>
+        public bool RegisterAdditionalEnemy(EnemyBase enemy, EnemyBase source)
+        {
+            if (!_isWaveRunning || source == null || !_aliveEnemyIds.Contains(source.gameObject.GetInstanceID()) ||
+                enemy == null || enemy.Status == null || enemy.Status.HP <= 0 ||
+                (_gameManager != null && _gameManager.IsGameOver) || !_aliveEnemyIds.Add(enemy.gameObject.GetInstanceID())) return false;
+            _remainingEnemyCount += 1;
+            if (_phaseSystem != null) _phaseSystem.UpdateRemainingEnemyCount(_remainingEnemyCount);
+            return true;
+        }
+
         // waitTime은 이전 적이 생성된 시점이 아니라 Wave 시작 시점부터 센다.
         private IEnumerator SpawnAfterWait(WaveInfo.EnemySpawnInfo enemyInfo)
         {
@@ -281,10 +292,8 @@ namespace UJam.Runtime.Phase
 
             GameObject instance = Instantiate(enemyInfo.EnemyPrefab, GetWorldPosition(enemyInfo.GridPosition), enemyInfo.EnemyPrefab.transform.rotation, _activeEnemyRoot);
             EnemyBase enemy = instance.GetComponent<EnemyBase>();
-            enemy.FSM.Targets.Clear();
-            enemy.FSM.Targets.Add(_defaultEnemyTarget);
             _aliveEnemyIds.Add(instance.GetInstanceID());
-            enemy.FSM.SetState(EnemyStateType.Move);
+            enemy.BeginCombat(_defaultEnemyTarget);
             Debug.Log($"[WaveController] {enemyInfo.EnemyPrefab.name} 생성: Grid {enemyInfo.GridPosition}, 지연 {enemyInfo.WaitTime}초", this);
         }
 

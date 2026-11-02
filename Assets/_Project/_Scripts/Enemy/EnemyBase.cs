@@ -1,9 +1,9 @@
 using System.Collections;
 using UJam.Runtime.Combat;
 using UJam.Runtime.Enemy.Movement;
+using UJam.Runtime.Grid;
 using UJam.Runtime.Phase;
 using UJam.Runtime.Shop;
-using Unity.VisualScripting;
 using UnityEngine;
 using UJam.Runtime.Player;
 using UJam.Runtime.Systems;
@@ -14,204 +14,284 @@ namespace UJam.Runtime.Enemy
     [RequireComponent(typeof(EnemyStatus))]
     public abstract class EnemyBase : MonoBehaviour, IDamageable
     {
-        #region Inspector 창에 띄울 것들
-
-        // 사용할 Status 객체 [Inspector에서 할당]
         [SerializeField] private EnemyStatus _status;
         private PlayerStatus lastAttacker;
-
-        #endregion
-
-        #region Properties
-
-        /// <summary>
-        /// Enemy가 보유한 FSM 시스템 객체
-        /// EnemyFSM객체를 통해 상태를 제어한다.
-        /// </summary>
         private EnemyFSM _fsm;
-
-        /// <summary>
-        /// Enemy가 보유한 이동 알고리즘.
-        /// EnemyStatus에서 가져온 객체를 사용한다.
-        /// </summary>
         private EnemyMovement _movement;
+        private GameObject _defaultTarget;
+        private bool _initialized;
+        private bool _combatStarted;
+        private bool _dead;
+        private bool _deathReported;
+        private bool _attackImpactPending;
 
-        // 현재 Enemy 스탯
-        public EnemyStatus Status { get { return _status; } } // 현재 스탯 반환
+        public EnemyStatus Status => _status;
+        public EnemyFSM FSM => _fsm;
+        public EnemyMovement Movement => _movement;
+        public EnemyAnimation Animation { get; private set; }
+        public GameObject AttackTarget { get; private set; }
+        public Vector3 AttackTargetPosition { get; private set; }
+        public bool AttackTargetWasBaseCore { get; private set; }
+        public bool IsAttackPlaying { get; private set; }
+        public virtual bool ImmediateAttack => false;
 
-        // 현재 Enemy 상태 머신
-        public EnemyFSM FSM { get { return _fsm; }} // 현재 FSM 반환
-
-        // 현재 Enemy 움직임 로직
-        public EnemyMovement Movement { get { return _movement; }} // 현재 movement 반환
-
-
-        #endregion
-
-        #region Unity Life Cycle
-
-        // Status와 Component를 준비하고 FSM 생성
         protected virtual void Awake()
         {
-            if (_status == null) _status = GetComponent<EnemyStatus>();
-            // EnemyBase 자신의 객체를 전달하여 FSM 생성
             _fsm = new EnemyFSM(this);
-
-            // FSM이 EnemyBase에 할당된 이후 기본 Idle 상태로 진입
-            _fsm.SetState(EnemyStateType.Idle);
+            _fsm.SetState(EnemyStateType.Init);
         }
 
-        private void Update()
+        protected virtual void Start()
         {
+            if (!_combatStarted && _fsm.state == EnemyStateType.Idle) BeginCombat();
+        }
+
+        protected virtual void Update()
+        {
+            if (_combatStarted && _fsm.state == EnemyStateType.Idle && !_status.IsStunned &&
+                _fsm.TGV.TryGetTarget(out _))
+                _fsm.SetState(EnemyStateType.Move);
+            if ((_fsm.state == EnemyStateType.Move || _fsm.state == EnemyStateType.Attack) &&
+                !_status.IsStunned && !IsAttackPlaying)
+                TrySummon();
         }
 
         protected virtual void OnDestroy()
         {
-
+            if (_status != null && _fsm != null) _status.Died -= _fsm.SetDead;
+            if (_dead) ReportDeath();
         }
 
-        #endregion
-
-        #region FSM Commands
-
-        // Idle의 기본 공통 행동 정의
-        public virtual void Idle()
+        public virtual void Init()
         {
-            // 1. Status 객체의 초기화
-            _status.init();            
-
-            // 2. 이동 알고리즘 Status에서 가져와서 할당
+            if (_initialized) return;
+            _initialized = true;
+            if (_status == null) _status = GetComponent<EnemyStatus>();
+            _status.init();
             _movement = _status.Movement;
-            // 없으면 기본 이동 방식 (열 이동 방식)을 사용하도록 하여 오류 방어
-            if(_movement == null)
+            if (_movement == null)
             {
-                Debug.LogError($"{name}의 EnemyStatus에 EnemyMovement가 할당되지 않았습니다.", this);
-                _movement = GetComponent<GridColMovement>();
+                _movement = GetComponent<EnemyMovement>();
                 if (_movement == null) _movement = gameObject.AddComponent<GridColMovement>();
             }
-            // EnemyBase 객체를 전달하여 초기화
             _movement.init(this);
-
-            // 3. 이벤트 구독 연결
-            _status.Died += _fsm.SetDead; // 체력이 0이되었을 때 발생하는 이벤트에, Dead 상태로 전환하는 함수 구독
-
-            // 4. 우선 공격 대상 Stack에 거점 할당
-            _fsm.Targets.Clear(); // Stack 내부의 요소들을 명시적으로 초기화 함
-            _fsm.Targets.Add(GameObject.FindGameObjectWithTag("BaseCore")); // 초기화된 스택에 요소 추가 = 0번째 요소를 거점으로 설정
+            _status.Died += _fsm.SetDead;
+            Animation = GetComponentInChildren<EnemyAnimation>(true);
+            if (Animation != null) Animation.Initialize(this);
         }
 
-        // Move의 기본 공통 행동 정의
+        // Idle resets targets only; entering it never heals or reinitializes the enemy.
+        public virtual void Idle()
+        {
+            _fsm.Targets.Clear();
+            GameObject target = _defaultTarget != null ? _defaultTarget : GameObject.FindGameObjectWithTag("BaseCore");
+            if (target != null) _fsm.Targets.Add(target);
+        }
+
+        public virtual void BeginCombat(GameObject target = null)
+        {
+            if (_combatStarted || _dead) return;
+            _combatStarted = true;
+            _defaultTarget = target;
+            Idle();
+            _fsm.SetState(Animation != null && Animation.HasState("Spawn")
+                ? EnemyStateType.Spawn
+                : EnemyStateType.Move);
+        }
+
+        public virtual void PrepareForTesting(GameObject target)
+        {
+            if (_dead) return;
+            _combatStarted = true;
+            _defaultTarget = target;
+            Idle();
+        }
+
         public virtual void Move()
         {
-            // 필요하다면 animation 단계를 여기에 추가
+            Animation?.Play("Move");
             _movement.Enter();
         }
 
-        // Attack의 기본 공통 행동 정의
+        public virtual void Spawn()
+        {
+            if (Animation == null || !Animation.Play("Spawn"))
+                _fsm.SetState(EnemyStateType.Move);
+        }
+
+        public virtual bool TrySummon() => false;
+
+        public virtual void Summon()
+        {
+            if (Animation == null || !Animation.Play("Summon"))
+                _fsm.SetState(EnemyStateType.Move);
+        }
+
+        public virtual void BeginAttack()
+        {
+            if (_dead || IsAttackPlaying || _fsm.state != EnemyStateType.Attack || _status.IsStunned ||
+                !_fsm.TGV.TryGetTarget(out GameObject target) || !_fsm.TGV.Check(target))
+                return;
+
+            AttackTarget = target;
+            AttackTargetPosition = target.transform.position;
+            AttackTargetWasBaseCore = target.CompareTag("BaseCore");
+            CaptureAttackDestination();
+            IsAttackPlaying = true;
+            _attackImpactPending = true;
+            Vector3 direction = target.CompareTag("BaseCore")
+                ? Vector3.forward
+                : target.transform.position - transform.position;
+            direction.y = 0f;
+            if (direction.sqrMagnitude > 0f) transform.rotation = Quaternion.LookRotation(direction);
+
+            float duration = Animation != null ? Animation.Duration("Attack") : 0f;
+            if (Animation == null || !Animation.Play("Attack", duration * _status.AttackSpeed))
+            {
+                AnimationSignal("AttackImpact");
+                AnimationSignal("AttackComplete");
+            }
+        }
+
+        public void CancelAttack()
+        {
+            _attackImpactPending = false;
+            IsAttackPlaying = false;
+            AttackTarget = null;
+            AttackTargetPosition = Vector3.zero;
+            AttackTargetWasBaseCore = false;
+        }
+
+        protected virtual void CaptureAttackDestination() { }
+
+        public bool TryGetAttackTarget(out GameObject target, out IDamageable damageable)
+        {
+            target = AttackTarget;
+            damageable = null;
+            if (!IsAttackPlaying || target == null || !_fsm.TGV.Check(target)) return false;
+            IDamageable receiver = target.GetComponent<IDamageable>();
+            if (receiver == null || receiver is Behaviour behaviour && !behaviour.isActiveAndEnabled) return false;
+            if (!AttackTargetWasBaseCore)
+            {
+                GridSystem grid = GridSystem.Instance;
+                Vector3 offset = target.transform.position - AttackTargetPosition;
+                var moved = new Vector2(offset.x / grid.CellWidth, offset.z / grid.CellHeight);
+                if (moved.sqrMagnitude > .01f) return false;
+            }
+            damageable = receiver;
+            return true;
+        }
+
+        // Only the animation impact signal executes the effect of an animated attack.
         public virtual void Attack()
         {
-            if (_status.IsStunned) return;
-            // 우선 공격 대상을 담는 Stack이 "GameObject"타입을 담는 것으로 정의되어 있기 때문에, TakeDamage를 호출하기 위해서 IDamageable로 형변환을 시도
-            GameObject target = _fsm.Targets[_fsm.Targets.Count - 1];
-            IDamageable damageable = target.GetComponent<IDamageable>();
-
-            // 형변환 실패시 IDamageable을 상속받은 대상을 공격하고 있지 않다는 뜻이므로 Debug.Log를 호출하도록 하는 것으로 
-            if (damageable == null)
-            {
-                Debug.LogError($"공격 대상 {target.name}의 TakeDamage를 호출할 수 없습니다.", target);
+            if (_dead || !TryGetAttackTarget(out GameObject target, out IDamageable damageable))
                 return;
-            }
-
             damageable.TakeDamage(new DamageInfo(_status.OutgoingDamage, name, DamageSourceKind.Enemy));
         }
 
-        // Dead의 기본 공통 행동 정의
+        public virtual void AnimationSignal(string signal)
+        {
+            switch (signal)
+            {
+                case "AttackImpact":
+                    if (_fsm.state != EnemyStateType.Attack || !IsAttackPlaying || !_attackImpactPending) return;
+                    _attackImpactPending = false;
+                    if (!_dead) Attack();
+                    break;
+                case "AttackComplete":
+                    if (_fsm.state != EnemyStateType.Attack || !IsAttackPlaying) return;
+                    CancelAttack();
+                    Animation?.Play("Idle");
+                    _fsm.CompleteAttack();
+                    break;
+                case "SpawnComplete":
+                    if (_fsm.state == EnemyStateType.Spawn) _fsm.SetState(EnemyStateType.Move);
+                    break;
+                case "SummonComplete":
+                    if (_fsm.state == EnemyStateType.Summon) _fsm.SetState(EnemyStateType.Move);
+                    break;
+                case "DeathComplete":
+                    if (_fsm.state == EnemyStateType.Dead)
+                    {
+                        ReportDeath();
+                        Destroy(gameObject);
+                    }
+                    break;
+            }
+        }
+
         public virtual void Dead()
         {
-            // 1. 모든 코루틴 종료
-            _fsm.Move.Exit();
-            _fsm.Attack.Exit();
+            if (_dead) return;
+            _dead = true;
+            CancelAttack();
+            _movement?.Exit();
             StopAllCoroutines();
-
-            // 2. 모든 물리 상호작용 제거
             foreach (Collider targetCollider in GetComponentsInChildren<Collider>())
-            {
                 targetCollider.enabled = false;
-            }
 
-            // 3. Wallet에 돈 추가
             if (Wallet.Instance != null)
             {
                 var player = lastAttacker != null ? lastAttacker : PlayerStatus.Instance;
                 Wallet.Instance.AddCurrency(player != null ? player.KillReward(_status.Credits) : _status.Credits);
             }
 
-            // 4. WaveController에 사망 정보 보내기
-            if (WaveController.Instance != null)
-            {
-                WaveController.Instance.ReportEnemyDead(gameObject);
-            }
-
-            // 5. 기본 Animation을 시작하고 삭제시킨다.
+            ReportDeath();
             StartCoroutine(DeadAnim());
         }
 
-        /// <summary>
-        /// 기본 Animation으로, Y축 아래로 하강한 뒤 Destroy를 통해 인스턴스를 게임내에서 지운다.
-        /// 필요시 해당 animation을 구체화할 수 있다.
-        /// </summary>
+        protected virtual void ReportDeath()
+        {
+            if (_deathReported) return;
+            _deathReported = true;
+            if (WaveController.Instance != null) WaveController.Instance.ReportEnemyDead(gameObject);
+        }
+
         public virtual IEnumerator DeadAnim()
         {
+            if (Animation != null && Animation.Play("Death"))
+            {
+                // Completion events normally remove the corpse; this also handles a missing end event.
+                yield return new WaitForSeconds(Animation.Duration("Death"));
+                AnimationSignal("DeathComplete");
+                yield break;
+            }
+
             Vector3 start = transform.position;
             Vector3 end = start + Vector3.down * 1.5f;
-            float duration = 0.5f;
+            const float duration = 0.5f;
             float elapsed = 0f;
-
             while (elapsed < duration)
             {
                 elapsed += Time.deltaTime;
                 transform.position = Vector3.Lerp(start, end, elapsed / duration);
                 yield return null;
             }
-
-            Destroy(gameObject);
+            AnimationSignal("DeathComplete");
         }
-
-        #endregion
-
-        
-        #region Public Commands
 
         public float TakeDamage(DamageInfo info)
         {
-            if (_status == null || _status.HP <= 0) return 0;
+            if (_status == null || _status.HP <= 0 || _dead) return 0;
             Vector3 deathPosition = transform.position;
-            lastAttacker = info.SourceKind == DamageSourceKind.Player ?
-                (info.Attacker != null ? info.Attacker : PlayerStatus.Instance) : null;
+            lastAttacker = info.SourceKind == DamageSourceKind.Player
+                ? (info.Attacker != null ? info.Attacker : PlayerStatus.Instance)
+                : null;
             float applied = _status.ApplyDamage(info.Damage, info.IgnoreDamageTaken);
             if (applied > 0 && _status.HP <= 0 && lastAttacker != null)
                 EventManager.Instance.Publish(new ItemEvent(ItemTrigger.EnemyKilled, lastAttacker, deathPosition, new[] { this }));
             return applied;
         }
 
-        /// <summary>파도 등 강제 이동 효과에서 호출한다. 현재 목적지를 새 위치 기준으로 다시 계산한다.</summary>
         public void Knockback(Vector3 offset)
         {
-            if (_status == null || _status.HP <= 0) return;
+            if (_status == null || _status.HP <= 0 || _dead) return;
             transform.position += offset;
-            if (_fsm == null) return;
             if (_fsm.state == EnemyStateType.Move) _movement.Enter();
             else ReTargeting();
         }
 
-        /// <summary>
-        /// FSM 시스템의 ReTargeting을 호출하는 중간자 역할
-        /// </summary>
-        public void ReTargeting()
-        {
-            _fsm.ReTargeting();
-        }
-
-        #endregion
+        public void ReTargeting() => _fsm.ReTargeting();
     }
 }
