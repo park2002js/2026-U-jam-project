@@ -115,6 +115,7 @@ namespace UJam.Runtime.Enemy
 
         public virtual void Spawn()
         {
+            GetComponent<EnemyVfx>()?.Signal("SpawnStart");
             if (Animation == null || !Animation.Play("Spawn"))
                 _fsm.SetState(EnemyStateType.Move);
         }
@@ -155,6 +156,7 @@ namespace UJam.Runtime.Enemy
 
         public void CancelAttack()
         {
+            GetComponent<EnemyVfx>()?.Signal("AttackCancel");
             _attackImpactPending = false;
             IsAttackPlaying = false;
             AttackTarget = null;
@@ -197,7 +199,13 @@ namespace UJam.Runtime.Enemy
                 case "AttackImpact":
                     if (_fsm.state != EnemyStateType.Attack || !IsAttackPlaying || !_attackImpactPending) return;
                     _attackImpactPending = false;
-                    if (!_dead) Attack();
+                    if (!_dead)
+                    {
+                        bool validHit = TryGetAttackTarget(out GameObject hitTarget, out _);
+                        Vector3 hitPosition = validHit ? hitTarget.transform.position : AttackTargetPosition;
+                        Attack();
+                        GetComponent<EnemyVfx>()?.Signal(signal, validHit, hitPosition);
+                    }
                     break;
                 case "AttackComplete":
                     if (_fsm.state != EnemyStateType.Attack || !IsAttackPlaying) return;
@@ -205,11 +213,35 @@ namespace UJam.Runtime.Enemy
                     Animation?.Play("Idle");
                     _fsm.CompleteAttack();
                     break;
+                case "AttackCharge":
+                case "AttackTrailStart":
+                case "AttackTrailEnd":
+                    if (_dead || !IsAttackPlaying || _fsm.state != EnemyStateType.Attack || _status.IsStunned) return;
+                    GetComponent<EnemyVfx>()?.Signal(signal);
+                    break;
+                case "EyesOff":
+                case "DeathImpact":
+                    if (_fsm.state == EnemyStateType.Dead) GetComponent<EnemyVfx>()?.Signal(signal);
+                    break;
+                case "MoveStep":
+                    if (_fsm.state == EnemyStateType.Move && !_status.IsStunned) GetComponent<EnemyVfx>()?.Signal(signal);
+                    break;
+                case "SpawnLand":
+                    if (_fsm.state == EnemyStateType.Spawn) GetComponent<EnemyVfx>()?.Signal(signal);
+                    break;
+                case "SummonStart":
+                case "SummonImpact":
+                    if (_fsm.state == EnemyStateType.Summon && !_dead && !_status.IsStunned) GetComponent<EnemyVfx>()?.Signal(signal);
+                    break;
                 case "SpawnComplete":
                     if (_fsm.state == EnemyStateType.Spawn) _fsm.SetState(EnemyStateType.Move);
                     break;
                 case "SummonComplete":
-                    if (_fsm.state == EnemyStateType.Summon) _fsm.SetState(EnemyStateType.Move);
+                    if (_fsm.state == EnemyStateType.Summon)
+                    {
+                        GetComponent<EnemyVfx>()?.Signal(signal);
+                        _fsm.SetState(EnemyStateType.Move);
+                    }
                     break;
                 case "DeathComplete":
                     if (_fsm.state == EnemyStateType.Dead)
@@ -226,6 +258,7 @@ namespace UJam.Runtime.Enemy
             if (_dead) return;
             _dead = true;
             CancelAttack();
+            GetComponent<EnemyVfx>()?.Signal("DeathStart");
             _movement?.Exit();
             StopAllCoroutines();
             foreach (Collider targetCollider in GetComponentsInChildren<Collider>())
