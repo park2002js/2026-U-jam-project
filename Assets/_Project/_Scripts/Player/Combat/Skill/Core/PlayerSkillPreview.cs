@@ -14,7 +14,7 @@ namespace UJam.Runtime.Player
     /// </summary>
     public class PlayerSkillPreview : MonoBehaviour
     {
-        [SerializeField, Min(0.01f)]
+        [SerializeField, Min(0f)]
         [Tooltip("Ground와 Preview가 겹쳐 깜빡이는 현상을 막기 위한 표면 오프셋")]
         private float surfaceOffset = 0.03f;
 

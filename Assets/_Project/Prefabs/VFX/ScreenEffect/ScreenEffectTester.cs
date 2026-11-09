@@ -28,6 +28,11 @@ namespace UJam.Runtime.UI
         [SerializeField, Range(0f, 1f)] private float _tenacityAlpha = 0.28f;
         [SerializeField, Range(0f, 1f)] private float _resurrectAlpha = 0.4f;
 
+        [Header("반짝임")]
+        [SerializeField, Range(0, 10)]
+        [Tooltip("긴급 수리 발동 시 좌우 각각 생성할 반짝임 개수")]
+        private int _repairSparkleCount = 4;
+
         private int _rageStep;
 
         private void Update()
@@ -39,9 +44,9 @@ namespace UJam.Runtime.UI
             if (Input.GetKeyDown(_adrenalineKey))
                 manager.Flash(_adrenalineColor, _adrenalineAlpha, 0.3f, 4.2f, 0.5f);
 
-            // 긴급 수리: 회복 순간만 짧게
+            // 긴급 수리: 회복 순간만 짧게, 좌우에 반짝임 동반
             if (Input.GetKeyDown(_repairKey))
-                manager.Flash(_repairColor, _repairAlpha, 0.1f, 0.15f, 0.5f);
+                manager.Flash(_repairColor, _repairAlpha, 0.1f, 0.15f, 0.5f, _repairSparkleCount);
 
             // 집념: 2초 공속 버프
             if (Input.GetKeyDown(_tenacityKey))
@@ -49,8 +54,10 @@ namespace UJam.Runtime.UI
 
             // 리저렉션: 가장 강하게 번쩍인 뒤 천천히 사라짐
             if (Input.GetKeyDown(_resurrectKey))
+            {
                 manager.Flash(_resurrectColor, _resurrectAlpha, 0.08f, 0.3f, 1.2f);
-
+                manager.ShowWings();
+            }
             // 분노: 누를 때마다 단계 상승, 최대를 넘기면 0으로 돌아감
             if (Input.GetKeyDown(_rageUpKey))
             {
