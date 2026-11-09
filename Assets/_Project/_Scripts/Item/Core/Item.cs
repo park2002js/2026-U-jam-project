@@ -6,8 +6,37 @@ namespace Ujam.Runtime.Item
 {
     public enum ItemKind { Active, Passive }
     public enum ItemCastType { Instant, Normal }
+    public enum ItemPreviewType { None, Circle, Rectangle }
     public enum ItemTarget { Player, Enemies }
     public enum ItemTrigger { Equipped, Shooting, ShootingResolved, SkillUse, SkillHit, HealthChanged, BeforeDeath, EnemyKilled }
+
+    /// <summary>Preview의 형태, 직접 적용할 X/Z 스케일, 월드 XZ 방향. 한 스케일은 두 축에 동일하게 적용한다.</summary>
+    public readonly struct ItemPreview
+    {
+        public ItemPreviewType Type { get; }
+        public Vector2 Scale { get; }
+        public Vector3 Direction { get; }
+
+        public ItemPreview(ItemPreviewType type, float scale = 1f, Vector3? direction = null)
+            : this(type, scale, scale, direction) { }
+
+        public ItemPreview(ItemPreviewType type, float scaleX, float scaleZ, Vector3? direction = null)
+        {
+            if (type != ItemPreviewType.None && type != ItemPreviewType.Circle && type != ItemPreviewType.Rectangle)
+                throw new ArgumentException("Preview 종류가 유효하지 않습니다.", nameof(type));
+            if (!float.IsFinite(scaleX) || !float.IsFinite(scaleZ) || scaleX <= 0 || scaleZ <= 0)
+                throw new ArgumentException("Preview 스케일은 유한한 양수여야 합니다.");
+
+            Vector3 heading = direction ?? Vector3.forward;
+            float magnitude = Mathf.Max(Mathf.Abs(heading.x), Mathf.Abs(heading.z));
+            if (!float.IsFinite(heading.x) || !float.IsFinite(heading.y) || !float.IsFinite(heading.z) || magnitude <= 0)
+                throw new ArgumentException("Preview 방향은 유한한 XZ 방향 벡터여야 합니다.", nameof(direction));
+
+            Type = type;
+            Scale = new Vector2(scaleX, scaleZ);
+            Direction = new Vector3(heading.x / magnitude, 0, heading.z / magnitude).normalized;
+        }
+    }
 
     /// <summary>상점/인벤토리/UI가 읽는 표시 및 시전 설정. 수치는 ItemCatalog의 생성자에서 수정한다.</summary>
     public class ItemMeta
@@ -19,21 +48,26 @@ namespace Ujam.Runtime.Item
         public float Cooldown { get; }
         public int Grade { get; }
         public ItemKind Kind { get; }
-        public ItemCastType CastType { get; }
+        public ItemPreview Preview { get; }
+        public string VfxPath { get; }
+        public ItemCastType CastType => Preview.Type == ItemPreviewType.None ? ItemCastType.Instant : ItemCastType.Normal;
         public ItemTarget Target { get; }
         public Sprite ItemSprite { get; set; }
         public Sprite ActiveSkillIcon { get; set; }
         public Sprite SkillIcon => ActiveSkillIcon != null ? ActiveSkillIcon : ItemSprite;
 
-        /// <summary>Catalog에서 아이템을 정의할 때 호출한다. 가격/쿨타임은 0 이상이며 일반형도 현재는 즉시 실행한다.</summary>
+        /// <summary>Catalog에서 아이템을 정의한다. Preview가 None이면 즉시 시전하고, 나머지는 조준 후 확정한다.</summary>
         public ItemMeta(string name, string tags, int price, float cooldown, int grade, ItemKind kind,
-            ItemCastType castType, ItemTarget target, string description = "", string iconName = null)
+            ItemTarget target, string description = "", string iconName = null, ItemPreview preview = default, string vfxPath = null)
         {
             if (string.IsNullOrWhiteSpace(name) || price < 0 || !float.IsFinite(cooldown) || cooldown < 0 || grade < 1)
                 throw new ArgumentException("아이템 메타 값이 유효하지 않습니다.");
 
             Name = name; Tags = tags; Price = price; Cooldown = cooldown; Grade = grade;
-            Kind = kind; CastType = castType; Target = target; Description = description;
+            Kind = kind; Target = target; Description = description;
+            Preview = preview.Type == ItemPreviewType.None && preview.Direction == Vector3.zero
+                ? new ItemPreview(ItemPreviewType.None) : preview;
+            VfxPath = vfxPath;
 
             // Resources/Art/Item에서 확장자를 제외한 파일명으로 조회한다. 미지정이거나 찾지 못하면 null 이미지를 사용한다.
             string imageName = string.IsNullOrWhiteSpace(iconName) ? "null" : iconName;

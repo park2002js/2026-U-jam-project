@@ -13,7 +13,6 @@ namespace Ujam.Runtime.Item
         /// <summary>중앙 SkillUse가 호출한다. 처음에는 Overlap, 이후에는 TriggerEnter/Exit로 판정한다.</summary>
         public override void Execute(ItemUseContext c)
         {
-            /* VFX: 약화 장판 생성 표현을 추가한다. 지속 표현은 생성된 장판의 자식에 붙인다. */
             c.Run(ItemWorld.ConditionArea(c, prefabPath, radius, duration, BuffStat.AttackDamage, -percent));
         }
     }

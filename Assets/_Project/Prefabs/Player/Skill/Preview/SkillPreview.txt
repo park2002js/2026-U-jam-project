@@ -2,23 +2,35 @@ UJam Skill Previews
 
 파일 위치: Assets/_Project/Prefabs/Player/Skill/Preview/
 
-SkillPreviewCircle.prefab: XZ 평면의 기본 지름 1 Unity unit. 기존 GUID를
-유지하여 기존 스킬의 PlayerSkillPreview.Show(radius)에서 그대로 사용한다.
+SkillPreviewCircle.prefab: XZ 평면의 기본 지름 1 Unity unit. 기존 GUID 유지.
 SkillPreviewRectangle.prefab: 기본 폭 X=1, 길이 Z=3 Unity units.
 중심 pivot이며 텍스처의 화살표는 local +Z를 향한다.
 
-크기/배치:
-  circle.Show(radius);
-  rectangle.ShowRectangle(width, length);
-  preview.SetPosition(groundHit.point, groundHit.normal);
-SetPosition은 지면 법선에 정렬하고 표면에서 0.03 unit 띄운다.
-직사각형을 시전자에서 앞쪽으로 뻗으려면 중심을 forward * length/2만큼
-이동하고 Y 회전으로 방향을 정한다. Instantiate는 scale=1인 부모를 쓰거나
-부모 없이 사용한다. Hide()로 표시를 끈다.
+Item 설정: Assets/_Project/_Scripts/Item/Core/ItemCatalog.cs
+  preview: new ItemPreview(ItemPreviewType.None)
+  preview: new ItemPreview(ItemPreviewType.Circle, 8f)
+  preview: new ItemPreview(ItemPreviewType.Rectangle, 10f, 2f)
+  preview: new ItemPreview(ItemPreviewType.Rectangle, 10f, 2f,
+      direction: UnityEngine.Vector3.right)
 
-현재 PlayerSkillManager는 반경 기반 원형 스킬만 사용하므로 원형 프리팹이
-연결되어 있다. 직사각형은 재사용 가능한 표시 에셋/API로 제공한다.
-기존 스킬의 판정 형태나 시전 규칙은 바꾸지 않았다.
+ItemMeta.Preview가 종류·스케일·방향을 보관한다. None은 즉시 시전,
+Circle/Rectangle은 Preview를 표시하고 좌클릭으로 시전을 확정한다.
+스케일 하나는 X/Z 양쪽, 두 개는 각각 X/Z의 Transform.localScale 값이다.
+Y 스케일은 유지한다. 반경/칸 수가 아니며 기본 프리팹 스케일에 곱하거나
+Grid 크기로 자동 환산하지 않는다. 직사각형 기본 Z=3도 Meta 값으로 덮어쓴다.
+방향은 월드 XZ 평면 기준이며 생략하면 +Z다.
+
+PlayerSkillManager가 종류에 맞는 프리팹을 선택하고 Meta의 Scale/Direction을
+PlayerSkillPreview.Show(scale, direction)에 전달한다. 위치는 마우스 지면 또는
+플레이어 위치를 따라간다. SetPosition은 방향을 유지하면서 지면 법선에
+정렬하고 표면에서 0.03 unit 띄운다. Hide()로 표시를 끈다.
+Instantiate는 scale=1인 부모를 쓰거나 부모 없이 사용한다.
+
+현재 Catalog의 표시 크기는 기존 전투 씬의 칸 크기 2 기준으로 맞췄다.
+집중 사격 2, 화염구 12, 약화/안개/중력장/낙뢰/돌풍 8, 냉각 4, 파도 X=10/Z=2다.
+실제 판정은 Effect의 칸 단위 수치를 사용한다. 판정 수치나 Grid 크기를
+바꾸면 Preview 값도 함께 조정한다. Preview 방향은 표시와 연결된 Item VFX에
+적용되며 실제 판정 방향은 변경하지 않는다.
 
 재질/렌더링:
 Materials/의 두 재질은 UJam/SkillPreview URP Unlit 셰이더를 사용한다.

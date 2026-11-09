@@ -38,6 +38,7 @@ namespace Ujam.Runtime.Item
             try
             {
                 Effect.OnEquip(context);
+                if (!string.IsNullOrEmpty(Item.Meta.VfxPath)) Run(ItemAssets.LoadAsync(Item.Meta.VfxPath, _ => { }));
                 if (Trigger == ItemTrigger.Equipped) Execute(context.Signal);
             }
             catch { Unequip(); throw; }

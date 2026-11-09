@@ -8,7 +8,7 @@ namespace UJam.Runtime.Systems
 {
     public enum ElementType { Burn, Freeze, Shock, Bleed, Wind }
 
-    /// <summary>적 하나의 속성과 스택. 한 적은 하나의 속성만 보유한다.</summary>
+    /// <summary>적에게 적용된 속성 하나의 독립적인 수명과 출혈 스택.</summary>
     public class ElementState
     {
         public ElementType Type { get; internal set; }
@@ -16,10 +16,11 @@ namespace UJam.Runtime.Systems
         public float ExpiresAt { get; internal set; }
         internal float NextTick;
         internal PlayerStatus Player;
+        internal GameObject Visual;
     }
 
     /// <summary>
-    /// 속성 부여/교체/갱신과 실제 효과를 중앙 처리한다. 호출자는 적과 속성만 전달하면 된다.
+    /// 속성별 부여/갱신/만료와 실제 효과를 중앙 처리한다. 여러 속성은 독립적으로 유지된다.
     /// 미지정 수치는 5초, 화상 1초 주기, 출혈 5스택/최대 체력 5%/상한 1000으로 정했다.
     /// 속성 조합은 보류하며 바람은 속성 보유만 기록한다.
     /// </summary>
@@ -34,7 +35,7 @@ namespace UJam.Runtime.Systems
         public int BleedThreshold { get; set; } = 5;
         public float BleedMaxHealthPercent { get; set; } = 5f;
         public float BleedDamageCap { get; set; } = 1000f;
-        private readonly Dictionary<EnemyBase, ElementState> states = new();
+        private readonly Dictionary<(EnemyBase Enemy, ElementType Type), ElementState> states = new();
 
         /// <summary>단일 적에게 속성을 부여한다. player 생략 시 현재 플레이어를 사용하며 즉시 발생한 출혈 피해를 반환한다.</summary>
         public float Apply(EnemyBase enemy, ElementType type, PlayerStatus player = null)
@@ -44,24 +45,30 @@ namespace UJam.Runtime.Systems
             RuntimeTimer.Ensure();
             player = player != null ? player : PlayerStatus.Instance;
 
-            if (!states.TryGetValue(enemy, out var state) || state.Type != type || state.ExpiresAt < Time.time)
+            var key = (enemy, type);
+            float duration = Mathf.Max(0.01f, Duration);
+            if (!states.TryGetValue(key, out var state) || state.ExpiresAt <= Time.time)
             {
-                if (state != null) BuffManager.Instance.RemoveSource(state);
-                state = new ElementState { Type = type, NextTick = Time.time + Mathf.Max(0.01f, BurnInterval) };
-                states[enemy] = state;
+                if (state != null) Clear(state);
+                state = new ElementState
+                {
+                    Type = type, NextTick = Time.time + Mathf.Max(0.01f, BurnInterval),
+                    Visual = RuntimeTimer.Instance.CreateElementVfx(enemy, type)
+                };
+                states[key] = state;
             }
 
             state.Player = player;
-            state.ExpiresAt = Time.time + Mathf.Max(0.01f, Duration);
+            state.ExpiresAt = Time.time + duration;
 
             switch (type)
             {
                 case ElementType.Freeze:
-                    BuffManager.Instance.SetTimed(enemy.Status, state, BuffStat.MovementSpeed, -FreezePercent, Duration);
-                    BuffManager.Instance.SetTimed(enemy.Status, state, BuffStat.AttackSpeed, -FreezePercent, Duration);
+                    BuffManager.Instance.SetTimed(enemy.Status, state, BuffStat.MovementSpeed, -FreezePercent, duration);
+                    BuffManager.Instance.SetTimed(enemy.Status, state, BuffStat.AttackSpeed, -FreezePercent, duration);
                     break;
                 case ElementType.Shock:
-                    BuffManager.Instance.SetTimed(enemy.Status, state, BuffStat.DamageTaken, ShockPercent, Duration);
+                    BuffManager.Instance.SetTimed(enemy.Status, state, BuffStat.DamageTaken, ShockPercent, duration);
                     break;
                 case ElementType.Bleed:
                     if (++state.Stacks >= Mathf.Max(1, BleedThreshold))
@@ -80,25 +87,35 @@ namespace UJam.Runtime.Systems
         public void Apply(IReadOnlyList<EnemyBase> enemies, ElementType type, PlayerStatus player = null)
         { if (enemies != null) foreach (var enemy in enemies) Apply(enemy, type, player); }
 
-        /// <summary>UI나 추가 효과에서 현재 속성과 출혈 스택을 조회할 때 사용한다.</summary>
+        /// <summary>지정한 속성과 출혈 스택을 조회한다. 다른 속성의 수명에는 영향을 주지 않는다.</summary>
+        public bool TryGet(EnemyBase enemy, ElementType type, out ElementState state)
+        {
+            state = null;
+            return Alive(enemy) && states.TryGetValue((enemy, type), out state) && state.ExpiresAt > Time.time;
+        }
+
+        /// <summary>속성 종류를 구분하지 않는 기존 호출자를 위해 활성 속성 하나를 반환한다.</summary>
         public bool TryGet(EnemyBase enemy, out ElementState state)
         {
             state = null;
-            return Alive(enemy) && states.TryGetValue(enemy, out state) && state.ExpiresAt > Time.time;
+            if (!Alive(enemy)) return false;
+            foreach (var pair in states)
+                if (pair.Key.Enemy == enemy && pair.Value.ExpiresAt > Time.time) { state = pair.Value; return true; }
+            return false;
         }
 
         /// <summary>RuntimeTimer.Update에서 화상 틱과 속성 만료를 처리한다.</summary>
         public void Update()
         {
             // 피해/사망 이벤트가 다른 적에게 속성을 줄 수 있어 스냅샷을 순회한다.
-            foreach (var pair in new List<KeyValuePair<EnemyBase, ElementState>>(states))
+            foreach (var pair in new List<KeyValuePair<(EnemyBase Enemy, ElementType Type), ElementState>>(states))
             {
-                var enemy = pair.Key; var state = pair.Value;
+                var enemy = pair.Key.Enemy; var state = pair.Value;
                 if (Alive(enemy) && state.Type == ElementType.Burn)
                 {
                     float lastTick = Mathf.Min(Time.time, state.ExpiresAt);
                     while (state.NextTick <= lastTick && Alive(enemy) &&
-                        states.TryGetValue(enemy, out var active) && ReferenceEquals(active, state))
+                        states.TryGetValue(pair.Key, out var active) && ReferenceEquals(active, state))
                     {
                         state.NextTick += Mathf.Max(0.01f, BurnInterval);
                         var player = state.Player;
@@ -112,10 +129,15 @@ namespace UJam.Runtime.Systems
 
                 if (!Alive(enemy) || state.ExpiresAt <= Time.time)
                 {
-                    if (states.TryGetValue(enemy, out var current) && ReferenceEquals(current, state)) states.Remove(enemy);
-                    BuffManager.Instance.RemoveSource(state);
+                    if (states.TryGetValue(pair.Key, out var current) && ReferenceEquals(current, state)) states.Remove(pair.Key);
+                    Clear(state);
                 }
             }
+        }
+        private static void Clear(ElementState state)
+        {
+            BuffManager.Instance.RemoveSource(state);
+            if (state.Visual != null) { state.Visual.SetActive(false); Object.Destroy(state.Visual); }
         }
         private static bool Alive(EnemyBase enemy) => enemy != null && enemy.isActiveAndEnabled && enemy.Status != null && enemy.Status.HP > 0;
 

@@ -22,10 +22,13 @@ namespace Ujam.Runtime.Item
         }
         /// <summary>직사각형/가로선/세로선 효과에서 사용한다. width/depth는 반폭이 아닌 전체 칸 수다.</summary>
         public static List<EnemyBase> Box(Vector3 center, float width, float depth, LayerMask mask)
+            => Box(center, new Vector3(width * CellWidth, 200f, depth * CellHeight), Quaternion.identity, mask);
+
+        /// <summary>회전 가능한 월드 크기의 Box. 폭격의 VFX와 동일한 영역을 판정한다.</summary>
+        public static List<EnemyBase> Box(Vector3 center, Vector3 size, Quaternion rotation, LayerMask mask)
         {
             Physics.SyncTransforms();
-            return Unique(Physics.OverlapBox(center, new Vector3(width * CellWidth / 2f, 100f, depth * CellHeight / 2f),
-                Quaternion.identity, mask, QueryTriggerInteraction.Collide));
+            return Unique(Physics.OverlapBox(center, size / 2f, rotation, mask, QueryTriggerInteraction.Collide));
         }
         /// <summary>가로/세로 필드 전체를 조회한다. 중심 고정축과 전체 길이는 GridSystem에서 가져온다.</summary>
         public static List<EnemyBase> Line(Vector3 cursor, float thickness, bool horizontal, LayerMask mask)
@@ -67,16 +70,20 @@ namespace Ujam.Runtime.Item
             var relay = area.GetComponent<AreaTrigger>();
             if (relay == null) { UnityEngine.Object.Destroy(area); throw new InvalidOperationException("장판 Prefab에 AreaTrigger가 필요합니다."); }
 
-            relay.Initialize(context.EnemyMask,
-                enemy =>
-                {
-                    BuffManager.Instance.SetCondition(enemy.Status, area, stat, percent);
-                    context.ReportHits(new[] { enemy });
-                },
-                enemy => { if (enemy != null) BuffManager.Instance.Remove(enemy.Status, area, stat); });
+            try
+            {
+                yield return ItemVfx.Spawn(context, radius * CellWidth * 2f, seconds, area.transform);
+                if (!context.Item.IsEquipped || area == null) yield break;
+                relay.Initialize(context.EnemyMask,
+                    enemy =>
+                    {
+                        BuffManager.Instance.SetCondition(enemy.Status, area, stat, percent);
+                        context.ReportHits(new[] { enemy });
+                    },
+                    enemy => { if (enemy != null) BuffManager.Instance.Remove(enemy.Status, area, stat); });
 
-            /* VFX: area의 자식으로 장판 표현을 붙인다. 판정 Collider와 시각 크기를 분리한다. */
-            try { yield return new WaitForSeconds(seconds); }
+                yield return new WaitForSeconds(seconds);
+            }
             finally
             {
                 BuffManager.Instance.RemoveSource(area);
@@ -90,8 +97,6 @@ namespace Ujam.Runtime.Item
     {
         private static readonly Dictionary<string, GameObject> cache = new();
         public const string AreaPath = "ItemPipeline/TriggerSphere";
-        public const string BoltPath = "ItemPipeline/LightningBolt";
-        public const string GroundPath = "ItemPipeline/LightningGround";
 
         /// <summary>Effect의 코루틴에서 yield return으로 호출한다. 실패하면 null을 돌려주고 오류 경로를 남긴다.</summary>
         public static IEnumerator LoadAsync(string path, Action<GameObject> loaded)
