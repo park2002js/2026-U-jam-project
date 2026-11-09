@@ -2395,6 +2395,21 @@ MonoBehaviour:
   _rageColor: {r: 1, g: 0.1, b: 0.1, a: 1}
   _rageMaxAlpha: 0.5
   _rageFadeSpeed: 3
+  _sparkleSprite: {fileID: 21300000, guid: 8d9e1742881918846a64509bd1f30202, type: 3}
+  _sparkleParent: {fileID: 0}
+  _sparklePoolSize: 16
+  _sparkleSizeRange: {x: 24, y: 48}
+  _sparkleEdgeRatio: 0.18
+  _sparkleRiseSpeed: 40
+  _sparkleLifetime: 0.8
+  _wingSprite: {fileID: 21300000, guid: 988e536672bd10e48921af5fbc28742a, type: 3}
+  _wingParent: {fileID: 0}
+  _wingColor: {r: 1, g: 0.945926, b: 0.745283, a: 1}
+  _wingAlpha: 0.8
+  _wingSize: {x: 320, y: 320}
+  _wingSpread: 160
+  _wingSpreadMotion: 60
+  _wingLifetime: 1.4
 --- !u!4 &378432598 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4021645171301757241, guid: b052646694e3fb0428a60911633c0540, type: 3}
@@ -9899,7 +9914,7 @@ PrefabInstance:
     - target: {fileID: 1967415335216073599, guid: a9ea3f06ed48d4c448a9698393a9c415, type: 3}
       propertyPath: _entries.Array.data[0].prefab
       value: 
-      objectReference: {fileID: 4828323728818920166, guid: 6a02f58a447a04040bde8833c44048bf, type: 3}
+      objectReference: {fileID: 6658925932257759686, guid: 14048f8344e01c04c8c11a3c9a3dff69, type: 3}
     - target: {fileID: 1967415335216073599, guid: a9ea3f06ed48d4c448a9698393a9c415, type: 3}
       propertyPath: _entries.Array.data[1].prefab
       value: 
@@ -10095,6 +10110,7 @@ MonoBehaviour:
   _repairAlpha: 0.35
   _tenacityAlpha: 0.28
   _resurrectAlpha: 0.4
+  _repairSparkleCount: 4
 --- !u!4 &1738106285 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3318955827309866218, guid: dc35a6dbc0522f54eacedf229880accb, type: 3}

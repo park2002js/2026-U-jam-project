@@ -19,13 +19,21 @@ namespace UJam.Runtime.Player
     /// </summary>
     public class PlayerSkillPreview : MonoBehaviour
     {
-        [SerializeField, Min(0.01f)]
+        [SerializeField, Min(0f)]
         [Tooltip("Ground와 Preview가 겹쳐 깜빡이는 현상을 막기 위한 표면 오프셋")]
         private float surfaceOffset = 0.02f;
 
         [SerializeField, Min(0.0001f)]
         [Tooltip("Prefab 원본 크기 보정 배율. 메시가 지름 1보다 크면 그만큼 줄여서 지정한다.")]
         private float scaleMultiplier = 1f;
+
+        [SerializeField]
+        [Tooltip("조준 중 Y축 회전 속도(도/초). 0이면 회전하지 않고, 음수면 반대로 돈다.")]
+        private float rotateSpeed = 30f;
+
+        [SerializeField]
+        [Tooltip("조준을 시작할 때 회전 각도를 0으로 되돌린다.")]
+        private bool resetRotationOnShow = true;
 
         /// <summary>조준을 시작할 때 호출한다. 반경(월드 거리)에 맞춰 지름으로 환산한다.</summary>
         public void Show(float radius)
@@ -35,6 +43,8 @@ namespace UJam.Runtime.Player
             // 반경을 지름으로 바꾸고 Prefab 원본 크기를 보정한다
             float size = radius * 2f * scaleMultiplier;
             transform.localScale = new Vector3(size, transform.localScale.y, size);
+
+            if (resetRotationOnShow) transform.rotation = Quaternion.identity;
         }
 
         // Preview를 약간 위로 띄워서 처리함
@@ -46,6 +56,14 @@ namespace UJam.Runtime.Player
         public void Hide()
         {
             gameObject.SetActive(false);
+        }
+
+        // 조준 중에만 활성화되므로 여기서 회전시키면 표시되는 동안만 돈다
+        private void Update()
+        {
+            if (rotateSpeed == 0f) return;
+
+            transform.Rotate(Vector3.up, rotateSpeed * Time.deltaTime, Space.World);
         }
     }
 }
