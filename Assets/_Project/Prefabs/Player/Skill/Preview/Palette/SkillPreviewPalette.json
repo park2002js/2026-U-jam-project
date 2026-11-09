@@ -1,0 +1,129 @@
+{
+  "name": "UJam Skill Preview — LoL screenshot study",
+  "colorSpace": "sRGB; RGB8; alpha is linear coverage",
+  "measurementNote": "RGB values are composited screenshot samples, NOT official Riot texture/source RGB. Deep Teal and all alpha values are authored choices. Still images do not establish temporal color animation.",
+  "brightnessNote": "HSV V is not perceptual brightness. Relative luminance Y is calculated from linearized sRGB using Rec.709 weights.",
+  "rendering": "Unlit, straight-alpha blending, no lighting or shadows. Circle center alpha target ~0.08, rectangle fill ~0.24..0.34. Generated artwork approximates these anchors with continuous gradients.",
+  "colors": [
+    {
+      "name": "Deep Teal",
+      "hex": "#217D78",
+      "rgb": [
+        33,
+        125,
+        120
+      ],
+      "hsv": [
+        176.7,
+        73.6,
+        49.0
+      ],
+      "relativeLuminance": 0.163,
+      "authoringAlpha": 0.14,
+      "observation": "authored darker glow"
+    },
+    {
+      "name": "Circle Base",
+      "hex": "#46C6A5",
+      "rgb": [
+        70,
+        198,
+        165
+      ],
+      "hsv": [
+        164.5,
+        64.6,
+        77.6
+      ],
+      "relativeLuminance": 0.444,
+      "authoringAlpha": 0.7,
+      "observation": "image 1, pixel (565,382)"
+    },
+    {
+      "name": "Circle Mint",
+      "hex": "#83FBDC",
+      "rgb": [
+        131,
+        251,
+        220
+      ],
+      "hsv": [
+        164.5,
+        47.8,
+        98.4
+      ],
+      "relativeLuminance": 0.79,
+      "authoringAlpha": 0.95,
+      "observation": "image 1, pixel (591,350)"
+    },
+    {
+      "name": "Rectangle Cyan",
+      "hex": "#48FFFF",
+      "rgb": [
+        72,
+        255,
+        255
+      ],
+      "hsv": [
+        180.0,
+        71.8,
+        100.0
+      ],
+      "relativeLuminance": 0.801,
+      "authoringAlpha": 0.95,
+      "observation": "image 2, pixel (495,484)"
+    },
+    {
+      "name": "Highlight",
+      "hex": "#CCFCF4",
+      "rgb": [
+        204,
+        252,
+        244
+      ],
+      "hsv": [
+        170.0,
+        19.0,
+        98.8
+      ],
+      "relativeLuminance": 0.89,
+      "authoringAlpha": 1.0,
+      "observation": "image 1, pixel (316,224)"
+    },
+    {
+      "name": "Fill",
+      "hex": "#55C7CB",
+      "rgb": [
+        85,
+        199,
+        203
+      ],
+      "hsv": [
+        182.0,
+        58.1,
+        79.6
+      ],
+      "relativeLuminance": 0.471,
+      "authoringAlpha": 0.3,
+      "observation": "image 2, pixel (470,330)"
+    }
+  ],
+  "method": "Origin at top-left. System.Drawing.Bitmap.GetPixel on original attachments. Circular annuli: image1 center(462,285), radii(163,128), normalized r .83..1.04; image3 center(193,101), radii(73,51), r .79..1.04. Cyan filter G-R>35, B-R>20, G>110, B>110. Exclude red annotation, UI, large range ring overlap. Rectangle rails and fill below y=280.",
+  "referenceImages": [
+    "codex-clipboard-5d5ab6e1-02d8-43f6-a0e0-21753aa860df.png",
+    "codex-clipboard-49b313bf-c588-44d9-b344-bf834600a1e2.png",
+    "codex-clipboard-04b90a7c-1865-49c7-a2a6-1e1897f77ff9.png"
+  ],
+  "sources": [
+    {
+      "title": "Riot Games — Clarity in League",
+      "url": "https://www.leagueoflegends.com/en-us/news/dev/clarity-in-league/",
+      "usedFor": "Hitbox alignment, visual hierarchy, restrained visual noise; does not publish RGB/alpha for these indicators."
+    },
+    {
+      "title": "Unity 6 ShaderLab Offset",
+      "url": "https://docs.unity3d.com/6000.0/Documentation/Manual/SL-Offset.html",
+      "usedFor": "Depth bias to reduce coplanar artifacts."
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+UJam Skill Previews
+
+파일 위치: Assets/_Project/Prefabs/Player/Skill/Preview/
+
+SkillPreviewCircle.prefab: XZ 평면의 기본 지름 1 Unity unit. 기존 GUID를
+유지하여 기존 스킬의 PlayerSkillPreview.Show(radius)에서 그대로 사용한다.
+SkillPreviewRectangle.prefab: 기본 폭 X=1, 길이 Z=3 Unity units.
+중심 pivot이며 텍스처의 화살표는 local +Z를 향한다.
+
+크기/배치:
+  circle.Show(radius);
+  rectangle.ShowRectangle(width, length);
+  preview.SetPosition(groundHit.point, groundHit.normal);
+SetPosition은 지면 법선에 정렬하고 표면에서 0.03 unit 띄운다.
+직사각형을 시전자에서 앞쪽으로 뻗으려면 중심을 forward * length/2만큼
+이동하고 Y 회전으로 방향을 정한다. Instantiate는 scale=1인 부모를 쓰거나
+부모 없이 사용한다. Hide()로 표시를 끈다.
+
+현재 PlayerSkillManager는 반경 기반 원형 스킬만 사용하므로 원형 프리팹이
+연결되어 있다. 직사각형은 재사용 가능한 표시 에셋/API로 제공한다.
+기존 스킬의 판정 형태나 시전 규칙은 바꾸지 않았다.
+
+재질/렌더링:
+Materials/의 두 재질은 UJam/SkillPreview URP Unlit 셰이더를 사용한다.
+RGBA 텍스처의 source alpha로 혼합하며 조명/그림자 영향을 받지 않는다.
+Transparent+10, ZWrite Off, ZTest LEqual, Offset -1,-1 설정으로 지면과의
+깊이 충돌을 줄인다. 벽/캐릭터와의 정상적인 깊이 가림은 유지한다.
+Map/Ground와 LCH_Scene의 실제 Ground 표면을 기준으로 검증한다.
+굴곡진 지형에 투영하는 decal은 아니므로 굴곡이 큰 맵에서는 별도 대응이 필요하다.
+
+색상 자료:
+Palette/SkillPreviewPalette.png: RGB/HEX/HSV/상대 휘도/제작 alpha 견본.
+Palette/SkillPreviewPalette.json: 픽셀 샘플 좌표, 분석 방법, 출처 포함.
+원형은 mint 약165도, 직사각형은 cyan 약180도 계열이다.
+색 변화는 어두운 teal glow -> 밝은 mint/cyan 경계 -> 옅은 highlight의
+공간적 계층으로 구성한다. 시간에 따른 색/밝기 애니메이션은 넣지 않았다.
+RGB는 첨부 스크린샷에서 관찰한 합성 픽셀이다. Riot 공식 원본 텍스처
+RGB/alpha가 아니며 alpha는 우리 게임용 제작값이다. 생성된 텍스처는
+팔레트 기준색 사이의 연속 색조를 사용한다.
+
+제작 방식: built-in image_gen. 정확한 생성/편집 프롬프트는
+Img/GenerationPrompts.txt에 저장했다. LoL 파일을 추출한 에셋이 아니다.
+
+검사 메뉴: Tools > Skills > Check Skill Previews and Capture
+검사 코드: Assets/_Project/Editor/SkillPreviewChecks.cs
+검사 캡처: Library/SkillPreviewCapture.png
+
+기존 LCH_Scene 및 빌드 메인 _MainScene 1의 끊어진 preview 참조를
+SkillPreviewCircle로 복구했다. Field.mat은 다른 아이템 효과도 사용하므로
+변경하지 않았다. CHK_Scene의 별도 Ground collider/표면 높이 불일치는
+이번 변경 범위에 포함하지 않았다.
