@@ -4112,6 +4112,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   previewPrefab: {fileID: 0}
+  rectanglePreviewPrefab: {fileID: 2878677094038920207, guid: 7f926d388b965959ac819d58f5003df8, type: 3}
 --- !u!114 &585344524
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8275,6 +8276,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1371441075}
   - component: {fileID: 1371441074}
+  - component: {fileID: 1371441076}
   m_Layer: 0
   m_Name: Managers
   m_TagString: Untagged
@@ -8309,6 +8311,31 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1371441076
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1371441073}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2feb454ca1490774c83c05e1691a905d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  elementVfx:
+  - type: 0
+    prefab: {fileID: 1648978194837340, guid: 8ca50d76f93344b282c4c640ceb8c92c, type: 3}
+    scalePerHeight: 1.2
+  - type: 1
+    prefab: {fileID: 4446882967495364412, guid: 772876c8d96376c41860a3cb84429c20, type: 3}
+    scalePerHeight: 0.4
+  - type: 2
+    prefab: {fileID: 4828323728818920166, guid: 6a02f58a447a04040bde8833c44048bf, type: 3}
+    scalePerHeight: 1.2
+  - type: 3
+    prefab: {fileID: 8181650994957254821, guid: d76ddf1ec277e1749a77f401fbb20d04, type: 3}
+    scalePerHeight: 0.35
 --- !u!1 &1378314870
 GameObject:
   m_ObjectHideFlags: 0

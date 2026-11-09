@@ -9,18 +9,22 @@ namespace UJam.Runtime.Player
 {
     /// <summary>
     /// 두 스킬 슬롯과 쿨타임의 소유자. 사용이 정당하면 EventManager로 전달하며 Effect를 직접 호출하지 않는다.
-    /// Normal 시전은 Preview로 위치를 고른 뒤 좌클릭으로 확정하고, Instant는 즉시 확정한다.
+    /// ItemMeta의 Preview가 있으면 위치를 고른 뒤 좌클릭으로 확정하고, None은 즉시 확정한다.
     /// </summary>
     public class PlayerSkillManager : MonoBehaviour
     {
-        [SerializeField, Tooltip("스킬 범위 Preview 프리팹. 비우면 CombatManager에 연결된 것을 사용한다.")]
+        [SerializeField, Tooltip("원형 Preview 프리팹. 비우면 CombatManager에 연결된 것을 사용한다.")]
         private GameObject previewPrefab;
+
+        [SerializeField, Tooltip("직사각형 Preview 프리팹")]
+        private GameObject rectanglePreviewPrefab;
 
         private readonly Item[] slots = new Item[2];
         private readonly float[] readyAt = new float[2];
         private PlayerCombatManager combat;
 
-        private PlayerSkillPreview preview;   // 생성된 Preview 인스턴스
+        private PlayerSkillPreview circlePreview, rectanglePreview;
+        private PlayerSkillPreview preview;   // 현재 표시 중인 Preview
         private int aimingSlot = -1;          // 조준 중인 슬롯 (-1이면 조준 아님)
 
         public event Action<int, Item> OnSkillChanged;
@@ -35,14 +39,25 @@ namespace UJam.Runtime.Player
         {
             combat = manager;
 
-            // Preview 인스턴스를 한 번만 만들어 재사용한다.
+            // 형태별 인스턴스를 한 번만 만들어 재사용한다.
             GameObject prefab = previewPrefab != null ? previewPrefab : manager != null ? manager.PlayerSkillPreviewPrefab : null;
-            if (prefab != null && preview == null)
+            if (circlePreview == null) circlePreview = CreatePreview(prefab);
+            if (rectanglePreview == null) rectanglePreview = CreatePreview(rectanglePreviewPrefab);
+        }
+
+        private PlayerSkillPreview CreatePreview(GameObject prefab)
+        {
+            if (prefab == null) return null;
+            GameObject instance = Instantiate(prefab);
+            PlayerSkillPreview result = instance.GetComponent<PlayerSkillPreview>();
+            if (result == null)
             {
-                preview = Instantiate(prefab).GetComponent<PlayerSkillPreview>();
-                if (preview == null) Debug.LogError("[SkillManager] Preview 프리팹에 PlayerSkillPreview가 없습니다.", this);
-                else preview.Hide();
+                Destroy(instance);
+                Debug.LogError("[SkillManager] Preview 프리팹에 PlayerSkillPreview가 없습니다.", this);
+                return null;
             }
+            result.Hide();
+            return result;
         }
 
         /// <summary>UI/테스트에서 슬롯의 보유 Item을 읽는다.</summary>
@@ -80,38 +95,39 @@ namespace UJam.Runtime.Player
         /// <summary>Inventory에서 특정 개체가 사라질 때 해당 슬롯을 정리한다.</summary>
         public void Remove(Item item) { int slot = Array.IndexOf(slots, item); if (slot >= 0) UnEquip(slot); }
 
-        /// <summary>D/F 입력에서 호출한다. Normal은 조준을 시작하고 Instant는 즉시 시전한다.</summary>
+        /// <summary>D/F 입력에서 호출한다. Meta의 Preview 형태가 조준 여부를 결정한다.</summary>
         public void TryUse(int slot)
         {
             var item = GetSkill(slot);
             if (!CanUse(slot, item) || EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
 
-            Vector3 position = item.Runtime.Owner.transform.position;
-            if (item.Meta.Target == ItemTarget.Enemies)
-            {
-                if (!TryGetGroundPoint(out Vector3 point, out _)) return;
-                position = point;
-            }
+            if (!TryGetTargetPoint(item, out Vector3 position, out Vector3 normal)) return;
 
-            // Normal이면 위치를 고르는 조준 모드로 들어간다.
-            if (item.Meta.CastType == ItemCastType.Normal && item.Meta.Target == ItemTarget.Enemies && preview != null)
+            if (item.Meta.Preview.Type != ItemPreviewType.None)
             {
-                StartAiming(slot, item);
+                if (StartAiming(slot, item)) preview.SetPosition(position, normal);
                 return;
             }
 
+            CancelAiming();
             ConfirmUse(slot, position);
         }
 
         /// <summary>조준 모드 진입. 같은 슬롯을 다시 누르면 취소하고, 다른 슬롯이면 대상을 바꾼다.</summary>
-        private void StartAiming(int slot, Item item)
+        private bool StartAiming(int slot, Item item)
         {
-            if (aimingSlot == slot) { CancelAiming(); return; }
+            if (aimingSlot == slot) { CancelAiming(); return false; }
 
+            CancelAiming();
+            preview = item.Meta.Preview.Type == ItemPreviewType.Circle ? circlePreview : rectanglePreview;
+            if (preview == null)
+            {
+                Debug.LogError($"[SkillManager] {item.Meta.Preview.Type} Preview 프리팹이 연결되지 않았습니다.", this);
+                return false;
+            }
             aimingSlot = slot;
-            // 반경은 칸 단위이므로 CellWidth로 환산해 실제 판정 범위와 맞춘다.
-            float radius = item.Runtime.Effect.PreviewRadiusCells * ItemWorld.CellWidth;
-            preview.Show(radius);
+            preview.Show(item.Meta.Preview.Scale, item.Meta.Preview.Direction);
+            return true;
         }
 
         /// <summary>조준 취소. Preview를 숨기고 상태를 초기화한다.</summary>
@@ -119,6 +135,7 @@ namespace UJam.Runtime.Player
         {
             aimingSlot = -1;
             if (preview != null) preview.Hide();
+            preview = null;
         }
 
         private void Update()
@@ -130,7 +147,7 @@ namespace UJam.Runtime.Player
             if (item == null || !item.IsEquipped) { CancelAiming(); return; }
 
             // 마우스가 가리키는 바닥을 따라 Preview를 옮긴다.
-            bool hasPoint = TryGetGroundPoint(out Vector3 point, out Vector3 normal);
+            bool hasPoint = TryGetTargetPoint(item, out Vector3 point, out Vector3 normal);
             if (hasPoint) preview.SetPosition(point, normal);
 
             if (Mouse.current == null) return;
@@ -153,10 +170,12 @@ namespace UJam.Runtime.Player
             }
         }
 
-        /// <summary>마우스가 가리키는 바닥 지점과 표면 방향을 구한다.</summary>
-        private bool TryGetGroundPoint(out Vector3 point, out Vector3 normal)
+        /// <summary>대상이 Player이면 소유자 위치, Enemies이면 마우스의 지면 위치를 구한다.</summary>
+        private bool TryGetTargetPoint(Item item, out Vector3 point, out Vector3 normal)
         {
-            point = default; normal = Vector3.up;
+            point = item.Runtime.Owner.transform.position;
+            normal = Vector3.up;
+            if (item.Meta.Target == ItemTarget.Player) return true;
 
             Camera camera = combat != null && combat.AimCamera != null ? combat.AimCamera : Camera.main;
             if (camera == null || combat == null || Mouse.current == null) return false;
@@ -191,5 +210,13 @@ namespace UJam.Runtime.Player
 
         private bool CanUse(int slot, Item item) => isActiveAndEnabled && item != null && item.IsEquipped &&
             item.Runtime.Owner.CurrentHealth > 0 && Time.time >= readyAt[slot];
+
+        private void OnDisable() => CancelAiming();
+
+        private void OnDestroy()
+        {
+            if (circlePreview != null) Destroy(circlePreview.gameObject);
+            if (rectanglePreview != null) Destroy(rectanglePreview.gameObject);
+        }
     }
 }

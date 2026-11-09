@@ -347,7 +347,6 @@ namespace UJam.Runtime.UI
         private static void SetAlpha(Image image, float alpha)
         {
             if (image == null) return;
-
             Color color = image.color;
             image.color = new Color(color.r, color.g, color.b, alpha);
         }

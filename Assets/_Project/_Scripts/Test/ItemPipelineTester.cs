@@ -9,7 +9,7 @@ namespace Ujam.Runtime.Item
 {
     /// <summary>
     /// 씬의 빈 오브젝트에 붙이고 itemIds에 CSV ID를 입력한다. 구매와 같은 TryAdd로 장착한다.
-    /// 기본값은 11번 낙뢰/13번 아드레날린. D/F로 즉시 시전하며 일반형도 클릭 확정을 기다리지 않는다.
+    /// 기본값은 11번 낙뢰/20번 전류 탄환. D/F 시전 시 Meta의 Preview가 있으면 좌클릭으로 확정한다.
     /// 패시브 ID도 같은 목록에 추가할 수 있다. 최대 두 개의 액티브 슬롯만 사용한다.
     /// </summary>
     public sealed class ItemPipelineTester : MonoBehaviour
