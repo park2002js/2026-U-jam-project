@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 3332974831762924717}
   - component: {fileID: 7256474921125440117}
   - component: {fileID: 3280431848205539571}
+  - component: {fileID: 507327056927014808}
   m_Layer: 6
   m_Name: Slime
   m_TagString: Untagged
@@ -35,6 +36,9 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4477646328569160867}
+  - {fileID: 2626021785009906613}
+  - {fileID: 1698815734953176321}
+  - {fileID: 6393486045052114396}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &8055029148401724373
@@ -132,6 +136,142 @@ MonoBehaviour:
   _status: {fileID: 3332974831762924717}
   _splitPrefab: {fileID: 3280431848205539571}
   _canSplit: 1
+--- !u!114 &507327056927014808
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 898103911622944060}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a496d5676ebe0bb41aafaafa6a696223, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Bindings:
+  - Signal: AttackImpact
+    Effect: {fileID: 8670258539236544963, guid: 29fa74dac3e47284abbb44d7718f2270, type: 3}
+    Anchor: {fileID: 0}
+    AtTarget: 1
+    UseAnchorPosition: 0
+    Follow: 0
+    TargetOffset: {x: 0, y: 0.8, z: 0}
+  - Signal: MoveStep
+    Effect: {fileID: 6975606545101200896, guid: abac8f62efeb2e24a91be1db48278ebb, type: 3}
+    Anchor: {fileID: 2626021785009906613}
+    AtTarget: 0
+    UseAnchorPosition: 0
+    Follow: 0
+    TargetOffset: {x: 0, y: 0.8, z: 0}
+  - Signal: SplitStart
+    Effect: {fileID: 4478994499516578660, guid: 104a3c0429d7a884e969dd693d8c53ee, type: 3}
+    Anchor: {fileID: 1698815734953176321}
+    AtTarget: 0
+    UseAnchorPosition: 0
+    Follow: 0
+    TargetOffset: {x: 0, y: 0.8, z: 0}
+  - Signal: SplitStart
+    Effect: {fileID: 4478994499516578660, guid: 104a3c0429d7a884e969dd693d8c53ee, type: 3}
+    Anchor: {fileID: 6393486045052114396}
+    AtTarget: 0
+    UseAnchorPosition: 0
+    Follow: 0
+    TargetOffset: {x: 0, y: 0.8, z: 0}
+  Eyes: []
+  Trails: []
+--- !u!1 &5758897887799227663
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2626021785009906613}
+  m_Layer: 6
+  m_Name: SlimeGroundVfx
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2626021785009906613
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5758897887799227663}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.035, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 378418914090263410}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6958964697411362804
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1698815734953176321}
+  m_Layer: 6
+  m_Name: SlimeSplitLeftVfx
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1698815734953176321
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6958964697411362804}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.8, y: 1.5675001, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 378418914090263410}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &9078217871839637754
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6393486045052114396}
+  m_Layer: 6
+  m_Name: SlimeSplitRightVfx
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6393486045052114396
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9078217871839637754}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.8, y: 1.5675001, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 378418914090263410}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &4154978445183353672
 PrefabInstance:
   m_ObjectHideFlags: 0

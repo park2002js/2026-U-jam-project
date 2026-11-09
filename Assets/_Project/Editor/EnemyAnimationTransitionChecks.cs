@@ -144,7 +144,7 @@ namespace UJam.EditorTools
                         {
                             string special = test.enemy.Animation.HasState("Spawn") ? "Spawn" : "Summon";
                             test.enemy.FSM.SetState(special == "Spawn" ? EnemyStateType.Spawn : EnemyStateType.Summon);
-                            AssertCommand(test, special, false);
+                            AssertCommand(test, special, special == "Spawn");
                             test.pose = null;
                             Next(test, 5);
                         }

@@ -48,6 +48,17 @@ namespace UJam.EditorTools
         private static int attackCase;
         private static bool summonChecked, splitChecked, bounceChecked, deathChecked, attackFinished, stunChecked;
         private static bool transitionsReported;
+        private static WitchEnemy fieldWitch;
+        private static EnemyVfx.Binding casterField;
+        private static GameObject fieldInstance;
+        private static readonly object fieldStun = new object();
+        private static int fieldCase;
+        private static float fieldSince;
+        private static bool fieldCancelled, fieldChecksComplete, summonFieldSeen, summonImpactSeen;
+        private static SkeletonEnemy[] firstFrameSkeletons;
+        private static Vector3[][] firstFrameVertices;
+        private static bool spawnPoseChecked;
+        private static float spawnPoseSince;
         private static float previousBugX;
         private static readonly string[] AttackNames = { "Golem", "Big_Golem", "Eyebeast", "Sniper_Eyebeast", "Witch", "Skeleton", "Slime", "Golem" };
         private static readonly float[] HitTimes = { .3f, .3f, .25f, .5f, .55f, 1.7f, .45f, .15f };
@@ -127,13 +138,14 @@ namespace UJam.EditorTools
         {
             result = new Result { result = "running" };
             rewardWallet = new GameObject("Test Reward Wallet").AddComponent<Wallet>();
-            CheckIncomingDamage();
             var gridObject = new GameObject("Test Grid");
             gridObject.SetActive(false);
             GridSystem grid = gridObject.AddComponent<GridSystem>();
             grid.CellWidth = grid.CellHeight = 2;
             grid.ColumnCount = 16; grid.RowCount = 100; grid.BaseCoreRow = 0;
             gridObject.SetActive(true);
+            CheckIncomingDamage();
+            CheckGolemStrikeContact();
             EnemyAnimationTransitionChecks.Begin();
             target = Spawn<MeleeEnemy>("Golem", Vector3.zero);
             target.Status.ConfigureSpawnStats(100000, 0, 0);
@@ -145,6 +157,16 @@ namespace UJam.EditorTools
 
             witch = Spawn<WitchEnemy>("Witch", new Vector3(-8, 0, -70));
             witch.BeginCombat(target.gameObject);
+            fieldWitch = Spawn<WitchEnemy>("Witch", new Vector3(8, 0, 100));
+            fieldWitch.PrepareForTesting(null);
+            casterField = fieldWitch.GetComponent<EnemyVfx>().Bindings.Single(binding => binding.Signal == "SummonStart");
+            fieldWitch.AnimationSignal("SummonStart");
+            Require(FindCasterField() == null, "Idle Witch accepted a stray SummonStart signal.");
+            fieldCase = 0;
+            fieldCancelled = fieldChecksComplete = summonFieldSeen = summonImpactSeen = false;
+            fieldWitch.FSM.SetState(EnemyStateType.Summon);
+            fieldSince = Time.time;
+            CheckSkeletonSpawnStart();
             slime = Spawn<SlimeEnemy>("Slime", new Vector3(8, 0, -70));
             slime.BeginCombat(target.gameObject);
             var waveObject = new GameObject("Test Wave");
@@ -161,7 +183,10 @@ namespace UJam.EditorTools
             Require(slime.TakeDamage(new DamageInfo(1000)) == 0 &&
                     rewardWallet.Gold - goldBeforeSlime == slime.Status.Credits,
                 "Repeated damage paid the main Slime reward twice.");
-            Require((int)Get(wave, "_remainingEnemyCount") == 1, "Slime ended wave before splitting.");
+            Require(Object.FindObjectsByType<SlimeEnemy>(FindObjectsSortMode.None).Count(s => s.transform.position.z < -30f && s != slime) == 2
+                && (int)Get(wave, "_remainingEnemyCount") == 2,
+                "Slime must create and register both children in the death call before reporting the parent.");
+            Require(slime.GetComponent<EnemyVfx>().PlayedEffects == 2, "Slime death must immediately splash once over each child.");
 
             MeleeEnemy distantTarget = Spawn<MeleeEnemy>("Golem", new Vector3(100, 0, 100));
             distantTarget.Status.ConfigureSpawnStats(10000, 0, 0);
@@ -188,9 +213,11 @@ namespace UJam.EditorTools
             RollbugEnemy killed = Spawn<RollbugEnemy>("Rollbug", new Vector3(0, 0, -40));
             killed.BeginCombat(target.gameObject);
             hp = target.Status.HP;
+            int explosionsBeforeDeath = Object.FindObjectsByType<LowpolyVfxLifetime>(FindObjectsSortMode.None).Length;
             killed.TakeDamage(new DamageInfo(100));
-            Require(target.Status.HP == hp, "Killed Rollbug damaged the target.");
-            result.checks.Add("Rollbug immediate 200 damage once; killed Rollbug deals no damage");
+            Require(target.Status.HP == hp && Object.FindObjectsByType<LowpolyVfxLifetime>(FindObjectsSortMode.None).Length == explosionsBeforeDeath,
+                "Killed Rollbug must not damage a target or create a separate death explosion.");
+            result.checks.Add("Rollbug immediate 200 damage once; ordinary death adds no damage or second explosion");
             hpBefore = target.Status.HP;
 
             dyingGolem = Spawn<EnemyBase>("Golem", new Vector3(0, 0, -1));
@@ -221,6 +248,20 @@ namespace UJam.EditorTools
                 transitionsReported = true;
             }
             CheckWitchDeathVfx();
+            CheckCasterField();
+            if (!spawnPoseChecked && Time.time - spawnPoseSince >= .2f)
+            {
+                for (int i = 0; i < firstFrameSkeletons.Length; i++)
+                {
+                    SkeletonEnemy skeleton = firstFrameSkeletons[i];
+                    Require(skeleton.FSM.state == EnemyStateType.Spawn && !skeleton.IsAttackPlaying &&
+                            !skeleton.Animation.IsBlending && skeleton.Animation.NormalizedTime > 0f &&
+                            BakedVertices(skeleton).Where((vertex, index) => Vector3.Distance(vertex, firstFrameVertices[i][index]) > .001f).Any(),
+                        "Skeleton did not advance naturally from its buried Spawn pose before acting.");
+                }
+                spawnPoseChecked = true;
+                result.checks.Add("Witch SummonImpact and wave-style BeginCombat apply Skeleton's buried Spawn F0 immediately without Idle blending, then advance Spawn before acting");
+            }
             if (!attackFinished) CheckAttack();
             if (!stunChecked && elapsed > .15f)
             {
@@ -229,24 +270,27 @@ namespace UJam.EditorTools
                 result.checks.Add("Rollbug waits through stun and detonates once after recovery");
             }
             if (elapsed < .58f)
-                Require(Object.FindObjectsByType<SlimeEnemy>(FindObjectsSortMode.None).Count(s => s.transform.position.z < -30f && s != slime) == 0,
-                    "Slime split before Death39F.");
+                Require(Object.FindObjectsByType<SlimeEnemy>(FindObjectsSortMode.None).Count(s => s.transform.position.z < -30f && s != slime) == 2,
+                    "Slime's immediate split children vanished during the parent sinking animation.");
             if (elapsed < 4.8f) Require(dyingGolem != null, "Golem disappeared before its five-second Death finished.");
             if (!splitChecked && elapsed >= .72f)
             {
                 SlimeEnemy[] children = Object.FindObjectsByType<SlimeEnemy>(FindObjectsSortMode.None)
                     .Where(s => s.transform.position.z < -30f && s != slime).ToArray();
-                Require(children.Length == 2, "Slime did not create exactly two children at Death39F.");
+                Require(children.Length == 2, "Slime did not keep exactly two immediately created children.");
                 long goldBeforeChildren = rewardWallet.Gold;
                 foreach (SlimeEnemy child in children)
                 {
                     Require(child.transform.localScale == Vector3.one * .5f && child.Status.HP == 75 &&
                         child.Status.OutgoingDamage == 40 && child.Status.Credits == 0, "Slime child stats or scale are wrong.");
                     int deathCount = 0;
+                    int effectsBeforeDeath = child.GetComponent<EnemyVfx>().PlayedEffects;
                     child.Status.Died += () => deathCount++;
                     Require(child.TakeDamage(new DamageInfo(1000)) == 75f &&
                             child.TakeDamage(new DamageInfo(1000)) == 0f && deathCount == 1,
                         "Slime child death was not applied exactly once.");
+                    Require(child.GetComponent<EnemyVfx>().PlayedEffects == effectsBeforeDeath,
+                        "A non-splitting child must not play the parent split splash.");
                 }
                 Require(rewardWallet.Gold == goldBeforeChildren, "Slime children paid an extra reward.");
                 slime.AnimationSignal("DeathSplit");
@@ -255,7 +299,7 @@ namespace UJam.EditorTools
                     "Repeated Slime split signals created extra children.");
                 Require((int)Get(wave, "_remainingEnemyCount") == 0, "Dynamic wave counting did not finish after children died.");
                 splitChecked = true;
-                result.checks.Add("Slime splits once at Death39F; children are half size/75HP/40 damage/0 reward; parent reward paid once; wave waits for children");
+                result.checks.Add("Slime splits immediately once with two child splashes; half-size/75HP/40damage/0reward children never resplit or splash, and wave/reward counting remains exact");
             }
             if (!bounceChecked && movingBug != null)
             {
@@ -278,9 +322,28 @@ namespace UJam.EditorTools
             {
                 SkeletonEnemy[] skeletons = Object.FindObjectsByType<SkeletonEnemy>(FindObjectsSortMode.None)
                     .Where(s => s.transform.position.z < -30f).ToArray();
+                if (witch.FSM.state == EnemyStateType.Summon && witch.Animation.NormalizedTime > .05f &&
+                    witch.Animation.NormalizedTime < .9f)
+                {
+                    EnemyVfx.Binding binding = witch.GetComponent<EnemyVfx>().Bindings.Single(item => item.Signal == "SummonStart");
+                    Require(!witch.IsAttackPlaying && binding.Anchor.GetComponentsInChildren<ParticleSystem>()
+                            .Any(system => system.particleCount > 0),
+                        "Witch caster field disappeared during Summon while no Attack was playing.");
+                    summonFieldSeen = true;
+                }
+                if (!summonImpactSeen && skeletons.Length > 0)
+                {
+                    Require(skeletons.Length == 2 && witch.FSM.state == EnemyStateType.Summon &&
+                            witch.Animation.NormalizedTime >= .2f && witch.Animation.NormalizedTime < .4f,
+                        "Witch field changed the two-Skeleton Summon21F spawn timing.");
+                    summonImpactSeen = true;
+                }
                 if (elapsed < 10.25f) Require(skeletons.Length == 0, "Witch summoned before its first ten-second cooldown and21F impact.");
                 if (elapsed > 12.6f)
                 {
+                    Require(summonFieldSeen && summonImpactSeen, "Natural Witch summon did not display its caster field and create two Skeletons at21F.");
+                    EnemyVfx.Binding binding = witch.GetComponent<EnemyVfx>().Bindings.Single(item => item.Signal == "SummonStart");
+                    Require(binding.Anchor.childCount == 0, "Witch caster field remained after SummonComplete.");
                     Require(skeletons.Length == 2, "Witch did not summon two Skeletons.");
                     Require(skeletons.All(s => s.FSM.state == EnemyStateType.Move), "Skeleton did not finish Spawn before moving.");
                     witch.TakeDamage(new DamageInfo(1000));
@@ -289,7 +352,123 @@ namespace UJam.EditorTools
                     result.checks.Add("Witch first summon after10s at21F; two Skeletons finish1.5s Spawn and survive Witch death");
                 }
             }
-            if (attackFinished && summonChecked && splitChecked && bounceChecked && deathChecked && stunChecked && witchVfxGoneChecked && transitionsReported) Finish(null);
+            if (attackFinished && summonChecked && splitChecked && bounceChecked && deathChecked && stunChecked && witchVfxGoneChecked && transitionsReported && fieldChecksComplete && spawnPoseChecked) Finish(null);
+        }
+
+        private static void CheckSkeletonSpawnStart()
+        {
+            SkeletonEnemy waveSkeleton = Spawn<SkeletonEnemy>("Skeleton", new Vector3(12, 0, 100));
+            waveSkeleton.BeginCombat(null);
+            var existing = new HashSet<SkeletonEnemy>(Object.FindObjectsByType<SkeletonEnemy>(FindObjectsSortMode.None));
+            fieldWitch.AnimationSignal("SummonImpact");
+            SkeletonEnemy[] summoned = Object.FindObjectsByType<SkeletonEnemy>(FindObjectsSortMode.None)
+                .Where(skeleton => !existing.Contains(skeleton)).ToArray();
+            Require(summoned.Length == 2, "Witch SummonImpact did not create exactly two Skeletons in its call frame.");
+            firstFrameSkeletons = summoned.Concat(new[] { waveSkeleton }).ToArray();
+            firstFrameVertices = new Vector3[firstFrameSkeletons.Length][];
+            AnimationClip spawn = AssetDatabase.LoadAssetAtPath<AnimationClip>("Assets/_Project/Art/EnemyChar/Skeleton/Skeleton_Spawn.anim");
+            Require(spawn != null, "Skeleton first-frame check requires its Spawn clip.");
+            for (int i = 0; i < firstFrameSkeletons.Length; i++)
+            {
+                SkeletonEnemy skeleton = firstFrameSkeletons[i];
+                Require(skeleton.FSM.state == EnemyStateType.Spawn && skeleton.Animation.CurrentAnimation == "Spawn" &&
+                        !skeleton.Animation.IsBlending && skeleton.Animation.NormalizedTime == 0f && !skeleton.IsAttackPlaying,
+                    "New Skeleton did not enter Spawn without an Idle blend in its creation call.");
+                Vector3[] actual = BakedVertices(skeleton);
+                spawn.SampleAnimation(skeleton.transform.Find("Model").gameObject, 0f);
+                Vector3[] expected = BakedVertices(skeleton);
+                Require(actual.Length > 0 && actual.Length == expected.Length &&
+                        actual.Where((vertex, index) => Vector3.Distance(vertex, expected[index]) > .001f).Any() == false &&
+                        expected.Max(vertex => vertex.y) < .05f,
+                    "New Skeleton's visible mesh did not match its buried Spawn F0 pose in the creation call.");
+                firstFrameVertices[i] = actual;
+            }
+            spawnPoseSince = Time.time;
+            spawnPoseChecked = false;
+        }
+
+        private static Vector3[] BakedVertices(EnemyBase enemy)
+        {
+            var vertices = new List<Vector3>();
+            var mesh = new Mesh();
+            try
+            {
+                foreach (SkinnedMeshRenderer renderer in enemy.transform.Find("Model").GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                {
+                    renderer.BakeMesh(mesh);
+                    foreach (Vector3 vertex in mesh.vertices)
+                        vertices.Add(enemy.transform.InverseTransformPoint(renderer.transform.TransformPoint(vertex)));
+                }
+            }
+            finally { Object.DestroyImmediate(mesh); }
+            return vertices.ToArray();
+        }
+
+        private static GameObject FindCasterField() => casterField.Anchor.Cast<Transform>()
+            .Where(child => child.name == casterField.Effect.name + "(Clone)").Select(child => child.gameObject).SingleOrDefault();
+
+        private static void CheckCasterField()
+        {
+            if (fieldChecksComplete || Time.time - fieldSince < .15f) return;
+            if (!fieldCancelled)
+            {
+                fieldInstance = FindCasterField();
+                Require(fieldInstance != null && !fieldWitch.IsAttackPlaying &&
+                        fieldInstance.GetComponent<ParticleSystem>().particleCount > 0,
+                    "Witch caster field did not appear on a fresh Summon playback.");
+                fieldWitch.transform.position += Vector3.right * .25f;
+                Require(Vector3.Distance(fieldInstance.transform.position, casterField.Anchor.position) < .001f,
+                    "Witch caster field did not follow its caster's ground anchor.");
+                switch (fieldCase)
+                {
+                    case 0: fieldWitch.FSM.SetState(EnemyStateType.Move); break;
+                    case 1: BuffManager.Instance.SetCondition(fieldWitch.Status, fieldStun, BuffStat.Stun, 100); break;
+                    case 2: fieldWitch.gameObject.SetActive(false); break;
+                    case 3: fieldWitch.TakeDamage(new DamageInfo(1000)); break;
+                }
+                fieldCancelled = true;
+                fieldSince = Time.time;
+                return;
+            }
+            Require(fieldInstance == null && FindCasterField() == null,
+                "Witch caster field survived cancellation case " + fieldCase + " (Move/stun/deactivate/death).");
+            if (fieldCase == 3)
+            {
+                fieldChecksComplete = true;
+                result.checks.Add("Witch caster field: stray Idle signal rejected; visible without Attack; follows caster; clears on Move/stun/deactivate/death and restarts on recast");
+                return;
+            }
+            if (fieldCase == 1) BuffManager.Instance.Remove(fieldWitch.Status, fieldStun, BuffStat.Stun);
+            if (fieldCase == 2) fieldWitch.gameObject.SetActive(true);
+            fieldWitch.FSM.SetState(EnemyStateType.Idle);
+            fieldWitch.FSM.SetState(EnemyStateType.Summon);
+            fieldCase++;
+            fieldCancelled = false;
+            fieldSince = Time.time;
+        }
+
+        private static void CheckGolemStrikeContact()
+        {
+            foreach (string name in new[] { "Golem", "Big_Golem" })
+            {
+                EnemyBase golem = Spawn<EnemyBase>(name, new Vector3(40, 1, 100));
+                EnemyVfx vfx = golem.GetComponent<EnemyVfx>();
+                EnemyVfx.Binding impact = vfx.Bindings.Single(binding => binding.Signal == "AttackImpact");
+                Require(impact.AtTarget && impact.UseAnchorPosition && impact.Anchor != null && impact.Anchor.parent.name == "Hand_R",
+                    name + " attack dust must use its animated arm-end contact.");
+                Vector3 raisedTarget = new Vector3(41, 50, 101);
+                int before = vfx.PlayedEffects;
+                vfx.Signal("AttackImpact", false, raisedTarget);
+                Require(vfx.PlayedEffects == before, name + " invalid target emitted impact dust.");
+                vfx.Signal("AttackImpact", true, raisedTarget);
+                Vector3 contact = impact.Anchor.position;
+                LowpolyVfxLifetime effect = Object.FindObjectsByType<LowpolyVfxLifetime>(FindObjectsSortMode.None)
+                    .Single(item => item.name == impact.Effect.name + "(Clone)" && Vector3.Distance(item.transform.position, contact) < .001f);
+                Require(vfx.PlayedEffects == before + 1 && effect != null, name + " dust did not originate at the animated arm tip.");
+                Object.Destroy(effect.gameObject);
+                Object.Destroy(golem.gameObject);
+            }
+            result.checks.Add("Both Golem impact clouds originate at the animated distal arm surface, reject invalid targets and ignore target pivots");
         }
 
         private static void CheckIncomingDamage()

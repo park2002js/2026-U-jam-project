@@ -7,6 +7,7 @@ namespace UJam.Runtime.Enemy.Projectiles
 {
     public sealed class Projectile : MonoBehaviour
     {
+        [SerializeField] private GameObject _impactEffect;
         private EnemyBase _owner;
         private IDamageable _pastTarget;
         private UnityEngine.Object _pastTargetObject;
@@ -42,6 +43,16 @@ namespace UJam.Runtime.Enemy.Projectiles
 
             yield return _movement.Move(transform, _destination, _speed);
 
+            if (_impactEffect != null) Instantiate(_impactEffect, transform.position, Quaternion.identity);
+            foreach (ParticleSystem particles in GetComponentsInChildren<ParticleSystem>())
+            {
+                if (particles.main.simulationSpace != ParticleSystemSimulationSpace.World) continue;
+                particles.transform.SetParent(null, true);
+                particles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+                LowpolyVfxLifetime cleanup = particles.GetComponent<LowpolyVfxLifetime>();
+                if (cleanup == null) cleanup = particles.gameObject.AddComponent<LowpolyVfxLifetime>();
+                cleanup.Lifetime = particles.main.startLifetime.constantMax + .3f;
+            }
             ApplyDamage();
             Destroy(gameObject);
         }

@@ -117,14 +117,15 @@ namespace UJam.Editor
                 ConnectSummons();
                 BuildWitchDeathVfx();
                 ConfigureAnimationTransitions();
+                EnemyVfxBuild.ConfigureAll();
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
                 foreach (Spec spec in Specs)
                     ValidatePrefab(spec, report.enemies.Single(entry => entry.name == spec.name));
                 report.validatedClipCount = report.enemies.Sum(entry => entry.validatedClipCount);
                 report.validatedEventCount = report.enemies.Sum(entry => entry.validatedEventCount);
-                Require(report.validatedClipCount == 32 && report.validatedEventCount == 25,
-                    "The production enemies must contain 32 validated clips and 25 validated animation signals.");
+                Require(report.validatedClipCount == 32 && report.validatedEventCount >= 25,
+                    "The production enemies must preserve 32 clips and all gameplay animation signals.");
                 report.result = "passed";
                 Debug.Log("[EnemyPrefabBuilder] Built and validated all eight production enemy prefabs. Big Golem damage is 30 (confirmed as 1.5 times Golem).");
             }
@@ -238,12 +239,7 @@ namespace UJam.Editor
                 AnimationClipSettings settings = AnimationUtility.GetAnimationClipSettings(copy);
                 settings.loopTime = state == "Idle" || state == "Move";
                 AnimationUtility.SetAnimationClipSettings(copy, settings);
-                var events = new List<AnimationEvent>();
-                if (state == "Attack") AddEvent(events, "AttackImpact", spec.hitFrame / 60f);
-                if (state == "Summon") AddEvent(events, "SummonImpact", 21 / 60f);
-                if (state == "Death" && spec.name == "Slime") AddEvent(events, "DeathSplit", 39 / 60f);
-                if (state == "Attack" || state == "Death" || state == "Spawn" || state == "Summon")
-                    AddEvent(events, state + "Complete", copy.length);
+                var events = EnemyVfxBuild.Events(spec.name, state, copy.length, spec.hitFrame);
                 AnimationUtility.SetAnimationEvents(copy, events.ToArray());
                 string path = Art + spec.folder + "/" + spec.name + "_" + state + ".anim";
                 AnimationClip saved = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
@@ -360,15 +356,10 @@ namespace UJam.Editor
 
         private static void ConfigureRollbugEffects()
         {
-            Material ash = BuildAshMaterial();
-            GameObject detonation = BuildRollbugBurst("Rollbug_Detonation", ash, true);
-            GameObject death = BuildRollbugBurst("Rollbug_DeathBurst", ash, false);
             GameObject root = PrefabUtility.LoadPrefabContents(Prefabs + "Rollbug.prefab");
             try
             {
-                var enemy = root.GetComponent<RollbugEnemy>();
-                SetObject(enemy, "_detonationEffect", detonation);
-                SetObject(enemy, "_deathEffect", death);
+                RollbugVfxSetup.Configure(root);
                 PrefabUtility.SaveAsPrefabAsset(root, Prefabs + "Rollbug.prefab");
             }
             finally { PrefabUtility.UnloadPrefabContents(root); }
@@ -550,12 +541,7 @@ namespace UJam.Editor
                 Require(Mathf.Abs(clip.length - ExpectedDuration(spec.name, name)) < .02f, spec.name + " " + name + " duration mismatch.");
                 Require(AnimationUtility.GetAnimationClipSettings(clip).loopTime == (name == "Idle" || name == "Move"), spec.name + " " + name + " loop flag mismatch.");
                 AnimationEvent[] events = AnimationUtility.GetAnimationEvents(clip);
-                var expectedEvents = new List<AnimationEvent>();
-                if (name == "Attack") AddEvent(expectedEvents, "AttackImpact", spec.hitFrame / 60f);
-                if (name == "Summon") AddEvent(expectedEvents, "SummonImpact", 21 / 60f);
-                if (name == "Death" && spec.name == "Slime") AddEvent(expectedEvents, "DeathSplit", 39 / 60f);
-                if (name == "Attack" || name == "Death" || name == "Spawn" || name == "Summon")
-                    AddEvent(expectedEvents, name + "Complete", clip.length);
+                var expectedEvents = EnemyVfxBuild.Events(spec.name, name, clip.length, spec.hitFrame);
                 Require(events.Length == expectedEvents.Count, spec.name + " " + name + " event count mismatch.");
                 foreach (AnimationEvent expected in expectedEvents)
                     Require(events.Count(e => e.functionName == expected.functionName && e.stringParameter == expected.stringParameter
