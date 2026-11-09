@@ -1982,7 +1982,7 @@ MonoBehaviour:
   _playerStatus: {fileID: 188230508}
   _playerShooter: {fileID: 202004998}
   _playerSkillManager: {fileID: 202004996}
-  _playerSkillPreviewPrefab: {fileID: 166050, guid: 6e033fec805c77243aceb05946593ef1, type: 3}
+  _playerSkillPreviewPrefab: {fileID: 2878677094038920207, guid: 353ec16418688a14082fc65cca70bea0, type: 3}
   _bulletSpawnPoint: {fileID: 1738106285}
   _bulletPrefab: {fileID: 1940170559750460442, guid: d84b19498b00985489578140a1293605, type: 3}
 --- !u!114 &202004998
@@ -9978,7 +9978,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5589831090510202531, guid: a9ea3f06ed48d4c448a9698393a9c415, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -31.29273
+      value: -25.8
       objectReference: {fileID: 0}
     - target: {fileID: 5589831090510202531, guid: a9ea3f06ed48d4c448a9698393a9c415, type: 3}
       propertyPath: m_LocalRotation.w
