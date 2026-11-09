@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 3231480641886404877}
   - component: {fileID: 4135762715241858528}
   - component: {fileID: 1571642345370098559}
-  - component: {fileID: 8829827157132956110}
+  - component: {fileID: 8018865050749120893}
   m_Layer: 6
   m_Name: Sniper_Eyebeast
   m_TagString: Untagged
@@ -101,7 +101,7 @@ MonoBehaviour:
   _enemyName: Sniper Eyebeast
   _credits: 150
   _maxHealth: 100
-  _speed: 0.5
+  _speed: 2.5
   _attackDamage: 100
   _attackSpeed: 0.8
   _attackRange: 5
@@ -131,9 +131,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _status: {fileID: 3231480641886404877}
-  _firePoint: {fileID: 0}
-  _shotEffect: {fileID: 0}
---- !u!114 &8829827157132956110
+  _firePoint: {fileID: 2836835520528734037}
+  _shotEffect: {fileID: 3934359598469324500, guid: 96fb4479a74ae5e44ab39ba70e35a9a2, type: 3}
+--- !u!114 &8018865050749120893
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -142,12 +142,57 @@ MonoBehaviour:
   m_GameObject: {fileID: 1456856074196641978}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 012d5de27c7a8bb43bbd6cfeeacfd4fa, type: 3}
+  m_Script: {fileID: 11500000, guid: a496d5676ebe0bb41aafaafa6a696223, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _status: {fileID: 3231480641886404877}
-  _flashColor: {r: 1, g: 0, b: 0, a: 1}
-  _flashTime: 0.1
+  Bindings:
+  - Signal: AttackCharge
+    Effect: {fileID: 1259655694173184097, guid: 9f8dc4bf2641ad943ae1338579b0a08b, type: 3}
+    Anchor: {fileID: 2836835520528734037}
+    AtTarget: 0
+    UseAnchorPosition: 0
+    Follow: 1
+    TargetOffset: {x: 0, y: 0.8, z: 0}
+  - Signal: DeathImpact
+    Effect: {fileID: 5990892486421291733, guid: 685049e55b14b604f9044707cf9bdbf2, type: 3}
+    Anchor: {fileID: 6918855428776168304}
+    AtTarget: 0
+    UseAnchorPosition: 0
+    Follow: 0
+    TargetOffset: {x: 0, y: 0.8, z: 0}
+  Eyes: []
+  Trails: []
+--- !u!1 &4532038129588951691
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2836835520528734037}
+  m_Layer: 6
+  m_Name: FirePoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2836835520528734037
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4532038129588951691}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.008495707, y: -0, z: -0, w: 0.99996394}
+  m_LocalPosition: {x: -0.0002309084, y: 0.22346634, z: 0.6612025}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6918855428776168304}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &9172138730872180031
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -622,7 +667,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -6967827498356603313, guid: 7d290d53da7c0d845a9e84bf1e4fbf8d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2836835520528734037}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7d290d53da7c0d845a9e84bf1e4fbf8d, type: 3}
       insertIndex: -1
@@ -631,6 +679,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 7659455156321622540}
   m_SourcePrefab: {fileID: 100100000, guid: 7d290d53da7c0d845a9e84bf1e4fbf8d, type: 3}
+--- !u!4 &6918855428776168304 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -6967827498356603313, guid: 7d290d53da7c0d845a9e84bf1e4fbf8d, type: 3}
+  m_PrefabInstance: {fileID: 9172138730872180031}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &8325064738395402350 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 7d290d53da7c0d845a9e84bf1e4fbf8d, type: 3}

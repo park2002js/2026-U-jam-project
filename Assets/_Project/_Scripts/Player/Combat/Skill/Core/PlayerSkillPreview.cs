@@ -21,7 +21,7 @@ namespace UJam.Runtime.Player
     {
         [SerializeField, Min(0f)]
         [Tooltip("Ground와 Preview가 겹쳐 깜빡이는 현상을 막기 위한 표면 오프셋")]
-        private float surfaceOffset = 0.02f;
+        private float surfaceOffset = 0.03f;
 
         [SerializeField, Min(0.0001f)]
         [Tooltip("Prefab 원본 크기 보정 배율. 메시가 지름 1보다 크면 그만큼 줄여서 지정한다.")]
@@ -47,9 +47,18 @@ namespace UJam.Runtime.Player
             if (resetRotationOnShow) transform.rotation = Quaternion.identity;
         }
 
-        // Preview를 약간 위로 띄워서 처리함
+        /// <summary>단위 Quad의 X/Z 크기를 월드 거리 기준 폭과 길이로 지정한다.</summary>
+        public void ShowRectangle(float width, float length)
+        {
+            gameObject.SetActive(true);
+            transform.localScale = new Vector3(width, transform.localScale.y, length);
+        }
+
+        // 지면 기울기에 맞추고 표면 위로 띄워 깊이 충돌을 막는다.
         public void SetPosition(Vector3 position, Vector3 surfaceNormal)
         {
+            surfaceNormal = surfaceNormal.sqrMagnitude > 0.000001f ? surfaceNormal.normalized : Vector3.up;
+            transform.up = surfaceNormal;
             transform.position = position + surfaceNormal * surfaceOffset;
         }
 

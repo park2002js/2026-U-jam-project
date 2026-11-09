@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace UJam.Runtime.Enemy
@@ -11,6 +12,7 @@ namespace UJam.Runtime.Enemy
         private string playing;
         private float speed = 1f;
         private bool completionSent;
+        private readonly HashSet<string> sentSignals = new HashSet<string>();
 
         public string CurrentAnimation => playing;
         public bool IsBlending => animator != null && animator.IsInTransition(0);
@@ -47,12 +49,18 @@ namespace UJam.Runtime.Enemy
             playing = state;
             speed = Mathf.Max(0f, playbackSpeed);
             completionSent = false;
+            sentSignals.Clear();
             animator.SetFloat(Animator.StringToHash(state + "Speed"), speed);
             animator.speed = IsPaused ? 0f : 1f;
             int hash = Animator.StringToHash(state);
-            bool immediate = state == "Death" || owner != null && owner.ImmediateAttack ||
+            bool immediate = state == "Spawn" || state == "Death" || owner != null && owner.ImmediateAttack ||
                 animator.GetCurrentAnimatorStateInfo(0).shortNameHash == hash;
-            if (immediate) animator.Play(hash, 0, 0f);
+            if (immediate)
+            {
+                animator.Play(hash, 0, 0f);
+                // Spawn must apply its buried pose before a newly created enemy can be rendered.
+                if (state == "Spawn") animator.Update(0f);
+            }
             else
             {
                 float duration = Duration(state);
@@ -96,6 +104,7 @@ namespace UJam.Runtime.Enemy
                 if (completionSent || signal != playing + "Complete" || PlayingState().normalizedTime < .9999f) return;
                 completionSent = true;
             }
+            if (signal != "MoveStep" && !sentSignals.Add(signal)) return;
             owner.AnimationSignal(signal);
         }
 
