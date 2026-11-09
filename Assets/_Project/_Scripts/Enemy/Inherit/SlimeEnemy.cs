@@ -8,28 +8,13 @@ namespace UJam.Runtime.Enemy
         [SerializeField] private SlimeEnemy _splitPrefab;
         [SerializeField] private bool _canSplit = true;
         private bool _splitHandled;
-
-        protected override void ReportDeath()
-        {
-            // The children must be counted before the last original enemy can complete the wave.
-            if (_canSplit && !_splitHandled) return;
-            base.ReportDeath();
-        }
+        public bool CanSplit => _canSplit;
 
         public override void Dead()
         {
-            if (Animation == null || !Animation.HasState("Death")) Split();
+            // Count both children before base.Dead reports the parent; its sinking animation reveals them.
+            Split();
             base.Dead();
-        }
-
-        public override void AnimationSignal(string signal)
-        {
-            if (FSM.state == EnemyStateType.Dead && (signal == "DeathSplit" || signal == "DeathComplete"))
-            {
-                Split();
-                base.ReportDeath();
-            }
-            base.AnimationSignal(signal);
         }
 
         private void Split()
@@ -53,12 +38,7 @@ namespace UJam.Runtime.Enemy
                 if (WaveController.Instance != null) WaveController.Instance.RegisterAdditionalEnemy(child, this);
                 child.BeginCombat(target);
             }
-        }
-
-        protected override void OnDestroy()
-        {
-            if (FSM != null && FSM.state == EnemyStateType.Dead) base.ReportDeath();
-            base.OnDestroy();
+            GetComponent<EnemyVfx>()?.Signal("SplitStart");
         }
     }
 }

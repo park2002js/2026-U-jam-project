@@ -6,7 +6,6 @@ namespace UJam.Runtime.Enemy
     public class RollbugEnemy : EnemyBase
     {
         [SerializeField] private GameObject _detonationEffect;
-        [SerializeField] private GameObject _deathEffect;
         private bool _resolved;
         public override bool ImmediateAttack => true;
 
@@ -30,11 +29,7 @@ namespace UJam.Runtime.Enemy
 
         public override void Dead()
         {
-            if (!_resolved)
-            {
-                _resolved = true;
-                if (_deathEffect != null) Instantiate(_deathEffect, transform.position, Quaternion.identity);
-            }
+            _resolved = true;
             base.Dead();
         }
 

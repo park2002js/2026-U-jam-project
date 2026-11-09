@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 2175516329740583976}
   - component: {fileID: 6162685836810371278}
   - component: {fileID: 2027869514113350076}
+  - component: {fileID: 3752184435246420573}
   m_Layer: 6
   m_Name: Eyebeast
   m_TagString: Untagged
@@ -100,7 +101,7 @@ MonoBehaviour:
   _enemyName: Eyebeast
   _credits: 100
   _maxHealth: 120
-  _speed: 0.5
+  _speed: 2.5
   _attackDamage: 80
   _attackSpeed: 1
   _attackRange: 3
@@ -130,10 +131,39 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _status: {fileID: 2175516329740583976}
-  _projectilePrefab: {fileID: 5139841574112990009, guid: 0e515641b5b3f6b46a21eaca23fcfd4d, type: 3}
+  _projectilePrefab: {fileID: 9044027335309408229, guid: f970005a07537ca4aac694a9a8770d50, type: 3}
   _firePoint: {fileID: 231147511620268241}
   _projectileMovement: {fileID: 11400000, guid: 6c0f2ca5412e4424789716531aa221c1, type: 2}
   _projectileSpeed: 5
+--- !u!114 &3752184435246420573
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3327700369383855136}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a496d5676ebe0bb41aafaafa6a696223, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Bindings:
+  - Signal: AttackImpact
+    Effect: {fileID: 8122894693527839038, guid: 242ac3d0e52714b4da12c08c7f3cbb23, type: 3}
+    Anchor: {fileID: 231147511620268241}
+    AtTarget: 0
+    UseAnchorPosition: 0
+    Follow: 0
+    TargetOffset: {x: 0, y: 0.8, z: 0}
+  - Signal: DeathImpact
+    Effect: {fileID: 3261086874257288383, guid: 7b7c359c9a6add74eacb0cd95afd3779, type: 3}
+    Anchor: {fileID: 8205347339348874098}
+    AtTarget: 0
+    UseAnchorPosition: 0
+    Follow: 0
+    TargetOffset: {x: 0, y: 0.8, z: 0}
+  Eyes: []
+  Trails: []
 --- !u!1 &8407204383676456641
 GameObject:
   m_ObjectHideFlags: 0

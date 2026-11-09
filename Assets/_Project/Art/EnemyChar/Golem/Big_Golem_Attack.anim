@@ -11550,9 +11550,23 @@ AnimationClip:
   m_HasGenericRootTransform: 0
   m_HasMotionFloatCurves: 0
   m_Events:
+  - time: 0.1
+    functionName: OnAnimationSignal
+    data: AttackTrailStart
+    objectReferenceParameter: {fileID: 0}
+    floatParameter: 0
+    intParameter: 0
+    messageOptions: 0
   - time: 0.3
     functionName: OnAnimationSignal
     data: AttackImpact
+    objectReferenceParameter: {fileID: 0}
+    floatParameter: 0
+    intParameter: 0
+    messageOptions: 0
+  - time: 0.4
+    functionName: OnAnimationSignal
+    data: AttackTrailEnd
     objectReferenceParameter: {fileID: 0}
     floatParameter: 0
     intParameter: 0

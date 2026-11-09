@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using UJam.Runtime.Combat;
+using UJam.Runtime.Defense;
 using UJam.Runtime.Enemy;
 using UJam.Runtime.Grid;
 using UnityEditor;
@@ -17,6 +18,7 @@ namespace UJam.Editor
     {
         private const string ScenePath = "Assets/_Project/Scenes/PJS_Scene.unity";
         private const string Request = "Library/SetupEnemyViewer.request";
+        private const string CameraRequest = "Library/MatchEnemyViewerCamera.request";
         private const string ReportPath = "Library/EnemyViewerSceneSetupReport.json";
         private static readonly string[] Names = { "Golem", "Big_Golem", "Eyebeast", "Sniper_Eyebeast", "Witch", "Skeleton", "Slime", "Rollbug" };
 
@@ -33,7 +35,19 @@ namespace UJam.Editor
 
         private static void Poll()
         {
-            if (!File.Exists(Request) || EditorApplication.isCompiling || EditorApplication.isUpdating || EditorApplication.isPlayingOrWillChangePlaymode) return;
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating || EditorApplication.isPlayingOrWillChangePlaymode) return;
+            if (File.Exists(CameraRequest))
+            {
+                File.Delete(CameraRequest);
+                try { MatchGameplayCamera(); }
+                catch (Exception error)
+                {
+                    File.WriteAllText("Library/EnemyViewerCameraMatchReport.json", JsonUtility.ToJson(new CameraMatchReport { result = "failed", error = error.ToString() }, true));
+                    Debug.LogException(error);
+                }
+                return;
+            }
+            if (!File.Exists(Request)) return;
             try { File.Delete(Request); }
             catch (IOException) { return; }
             try { Apply(); }
@@ -100,11 +114,8 @@ namespace UJam.Editor
                 }
 
                 Transform cameraRoot = Child(viewer.transform, "Preview Camera");
-                cameraRoot.position = new Vector3(12, 12, 42);
-                cameraRoot.rotation = Quaternion.LookRotation(new Vector3(0, 2.4f, 24) - cameraRoot.position);
                 Camera camera = cameraRoot.GetComponent<Camera>();
                 if (camera == null) camera = cameraRoot.gameObject.AddComponent<Camera>();
-                camera.orthographic = true;
                 camera.orthographicSize = 12;
                 camera.nearClipPlane = .1f;
                 camera.farClipPlane = 200;
@@ -112,6 +123,7 @@ namespace UJam.Editor
                 camera.backgroundColor = new Color(.055f, .07f, .09f);
                 camera.depth = 100;
                 camera.enabled = false;
+                AlignGameplayCamera(viewer);
                 Transform lightRoot = Child(viewer.transform, "Preview Light");
                 lightRoot.rotation = Quaternion.Euler(48, -35, 0);
                 Light light = lightRoot.GetComponent<Light>();
@@ -159,6 +171,72 @@ namespace UJam.Editor
             }
             catch (Exception error) { report.result = "failed"; report.error = error.ToString(); throw; }
             finally { File.WriteAllText(ReportPath, JsonUtility.ToJson(report, true)); }
+        }
+
+        [MenuItem("UJam/Enemies/Match PJS Preview to Gameplay Camera")]
+        public static void MatchGameplayCamera()
+        {
+            Require(!EditorApplication.isPlayingOrWillChangePlaymode, "Stop Play mode before matching the preview camera.");
+            Scene scene = SceneManager.GetSceneByPath(ScenePath);
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                for (int index = 0; index < SceneManager.sceneCount; index++)
+                    Require(!SceneManager.GetSceneAt(index).isDirty, "Save open scenes before opening PJS_Scene.");
+                scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            }
+            EnemyAnimationViewer viewer = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<EnemyAnimationViewer>(true)).Single();
+            File.Copy(ScenePath, "Library/PJS_Scene.BeforeCameraMatch.unity.txt", true);
+            AlignGameplayCamera(viewer);
+            EditorSceneManager.MarkSceneDirty(scene);
+            Require(EditorSceneManager.SaveScene(scene), "Could not save the matched preview camera.");
+        }
+
+        private static void AlignGameplayCamera(EnemyAnimationViewer viewer)
+        {
+            GameObject[] roots = viewer.gameObject.scene.GetRootGameObjects();
+            Transform head = roots.Single(root => root.name == "PlayerTurret").transform.Find("CameraHead");
+            BaseCore core = roots.Single(root => root.name == "Map").GetComponentsInChildren<BaseCore>(true).Single();
+            Transform marker = viewer.transform.Find("Viewer Target/Target Marker");
+            Camera preview = viewer.transform.Find("Preview Camera").GetComponent<Camera>();
+            Require(head != null && marker != null && preview != null, "Gameplay camera, target marker and preview camera are required.");
+            Camera gameplay = head.GetComponentInChildren<Camera>(true);
+            BoxCollider coreCollider = core.GetComponent<BoxCollider>();
+            MeshFilter markerMesh = marker.GetComponent<MeshFilter>();
+            Require(gameplay != null && coreCollider != null && markerMesh != null && markerMesh.sharedMesh != null,
+                "Matching requires the gameplay camera, BaseCore collider and target marker geometry.");
+            Require(Vector3.Distance(gameplay.transform.position, head.position) < .0001f
+                && Quaternion.Angle(gameplay.transform.rotation, head.rotation) < .001f,
+                "The gameplay Camera must share its CameraHead pose.");
+            Matrix4x4 unchangedMarker = marker.localToWorldMatrix;
+            Undo.RecordObjects(new Object[] { preview.transform, preview }, "Match viewer camera to gameplay");
+            Vector3 coreCenter = core.transform.TransformPoint(coreCollider.center);
+            Vector3 markerCenter = marker.TransformPoint(markerMesh.sharedMesh.bounds.center);
+            // Preserve the world-space camera-to-core offset; LookAt would change the gameplay angle.
+            preview.transform.SetPositionAndRotation(markerCenter + head.position - coreCenter, head.rotation);
+            preview.orthographic = gameplay.orthographic;
+            preview.fieldOfView = gameplay.fieldOfView;
+            float offsetError = Vector3.Distance(preview.transform.position - markerCenter, head.position - coreCenter);
+            float viewportError = Vector3.Distance(preview.WorldToViewportPoint(markerCenter), gameplay.WorldToViewportPoint(coreCenter));
+            Require(offsetError < .0001f && Quaternion.Angle(preview.transform.rotation, head.rotation) < .001f
+                && viewportError < .0001f && marker.localToWorldMatrix == unchangedMarker,
+                "The preview must match the gameplay camera relationship without moving the target marker.");
+            File.WriteAllText("Library/EnemyViewerCameraMatchReport.json", JsonUtility.ToJson(new CameraMatchReport
+            {
+                result = "passed", cameraHeadPosition = head.position, baseCoreCenter = coreCenter,
+                targetMarkerCenter = markerCenter, previewPosition = preview.transform.position,
+                previewEuler = preview.transform.eulerAngles, offsetError = offsetError, viewportError = viewportError,
+                markerUnchanged = true, perspective = !preview.orthographic, fieldOfView = preview.fieldOfView
+            }, true));
+            Debug.Log("[EnemyViewerSceneSetup] Preview camera matched CameraHead/BaseCore center; marker unchanged.");
+        }
+
+        [Serializable] private sealed class CameraMatchReport
+        {
+            public string result, error;
+            public Vector3 cameraHeadPosition, baseCoreCenter, targetMarkerCenter, previewPosition, previewEuler;
+            public float offsetError, viewportError, fieldOfView;
+            public bool markerUnchanged, perspective;
         }
 
         private static Transform Child(Transform parent, string name)
