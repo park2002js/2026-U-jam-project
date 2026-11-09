@@ -16,8 +16,9 @@ namespace Ujam.Runtime.Item
         {
             yield return new WaitForSeconds(delay);
 
+            yield return ItemVfx.Spawn(c, radius * ItemWorld.CellWidth * 2f, stunDuration);
+            if (!c.Item.IsEquipped) yield break;
             var enemies = ItemWorld.Circle(c.Position, radius, c.EnemyMask);
-            /* VFX: 빙결 폭발과 경직 표현을 이곳에 추가한다. */
             foreach (var enemy in enemies)
             {
                 BuffManager.Instance.SetTimed(enemy.Status, c.Item, BuffStat.Stun, 100, stunDuration);

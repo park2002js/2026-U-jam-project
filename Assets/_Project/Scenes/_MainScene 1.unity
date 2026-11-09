@@ -7514,6 +7514,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   previewPrefab: {fileID: 0}
+  rectanglePreviewPrefab: {fileID: 2878677094038920207, guid: 7f926d388b965959ac819d58f5003df8, type: 3}
 --- !u!114 &1457450727
 MonoBehaviour:
   m_ObjectHideFlags: 0

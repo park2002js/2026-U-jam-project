@@ -37,7 +37,7 @@ namespace UJam.Runtime.Player
         [SerializeField] [Tooltip("Skill 사용 및 적용 전반을 담당하는 매니저 객체")]
         private PlayerSkillManager _playerSkillManager;
         
-        [SerializeField] [Tooltip("Skill 사용시 보일 프리뷰를 정의한 Prefab")]
+        [SerializeField] [Tooltip("원형 Preview 기본 프리팹. SkillManager에 직접 지정한 원형 프리팹이 있으면 그것을 사용한다.")]
         private GameObject _playerSkillPreviewPrefab;
         
         [SerializeField] [Tooltip("Shooter에서 사용할 투사체 발사 위치")]

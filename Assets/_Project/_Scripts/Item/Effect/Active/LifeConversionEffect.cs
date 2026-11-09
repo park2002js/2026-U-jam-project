@@ -12,7 +12,7 @@ namespace Ujam.Runtime.Item
         /// <summary>중앙 SkillUse가 호출한다. 지불로 사망할 수 있고 부활 패시브도 정상 작동한다.</summary>
         public override void Execute(ItemUseContext c)
         {
-            c.Player.TakeDamage(new UJam.Runtime.Combat.DamageInfo(c.Player.MaxHealth * healthCost / 100f, c.Item.ID));
+            c.Player.TakeDamage(new UJam.Runtime.Combat.DamageInfo(c.Player.MaxHealth * healthCost / 100f, c.Item.ID, ignoreDamageTaken: true));
 
             if (c.Player.CurrentHealth > 0) BuffManager.Instance.SetTimed(c.Player, c.Item, BuffStat.Damage, damagePercent, duration);
             /* VFX: 체력 지불과 데미지 강화 표현을 이곳에 추가한다. */
