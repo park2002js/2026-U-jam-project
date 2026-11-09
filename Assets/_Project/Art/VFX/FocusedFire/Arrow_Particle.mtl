@@ -1,0 +1,8 @@
+newmtl Arrow_Particle
+Ka 1.000 1.000 1.000
+Kd 1.000 1.000 1.000
+Ks 0.1 0.1 0.1
+Ns 10.0
+d 1.0
+illum 2
+map_Kd Arrow_Particle_Color.png
