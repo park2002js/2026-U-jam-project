@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 3767921145108504849}
   - component: {fileID: 7782926079160768337}
   - component: {fileID: 7200727351682159269}
+  - component: {fileID: 2657023306901316039}
   m_Layer: 5
   m_Name: EnemyHealthBar
   m_TagString: Untagged
@@ -92,6 +93,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _fill: {fileID: 8137596045223864279}
   _group: {fileID: 7200727351682159269}
+  _icons: {fileID: 2657023306901316039}
 --- !u!225 &7200727351682159269
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -104,6 +106,31 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
+--- !u!114 &2657023306901316039
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1296635967430389382}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e56878d7d00cf249bb9fa408169d711, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _icons:
+  - type: 0
+    sprite: {fileID: 2085597570, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
+  - type: 1
+    sprite: {fileID: 1836421515, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
+  - type: 2
+    sprite: {fileID: -756865923, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
+  - type: 3
+    sprite: {fileID: -1539224395, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
+  _iconParent: {fileID: 0}
+  _iconSize: 30
+  _spacing: 2
+  _verticalOffset: 12
 --- !u!1 &7574632643948669164
 GameObject:
   m_ObjectHideFlags: 0

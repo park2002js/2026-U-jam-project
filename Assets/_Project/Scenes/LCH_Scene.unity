@@ -4948,6 +4948,7 @@ MonoBehaviour:
   _worldOffset: {x: 0, y: 2, z: 0}
   _hideDelay: 3
   _prewarmCount: 8
+  _keepWhileElementActive: 1
 --- !u!114 &834465468
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10028,6 +10029,7 @@ GameObject:
   - component: {fileID: 1707880197}
   - component: {fileID: 1707880196}
   - component: {fileID: 1707880198}
+  - component: {fileID: 1707880199}
   m_Layer: 0
   m_Name: Tester
   m_TagString: Untagged
@@ -10096,6 +10098,23 @@ MonoBehaviour:
   _repairAlpha: 0.35
   _tenacityAlpha: 0.28
   _resurrectAlpha: 0.4
+--- !u!114 &1707880199
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1707880195}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4bd70ad36fc7c643a93573a7ce1384b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _burnKey: 122
+  _freezeKey: 120
+  _shockKey: 99
+  _bleedKey: 118
+  _dealTinyDamage: 1
 --- !u!4 &1738106285 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3318955827309866218, guid: dc35a6dbc0522f54eacedf229880accb, type: 3}

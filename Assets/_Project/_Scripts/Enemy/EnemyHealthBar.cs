@@ -8,9 +8,11 @@ namespace UJam.Runtime.UI
     {
         [SerializeField] private Image _fill;          // Image Type을 Filled로 설정
         [SerializeField] private CanvasGroup _group;   // 보이기/숨기기용
+        [SerializeField] private EnemyStatusIcons _icons;   // 체력바 위 속성 아이콘
 
         public RectTransform Rect => (RectTransform)transform;
-        public float HideTimer { get; set; }           // 매니저가 관리하는 자동 숨김 타이머
+        public float HideTimer { get; set; }           // 매니저가 관리하는 자동 숨김 타이머\
+        public EnemyStatusIcons Icons => _icons;
 
         // 체력 비율 반영
         public void SetRatio(float ratio)
