@@ -1,32 +1,120 @@
+using System;
 using UnityEngine;
 
 namespace UJam.Runtime.UI
 {
     /// <summary>
     /// 화면 효과 확인용 임시 코드. 메인 로직과 무관하게 키 입력으로 발동한다.
-    /// 각 효과의 깊이(peakAlpha)는 광전사의 분노 2~3단계 수준으로 맞춰 테두리에만 머물게 한다.
+    /// 효과마다 테두리, 파티클 아이콘, 중앙 아이콘 설정을 따로 가진다.
+    /// 키 배치: 5 아드레날린 / 6 긴급수리 / 7 생명력전환 / 8 집념 / 9 리저렉션 / 0 광전사의 분노
     /// </summary>
     public class ScreenEffectTester : MonoBehaviour
     {
-        [Header("테스트 키")]
-        [SerializeField] private KeyCode _adrenalineKey = KeyCode.Alpha5;   // 아드레날린
-        [SerializeField] private KeyCode _repairKey = KeyCode.Alpha6;       // 긴급 수리
-        [SerializeField] private KeyCode _tenacityKey = KeyCode.Alpha7;     // 집념
-        [SerializeField] private KeyCode _resurrectKey = KeyCode.Alpha8;    // 리저렉션
-        [SerializeField] private KeyCode _rageUpKey = KeyCode.Alpha9;       // 분노 단계 ↑
-        [SerializeField] private KeyCode _clearKey = KeyCode.Minus;         // 전체 해제
+        /// <summary>효과 하나의 전체 설정.</summary>
+        [Serializable]
+        private class EffectSetting
+        {
+            [Header("발동 키")]
+            public KeyCode key = KeyCode.Alpha5;
 
-        [Header("색 설정")]
-        [SerializeField] private Color _adrenalineColor = new Color(0.78f, 0.14f, 1f);    // 보라 (분노마법)
-        [SerializeField] private Color _repairColor = new Color(0.3f, 1f, 0.5f);          // 초록 (회복)
-        [SerializeField] private Color _tenacityColor = new Color(1f, 0.85f, 0.2f);       // 노랑 (공속)
-        [SerializeField] private Color _resurrectColor = new Color(1f, 0.85f, 0.4f);      // 금빛 (부활)
+            [Header("테두리")]
+            public Color color = Color.white;
+            [Range(0f, 1f), Tooltip("클수록 화면 안쪽까지 들어온다")]
+            public float alpha = 0.3f;
+            [Tooltip("나타남 / 유지 / 사라짐 시간(초)")]
+            public float fadeIn = 0.2f;
+            public float hold = 1f;
+            public float fadeOut = 0.5f;
 
-        [Header("깊이 (0~1, 값이 클수록 화면 안쪽까지 들어온다)")]
-        [SerializeField, Range(0f, 1f)] private float _adrenalineAlpha = 0.3f;
-        [SerializeField, Range(0f, 1f)] private float _repairAlpha = 0.35f;
-        [SerializeField, Range(0f, 1f)] private float _tenacityAlpha = 0.28f;
-        [SerializeField, Range(0f, 1f)] private float _resurrectAlpha = 0.4f;
+            [Header("좌우 파티클 아이콘")]
+            [Tooltip("비우면 파티클을 띄우지 않는다")]
+            public Sprite sparkleIcon;
+            [Range(0, 10), Tooltip("좌우 각각의 개수")]
+            public int sparkleCount = 4;
+            [Tooltip("크기 범위(픽셀)")]
+            public Vector2 sparkleSize = new Vector2(24f, 48f);
+            [Range(0f, 45f), Tooltip("기울어지는 최대 각도. 0이면 똑바로 세운다")]
+            public float sparkleTilt = 0f;
+            [Tooltip("켜면 테두리 색으로 물들이고, 끄면 아이콘 원본 색을 쓴다")]
+            public bool tintSparkle = false;
+
+            [Header("중앙 아이콘")]
+            [Tooltip("비우면 중앙 아이콘을 띄우지 않는다")]
+            public Sprite centerIcon;
+            public Vector2 centerIconSize = new Vector2(240f, 240f);
+            [Tooltip("켜면 테두리 색으로 물들이고, 끄면 아이콘 원본 색을 쓴다")]
+            public bool tintCenterIcon = false;
+
+            /// <summary>설정대로 화면 효과를 발동한다.</summary>
+            public void Play(ScreenEffectManager manager)
+            {
+                manager.Flash(color, alpha, fadeIn, hold, fadeOut);
+
+                if (sparkleIcon != null)
+                {
+                    manager.SpawnSparkles(sparkleIcon, tintSparkle ? color : Color.white,
+                        sparkleCount, sparkleSize, sparkleTilt);
+                }
+
+                if (centerIcon != null)
+                {
+                    manager.ShowCenterIcon(centerIcon, tintCenterIcon ? color : Color.white, centerIconSize);
+                }
+            }
+        }
+
+        [Header("5 — 아드레날린 (13)")]
+        [SerializeField] private EffectSetting _adrenaline = new EffectSetting
+        {
+            key = KeyCode.Alpha5,
+            color = new Color(0.78f, 0.14f, 1f),   // 보라 (분노마법)
+            alpha = 0.3f, fadeIn = 0.3f, hold = 4.2f, fadeOut = 0.5f,
+            sparkleTilt = 0f
+        };
+
+        [Header("6 — 긴급 수리 (14)")]
+        [SerializeField] private EffectSetting _repair = new EffectSetting
+        {
+            key = KeyCode.Alpha6,
+            color = new Color(0.3f, 1f, 0.5f),     // 초록 (회복)
+            alpha = 0.35f, fadeIn = 0.1f, hold = 0.15f, fadeOut = 0.5f,
+            sparkleTilt = 15f, tintSparkle = true
+        };
+
+        [Header("7 — 생명력 전환 (15)")]
+        [SerializeField] private EffectSetting _lifeConversion = new EffectSetting
+        {
+            key = KeyCode.Alpha7,
+            color = new Color(0.9f, 0.1f, 0.1f),   // 붉은색 (체력 지불)
+            alpha = 0.28f,                          // 광전사의 분노 3단계와 같은 깊이
+            fadeIn = 0.1f, hold = 0.4f, fadeOut = 0.8f,
+            sparkleCount = 0                        // 파티클 없음, 중앙에 공격력 아이콘만
+        };
+
+        [Header("8 — 집념 (17)")]
+        [SerializeField] private EffectSetting _tenacity = new EffectSetting
+        {
+            key = KeyCode.Alpha8,
+            color = new Color(1f, 0.85f, 0.2f),    // 노랑 (공속)
+            alpha = 0.28f, fadeIn = 0.15f, hold = 1.5f, fadeOut = 0.35f,
+            sparkleTilt = 0f
+        };
+
+        [Header("9 — 리저렉션 (25)")]
+        [SerializeField] private EffectSetting _resurrect = new EffectSetting
+        {
+            key = KeyCode.Alpha9,
+            color = new Color(1f, 0.85f, 0.4f),    // 금빛 (부활)
+            alpha = 0.4f, fadeIn = 0.08f, hold = 0.3f, fadeOut = 1.2f,
+            sparkleCount = 0                        // 파티클 없음
+        };
+
+        [Header("0 — 광전사의 분노 (27)")]
+        [SerializeField, Tooltip("누를 때마다 단계가 오르고 최대를 넘기면 0으로 돌아간다")]
+        private KeyCode _rageUpKey = KeyCode.Alpha0;
+
+        [SerializeField, Tooltip("모든 화면 효과를 즉시 해제한다")]
+        private KeyCode _clearKey = KeyCode.Minus;
 
         [Header("반짝임")]
         [SerializeField, Range(0, 10)]
@@ -40,24 +128,12 @@ namespace UJam.Runtime.UI
             ScreenEffectManager manager = ScreenEffectManager.Instance;
             if (manager == null) return;
 
-            // 아드레날린: 5초 버프라 은은하게 오래 유지
-            if (Input.GetKeyDown(_adrenalineKey))
-                manager.Flash(_adrenalineColor, _adrenalineAlpha, 0.3f, 4.2f, 0.5f);
+            if (Input.GetKeyDown(_adrenaline.key)) _adrenaline.Play(manager);
+            if (Input.GetKeyDown(_repair.key)) _repair.Play(manager);
+            if (Input.GetKeyDown(_lifeConversion.key)) _lifeConversion.Play(manager);
+            if (Input.GetKeyDown(_tenacity.key)) _tenacity.Play(manager);
+            if (Input.GetKeyDown(_resurrect.key)) _resurrect.Play(manager);
 
-            // 긴급 수리: 회복 순간만 짧게, 좌우에 반짝임 동반
-            if (Input.GetKeyDown(_repairKey))
-                manager.Flash(_repairColor, _repairAlpha, 0.1f, 0.15f, 0.5f, _repairSparkleCount);
-
-            // 집념: 2초 공속 버프
-            if (Input.GetKeyDown(_tenacityKey))
-                manager.Flash(_tenacityColor, _tenacityAlpha, 0.15f, 1.5f, 0.35f);
-
-            // 리저렉션: 가장 강하게 번쩍인 뒤 천천히 사라짐
-            if (Input.GetKeyDown(_resurrectKey))
-            {
-                manager.Flash(_resurrectColor, _resurrectAlpha, 0.08f, 0.3f, 1.2f);
-                manager.ShowWings();
-            }
             // 분노: 누를 때마다 단계 상승, 최대를 넘기면 0으로 돌아감
             if (Input.GetKeyDown(_rageUpKey))
             {

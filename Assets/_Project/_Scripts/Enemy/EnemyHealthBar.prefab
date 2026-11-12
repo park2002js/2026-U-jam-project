@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 3767921145108504849}
   - component: {fileID: 7782926079160768337}
   - component: {fileID: 7200727351682159269}
+  - component: {fileID: 2657023306901316039}
   m_Layer: 5
   m_Name: EnemyHealthBar
   m_TagString: Untagged
@@ -38,7 +39,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 60, y: 8}
+  m_SizeDelta: {x: 80, y: 10}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8664072691523838826
 CanvasRenderer:
@@ -92,6 +93,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _fill: {fileID: 8137596045223864279}
   _group: {fileID: 7200727351682159269}
+  _icons: {fileID: 2657023306901316039}
 --- !u!225 &7200727351682159269
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -104,6 +106,38 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
+--- !u!114 &2657023306901316039
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1296635967430389382}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e56878d7d00cf249bb9fa408169d711, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _icons:
+  - type: 0
+    sprite: {fileID: 2085597570, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
+  - type: 1
+    sprite: {fileID: 1836421515, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
+  - type: 2
+    sprite: {fileID: -756865923, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
+  - type: 3
+    sprite: {fileID: 75391510, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
+  _iconParent: {fileID: 0}
+  _iconSize: 25
+  _spacing: 2
+  _verticalOffset: 20
+  _slotSprite: {fileID: 0}
+  _slotColor: {r: 0, g: 0, b: 0, a: 0}
+  _slotPadding: 3
+  _maxVisible: 3
+  _overflowFont: {fileID: 11400000, guid: 78cc551e5aa7848419af0d19ea25c4a4, type: 2}
+  _overflowFontSize: 25
+  _overflowColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &7574632643948669164
 GameObject:
   m_ObjectHideFlags: 0
@@ -136,10 +170,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 8112476766263270091}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 60, y: 8}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6014106756633301169
 CanvasRenderer:
@@ -169,7 +203,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: fa714199aeb991a4f82bf76c880d10b7, type: 3}
   m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1

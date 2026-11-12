@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UJam.Runtime.Enemy;
+using UJam.Runtime.Systems;
 
 namespace UJam.Runtime.UI
 {
@@ -17,8 +18,13 @@ namespace UJam.Runtime.UI
         [SerializeField, Min(0f)] private float _hideDelay = 3f;   // 피격 후 유지 시간 (0이면 계속 표시)
         [SerializeField, Min(0)] private int _prewarmCount = 8;    // 미리 만들어둘 개수
 
+        [SerializeField, Tooltip("속성이 걸려 있는 동안에는 체력바를 계속 표시한다.")]
+        private bool _keepWhileElementActive = true;
+
         // 지금 화면에 떠 있는 체력바들
         private readonly Dictionary<EnemyStatus, EnemyHealthBar> _active = new();
+        // 속성 조회를 위해 EnemyStatus와 EnemyBase를 함께 보관한다
+        private readonly Dictionary<EnemyStatus, EnemyBase> _owners = new();
         // 재사용 대기 중인 체력바들
         private readonly Queue<EnemyHealthBar> _pool = new();
         // 순회 중 제거를 모아두는 버퍼
@@ -57,6 +63,7 @@ namespace UJam.Runtime.UI
             {
                 bar = GetFromPool();
                 _active.Add(status, bar);
+                _owners[status] = status.GetComponent<EnemyBase>();   // 속성 조회용
             }
 
             bar.SetRatio(max > 0f ? current / max : 0f);
@@ -81,8 +88,17 @@ namespace UJam.Runtime.UI
                     continue;
                 }
 
-                // 일정 시간 지나면 숨김 (HideDelay가 0이면 계속 표시)
-                if (_hideDelay > 0f)
+                // 속성 아이콘 갱신
+                _owners.TryGetValue(status, out EnemyBase enemy);
+                bool hasElement = false;
+                if (bar.Icons != null)
+                {
+                    bar.Icons.Refresh(enemy);
+                    hasElement = bar.Icons.HasVisible;
+                }
+
+                // 속성이 걸려 있으면 타이머를 멈춰 체력바를 유지한다
+                if (_hideDelay > 0f && !(_keepWhileElementActive && hasElement))
                 {
                     bar.HideTimer -= Time.deltaTime;
                     if (bar.HideTimer <= 0f)
@@ -136,6 +152,7 @@ namespace UJam.Runtime.UI
                     {
                         ReturnToPool(pair.Value);
                         _active.Remove(pair.Key);
+                        _owners.Remove(pair.Key);
                         return;
                     }
                 }
@@ -146,12 +163,15 @@ namespace UJam.Runtime.UI
             {
                 ReturnToPool(bar);
                 _active.Remove(status);
+                _owners.Remove(status);
             }
         }
 
         private void ReturnToPool(EnemyHealthBar bar)
         {
             if (bar == null) return;
+
+            if (bar.Icons != null) bar.Icons.Clear();   // 아이콘도 함께 정리
             bar.gameObject.SetActive(false);
             _pool.Enqueue(bar);
         }

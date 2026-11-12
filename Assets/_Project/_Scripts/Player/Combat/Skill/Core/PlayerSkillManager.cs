@@ -99,7 +99,9 @@ namespace UJam.Runtime.Player
         public void TryUse(int slot)
         {
             var item = GetSkill(slot);
-            if (!CanUse(slot, item) || EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
+            if (!CanUse(slot, item)) return;
+            bool instantSelf = item.Meta.Target == ItemTarget.Player && item.Meta.Preview.Type == ItemPreviewType.None;
+            if (!instantSelf && EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
 
             if (!TryGetTargetPoint(item, out Vector3 position, out Vector3 normal)) return;
 

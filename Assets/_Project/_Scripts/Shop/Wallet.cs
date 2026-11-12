@@ -11,8 +11,8 @@ namespace UJam.Runtime.Shop
         // 재화 변경 전달용 함수
         public event Action<long> OnGoldChanged;
 
-        // Inspector에서 설정할 시작 재화
-        [SerializeField, Min(0)] private long _gold;
+        // 씬 저장값과 무관하게 플레이어는 1000 재화로 시작한다.
+        private long _gold = 1000L;
 
         // 외부 조회와 직접 변경에 사용할 현재 재화
         public long Gold
@@ -45,12 +45,6 @@ namespace UJam.Runtime.Shop
 
             // 현재 Component를 단일 Wallet로 등록
             Instance = this;
-
-            // Inspector 음수 재화를 0으로 보정
-            if (_gold < 0L)
-            {
-                _gold = 0L;
-            }
         }
 
         // 현재 Wallet 제거 시 Singleton 참조 해제

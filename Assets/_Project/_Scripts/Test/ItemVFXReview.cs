@@ -12,6 +12,7 @@ using UJam.Runtime.Systems;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -28,6 +29,7 @@ namespace UJam.Runtime.Test
         [SerializeField] private GameObject[] enemyPrefabs;
         [SerializeField] private EnemyBase[] dummies;
         [SerializeField] private PlayerSkillPreview circlePrefab, rectanglePrefab;
+        [SerializeField] private ItemScreenVfxCanvas screenVfx;
         [SerializeField] private Vector3 rowCenter, rowRight = Vector3.right;
         [SerializeField] private float groundY;
         private readonly Dictionary<string, Item> owned = new();
@@ -73,6 +75,8 @@ namespace UJam.Runtime.Test
             player = playerRig.GetComponent<PlayerStatus>();
             skills = playerRig.GetComponent<PlayerSkillManager>();
             shooter = playerRig.GetComponent<PlayerShooter>();
+            if (screenVfx != null) screenVfx.Bind(player);
+            else Debug.LogError("[ItemVFXReview] Canvas에 ItemScreenVFX 프리팹을 배치하고 연결하세요.", this);
         }
 
         public void SelectItem(string id)
@@ -186,12 +190,58 @@ namespace UJam.Runtime.Test
         public void ResetReview()
         {
             CancelAim();
+            if (screenVfx != null) screenVfx.Clear();
             foreach (Item item in owned.Values.ToArray()) Remove(item);
             selected = null;
             if (playerRig != null) { playerRig.SetActive(false); Destroy(playerRig); }
             CreatePlayer();
             RespawnDummies();
             message = "전체 초기화 완료 · 아이템 ID를 선택하세요";
+        }
+
+        /// <summary>화면 연출 대신 실제 시전·적중·피해 조건을 재현한다. 소모된 아이템도 검증할 수 있도록 개체를 반환한다.</summary>
+        public Item ReviewScreenEffect(string id, int rageHealthPercent = 40)
+        {
+            if (id != "13" && id != "14" && id != "15" && id != "17" && id != "25" && id != "27") return null;
+            if (player == null || player.CurrentHealth <= 0)
+            {
+                message = "플레이어 사망 · 전체 초기화 후 화면 VFX를 확인하세요";
+                return null;
+            }
+            CancelAim();
+            Item item = Own(id);
+            if (id == "13" || id == "14" || id == "15")
+            {
+                if (id == "14") SetReviewHealth(70);
+                SelectItem(id);
+            }
+            else if (id == "17")
+            {
+                var target = dummies.FirstOrDefault(enemy => enemy != null && enemy.Status.HP > 0);
+                if (target == null) { message = "살아 있는 표적이 없습니다 · 적을 재배치하세요"; return item; }
+                for (int hit = 0; hit < 5; hit++)
+                    EventManager.Instance.Publish(new ItemEvent(ItemTrigger.Shooting, player, target.transform.position, new[] { target }));
+                message = "17 집념 · 같은 더미 5회 적중 조건으로 발동 · 다시 눌러 갱신";
+            }
+            else if (id == "25")
+            {
+                player.TakeDamage(new DamageInfo(player.MaxHealth * 2, "Review", ignoreDamageTaken: true));
+                message = "25 리저렉션 · 실제 치명 피해를 막고 부활 · 아이템 소모 후에도 연출 유지";
+            }
+            else
+            {
+                int percent = Mathf.Clamp(rageHealthPercent, 1, 100);
+                SetReviewHealth(percent);
+                message = "27 광전사의 분노 · HP " + percent + "% · 아래 단계와 회복 버튼으로 농도 비교";
+            }
+            return item;
+        }
+
+        private void SetReviewHealth(float percent)
+        {
+            float difference = player.MaxHealth * percent / 100f - player.CurrentHealth;
+            if (difference > 0) player.Heal(difference);
+            else if (difference < 0) player.TakeDamage(new DamageInfo(-difference, "Review", ignoreDamageTaken: true));
         }
 
         /// <summary>조건을 채우기 전에 적이 죽지 않도록 리뷰 인스턴스의 체력만 충분히 준비한다.</summary>
@@ -270,6 +320,7 @@ namespace UJam.Runtime.Test
             scroll = GUILayout.BeginScrollView(scroll);
             GUILayout.Label("ITEM VFX REVIEW", heading);
             GUILayout.Label("ID 선택 → 지면 좌클릭\n우클릭: 조준 취소 / 사격\nID 재선택: 쿨타임 초기화", small);
+            DrawScreenReview();
             DrawIDs(1, 15, "액티브");
             DrawIDs(16, 30, "패시브 · 클릭하여 장착/해제");
             if (owned.ContainsKey("16") || owned.ContainsKey("22") || owned.ContainsKey("24"))
@@ -293,7 +344,8 @@ namespace UJam.Runtime.Test
                 ItemMeta meta = selected.Meta;
                 GUILayout.Label(selected.ID + " " + meta.Name, heading);
                 GUILayout.Label(meta.Preview.Type + " / XZ " + meta.Preview.Scale + "\n" +
-                    (string.IsNullOrEmpty(meta.VfxPath) ? "전용 VFX 미연결 · 실제 효과 확인" : meta.VfxPath), small);
+                    (screenVfx != null && screenVfx.GetView(selected.ID) != null ? "Canvas 화면 연출 · 미리 배치된 레이어 사용" :
+                    string.IsNullOrEmpty(meta.VfxPath) ? "전용 VFX 미연결 · 실제 효과 확인" : meta.VfxPath), small);
             }
             GUILayout.Space(6);
             GUILayout.Label(message, small);
@@ -342,9 +394,36 @@ namespace UJam.Runtime.Test
             }
         }
 
+        private void DrawScreenReview()
+        {
+            GUILayout.Label("화면 VFX 빠른 확인", heading);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("13 아드레날린", GUILayout.Height(30))) ReviewScreenEffect("13");
+            if (GUILayout.Button("14 긴급 수리", GUILayout.Height(30))) ReviewScreenEffect("14");
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("15 생명력 전환", GUILayout.Height(30))) ReviewScreenEffect("15");
+            if (GUILayout.Button("17 집념 · 5적중", GUILayout.Height(30))) ReviewScreenEffect("17");
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("25 리저렉션", GUILayout.Height(30))) ReviewScreenEffect("25");
+            if (GUILayout.Button("27 광전사의 분노", GUILayout.Height(30))) ReviewScreenEffect("27");
+            GUILayout.EndHorizontal();
+            GUILayout.Label("14: HP 70% 준비 후 회복·소모 / 15: 체력 지불\n17: 같은 적 5적중 / 25: 치명 피해 후 부활\n27: HP 단계 선택 · 다른 장착 아이템은 유지", small);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("80%", GUILayout.Height(28))) ReviewScreenEffect("27", 80);
+            if (GUILayout.Button("60%", GUILayout.Height(28))) ReviewScreenEffect("27", 60);
+            if (GUILayout.Button("40%", GUILayout.Height(28))) ReviewScreenEffect("27", 40);
+            if (GUILayout.Button("20%", GUILayout.Height(28))) ReviewScreenEffect("27", 20);
+            if (GUILayout.Button("회복", GUILayout.Height(28))) ReviewScreenEffect("27", 100);
+            GUILayout.EndHorizontal();
+            GUILayout.Label("HP " + player.CurrentHealth.ToString("F0") + "/" + player.MaxHealth, small);
+        }
+
         private void OnDestroy()
         {
             if (!initialized) return;
+            if (screenVfx != null) screenVfx.Clear();
             foreach (Item item in owned.Values.ToArray()) Remove(item);
             if (playerRig != null) Destroy(playerRig);
             if (circle != null) Destroy(circle.gameObject);
@@ -436,6 +515,20 @@ namespace UJam.Runtime.Test
                         foreach (Transform child in map.GetComponentsInChildren<Transform>(true))
                             if (child.CompareTag("BaseCore")) child.tag = "Untagged";
                     }
+                    var canvasRoot = new GameObject("Review Canvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
+                    var canvas = canvasRoot.GetComponent<Canvas>();
+                    canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                    canvas.sortingOrder = 100;
+                    var scaler = canvasRoot.GetComponent<CanvasScaler>();
+                    scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                    scaler.referenceResolution = new Vector2(1920, 1080);
+                    const string screenPrefabPath = "Assets/_Project/Prefabs/VFX/ScreenEffect/ItemScreenVFX.prefab";
+                    var screenPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(screenPrefabPath);
+                    Require(screenPrefab != null, "The common ItemScreenVFX prefab is missing.");
+                    var screenInstance = (GameObject)PrefabUtility.InstantiatePrefab(screenPrefab, scene);
+                    screenInstance.transform.SetParent(canvasRoot.transform, false);
+                    review.screenVfx = screenInstance.GetComponent<ItemScreenVfxCanvas>();
+                    Require(review.screenVfx != null, "The common screen prefab requires its Canvas controller.");
                     Transform ground = maps.SelectMany(map => map.GetComponentsInChildren<Transform>(true))
                         .First(child => child.gameObject.layer == LayerMask.NameToLayer("Ground") && child.GetComponent<Collider>() != null);
                     review.groundY = ground.position.y;
@@ -456,7 +549,7 @@ namespace UJam.Runtime.Test
                     EditorUtility.SetDirty(review);
                     Require(EditorSceneManager.SaveScene(scene, ScenePath), "Could not save ItemVFXReview.");
                     saved = true;
-                    File.WriteAllText(Report, "BUILD PASS: PJS camera/Map/environment/Grid/element VFX copied; 8 enemies in one row; one new test script.");
+                    File.WriteAllText(Report, "BUILD PASS: PJS camera/Map/environment/Grid/element VFX copied; 8 enemies in one row; authored Overlay Canvas with common ItemScreenVFX prefab; one new test script.");
                 }
                 finally
                 {
@@ -518,6 +611,8 @@ namespace UJam.Runtime.Test
                 try
                 {
                     var review = All<ItemVFXReview>(target).Single();
+                    Require(review.screenVfx != null && review.screenVfx.GetComponentInParent<Canvas>() != null,
+                        "Review requires its authored ItemScreenVFX under a Canvas.");
                     Camera original = All<PlayerCombatManager>(source).Single().AimCamera;
                     Require(Vector3.Distance(review.reviewCamera.transform.position, original.transform.position) < .001f &&
                         Quaternion.Angle(review.reviewCamera.transform.rotation, original.transform.rotation) < .001f &&
@@ -610,13 +705,66 @@ namespace UJam.Runtime.Test
                 Require(review.dummies.Length == 8 && review.dummies.All(enemy => enemy != null && enemy.Status.HP == enemy.Status.MaxHealth) &&
                     review.owned.Count == 0 && review.player.CurrentHealth == review.player.MaxHealth &&
                     FindObjectsByType<DecoyController>(FindObjectsSortMode.None).Length == 0, "Full reset left effects, equipment or damaged dummies.");
+
+                int screenCanvasCount = FindObjectsByType<Canvas>(FindObjectsSortMode.None).Length;
+                Item adrenaline = review.ReviewScreenEffect("13");
+                var adrenalineFx = ItemScreenVfx.GetActive(adrenaline);
+                Require(adrenalineFx != null && !review.armed && BuffManager.Instance.Percent(review.player, BuffStat.AttackSpeed) > 0,
+                    "Adrenaline quick review did not cast immediately through the real skill slot.");
+                Require(review.ReviewScreenEffect("13") == adrenaline && ItemScreenVfx.GetActive(adrenaline) == adrenalineFx,
+                    "Quick review must refresh the equipped item without adding another Canvas.");
+
+                Item repair = review.ReviewScreenEffect("14");
+                Require(repair != null && !repair.IsEquipped && !review.owned.ContainsKey("14") && review.skills.GetSkill(0) == null &&
+                    Mathf.Abs(review.player.CurrentHealth / review.player.MaxHealth - .8f) < .001f && ItemScreenVfx.GetActive(repair) != null,
+                    "Repair review must prepare health, heal immediately, consume itself and keep its Canvas alive.");
+                float beforeConversion = review.player.CurrentHealth;
+                Item conversion = review.ReviewScreenEffect("15");
+                Require(ItemScreenVfx.GetActive(conversion) != null &&
+                    Mathf.Abs(beforeConversion - review.player.CurrentHealth - review.player.MaxHealth * .05f) < .01f &&
+                    BuffManager.Instance.Percent(review.player, BuffStat.Damage) > 0, "Life Conversion review skipped its real health cost or buff.");
+
+                Item tenacity = review.ReviewScreenEffect("17");
+                var tenacityFx = ItemScreenVfx.GetActive(tenacity);
+                Require(tenacityFx != null && review.ReviewScreenEffect("17") == tenacity && ItemScreenVfx.GetActive(tenacity) == tenacityFx &&
+                    review.owned.ContainsKey("13") && review.owned.ContainsKey("15"),
+                    "Tenacity quick review must trigger actual hit conditions repeatedly and preserve other equipment.");
+
+                Item resurrection = review.ReviewScreenEffect("25");
+                Require(resurrection != null && !resurrection.IsEquipped && !review.owned.ContainsKey("25") &&
+                    Mathf.Abs(review.player.CurrentHealth / review.player.MaxHealth - .5f) < .001f && ItemScreenVfx.GetActive(resurrection) != null,
+                    "Resurrection quick review must prevent actual lethal damage and consume its item while its Canvas remains visible.");
+                Item secondResurrection = review.ReviewScreenEffect("25");
+                Require(secondResurrection != resurrection && ItemScreenVfx.GetActive(secondResurrection) != null,
+                    "A consumed Resurrection must be reacquired for repeat review.");
+
+                Item rage = review.ReviewScreenEffect("27");
+                Require(ItemScreenVfx.GetActive(rage)?.RageStep == 3, "Rage quick review must start at forty-percent health.");
+                foreach (int percent in new[] { 80, 60, 40, 20, 100 })
+                {
+                    Require(review.ReviewScreenEffect("27", percent) == rage, "Rage stage selection replaced the equipped item.");
+                    int step = percent == 100 ? 0 : (100 - percent) / 20;
+                    Require(Mathf.Abs(review.player.CurrentHealth / review.player.MaxHealth - percent / 100f) < .001f &&
+                        ItemScreenVfx.GetActive(rage)?.RageStep == step, "Rage review did not apply the requested exact health stage " + percent);
+                }
+                yield return new WaitForSeconds(.5f);
+                Require(ItemScreenVfx.GetActive(rage) == null && ItemScreenVfx.GetActive(adrenaline) != null,
+                    "Rage recovery must fade its own Canvas without clearing another item.");
+                review.ResetReview();
+                yield return null; yield return null;
+                Require(review.screenVfx.GetComponentsInChildren<ItemScreenVfx>(true).Length == 6 &&
+                    review.screenVfx.GetComponentsInChildren<ItemScreenVfx>(true).All(layer => !layer.IsPlaying) &&
+                    new[] { adrenaline, repair, conversion, tenacity, resurrection, secondResurrection, rage }
+                        .All(item => ItemScreenVfx.GetActive(item) == null), "Full reset must clear sources and retain the six reusable screen layers.");
+                Require(FindObjectsByType<Canvas>(FindObjectsSortMode.None).Length == screenCanvasCount,
+                    "Using screen items must not create additional Canvases.");
             }
 
             private static void Finish(Exception error)
             {
                 deadline = 0;
                 File.WriteAllText(Report, error == null
-                    ? "CHECK PASS: PJS camera/Map; 8 enabled enemy types in a visible row; Circle/Rectangle/None; real ConfirmUse damage+Shock; Decoy model; passive toggle; full reset."
+                    ? "CHECK PASS: PJS camera/Map; 8 enabled enemy types in a visible row; Circle/Rectangle/None; real ConfirmUse damage+Shock; Decoy model; passive toggle; six screen VFX quick reviews through actual item conditions; Repair/Resurrection consumption and replay; exact Rage health stages/recovery; equipment preservation; full reset."
                     : error.ToString());
                 if (error != null) Debug.LogException(error);
                 else Debug.Log("[ItemVFXReview] Native scene and runtime checks passed.");
