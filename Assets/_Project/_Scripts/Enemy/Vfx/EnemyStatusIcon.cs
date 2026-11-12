@@ -11,6 +11,7 @@ namespace UJam.Runtime.UI
     /// <summary>
     /// 체력바 위에 적의 현재 속성 아이콘을 표시한다.
     /// 아이콘은 미리 만들어두고 활성 속성에 맞춰 켜고 끈다.
+    /// 슬롯 스프라이트를 지정하면 아이콘마다 테두리 배경이 깔린다.
     /// 최대 표시 수를 넘으면 남은 개수를 +N 텍스트로 알린다.
     /// </summary>
     public class EnemyStatusIcons : MonoBehaviour
@@ -32,11 +33,21 @@ namespace UJam.Runtime.UI
         [SerializeField, Tooltip("아이콘 한 변의 크기(픽셀)")]
         private float _iconSize = 14f;
 
-        [SerializeField, Tooltip("아이콘 사이 간격(픽셀)")]
+        [SerializeField, Tooltip("슬롯 사이 간격(픽셀)")]
         private float _spacing = 2f;
 
         [SerializeField, Tooltip("체력바 위로 띄울 높이(픽셀)")]
         private float _verticalOffset = 12f;
+
+        [Header("슬롯 테두리")]
+        [SerializeField, Tooltip("아이콘 뒤에 깔 테두리 스프라이트. 비우면 테두리 없이 아이콘만 표시한다.")]
+        private Sprite _slotSprite;
+
+        [SerializeField, Tooltip("슬롯 색. 알파를 낮추면 반투명해진다.")]
+        private Color _slotColor = new Color(0f, 0f, 0f, 0.6f);
+
+        [SerializeField, Min(0f), Tooltip("아이콘 바깥으로 슬롯이 넓어지는 여백(픽셀)")]
+        private float _slotPadding = 3f;
 
         [Header("초과 표시")]
         [SerializeField, Min(1), Tooltip("한 번에 표시할 최대 아이콘 수. 초과분은 +N으로 표시한다.")]
@@ -56,14 +67,20 @@ namespace UJam.Runtime.UI
             ElementType.Burn, ElementType.Freeze, ElementType.Shock, ElementType.Bleed
         };
 
-        private readonly Dictionary<ElementType, Image> _slots = new();
+        // 속성별 루트. 슬롯이 있으면 슬롯이, 없으면 아이콘 자신이 루트가 된다.
+        private readonly Dictionary<ElementType, RectTransform> _slots = new();
         private readonly List<RectTransform> _visible = new();
+
+        private RectTransform _overflowRoot;
         private TMP_Text _overflowText;
         private bool _built;
 
+        // 슬롯 하나가 차지하는 한 변의 크기
+        private float CellSize => _iconSize + _slotPadding * 2f;
+
         private void Awake() => Build();
 
-        // 속성마다 Image를 하나씩 만들어두고 꺼둔다
+        // 속성마다 슬롯과 아이콘을 하나씩 만들어두고 꺼둔다
         private void Build()
         {
             if (_built) return;
@@ -76,37 +93,72 @@ namespace UJam.Runtime.UI
                 Sprite sprite = FindSprite(type);
                 if (sprite == null) continue;
 
-                _slots.Add(type, CreateIcon(parent, $"Icon_{type}", sprite));
+                _slots.Add(type, CreateIconView(parent, $"Icon_{type}", sprite));
             }
 
-            BuildOverflowText(parent);
+            _overflowRoot = CreateTextView(parent, "Icon_Overflow");
         }
 
-        private Image CreateIcon(RectTransform parent, string name, Sprite sprite)
+        /// <summary>
+        /// 슬롯 배경을 만든다. 슬롯 스프라이트가 없으면 null을 돌려주고 내용물이 직접 배치된다.
+        /// </summary>
+        private RectTransform CreateSlot(RectTransform parent, string name)
         {
+            if (_slotSprite == null) return null;
+
             var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
             var rect = (RectTransform)go.transform;
             rect.SetParent(parent, false);
             rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(CellSize, CellSize);
+
+            var image = go.GetComponent<Image>();
+            image.sprite = _slotSprite;
+            image.color = _slotColor;
+            // 9-slice 경계가 있는 스프라이트는 Sliced로 그려야 모서리가 늘어나지 않는다
+            image.type = _slotSprite.border == Vector4.zero ? Image.Type.Simple : Image.Type.Sliced;
+            image.raycastTarget = false;
+
+            return rect;
+        }
+
+        // 슬롯 + 아이콘 한 벌을 만들고 루트를 돌려준다
+        private RectTransform CreateIconView(RectTransform parent, string name, Sprite sprite)
+        {
+            RectTransform slot = CreateSlot(parent, name);
+            RectTransform host = slot != null ? slot : parent;
+
+            var go = new GameObject(slot != null ? "Icon" : name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            var rect = (RectTransform)go.transform;
+            rect.SetParent(host, false);
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = Vector2.zero;
             rect.sizeDelta = new Vector2(_iconSize, _iconSize);
 
             var image = go.GetComponent<Image>();
             image.sprite = sprite;
             image.raycastTarget = false;   // 클릭을 가로채지 않게 한다
+            image.preserveAspect = true;
 
-            go.SetActive(false);
-            return image;
+            RectTransform root = slot != null ? slot : rect;
+            root.gameObject.SetActive(false);
+            return root;
         }
 
-        // 초과 개수를 알리는 +N 텍스트
-        private void BuildOverflowText(RectTransform parent)
+        // 초과 개수를 알리는 +N 텍스트. 아이콘과 같은 슬롯을 쓴다.
+        private RectTransform CreateTextView(RectTransform parent, string name)
         {
-            var go = new GameObject("Icon_Overflow", typeof(RectTransform));
+            RectTransform slot = CreateSlot(parent, name);
+            RectTransform host = slot != null ? slot : parent;
+
+            var go = new GameObject(slot != null ? "Text" : name, typeof(RectTransform));
             var rect = (RectTransform)go.transform;
-            rect.SetParent(parent, false);
+            rect.SetParent(host, false);
             rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = Vector2.zero;
             rect.sizeDelta = new Vector2(_iconSize, _iconSize);
 
             var text = go.AddComponent<TextMeshProUGUI>();
@@ -117,8 +169,11 @@ namespace UJam.Runtime.UI
             text.raycastTarget = false;
             text.textWrappingMode = TextWrappingModes.NoWrap;
 
-            go.SetActive(false);
             _overflowText = text;
+
+            RectTransform root = slot != null ? slot : rect;
+            root.gameObject.SetActive(false);
+            return root;
         }
 
         private Sprite FindSprite(ElementType type)
@@ -143,27 +198,27 @@ namespace UJam.Runtime.UI
 
             foreach (ElementType type in DisplayOrder)
             {
-                if (!_slots.TryGetValue(type, out Image icon)) continue;
+                if (!_slots.TryGetValue(type, out RectTransform root)) continue;
 
                 bool active = enemy != null && ElementManager.Instance.TryGet(enemy, type, out _);
                 if (active) activeCount++;
 
                 // 최대 표시 수를 넘으면 숨기고 +N으로 대신한다
                 bool show = active && _visible.Count < _maxVisible;
-                if (icon.gameObject.activeSelf != show) icon.gameObject.SetActive(show);
-                if (show) _visible.Add((RectTransform)icon.transform);
+                if (root.gameObject.activeSelf != show) root.gameObject.SetActive(show);
+                if (show) _visible.Add(root);
             }
 
-            // 넘치는 경우에만 +N 텍스트를 켠다
+            // 넘치는 경우에만 +N 슬롯을 켠다
             int hidden = activeCount - _maxVisible;
             bool overflow = hidden > 0;
-            if (_overflowText != null)
+            if (_overflowRoot != null)
             {
-                if (_overflowText.gameObject.activeSelf != overflow) _overflowText.gameObject.SetActive(overflow);
+                if (_overflowRoot.gameObject.activeSelf != overflow) _overflowRoot.gameObject.SetActive(overflow);
                 if (overflow)
                 {
-                    _overflowText.text = $"+{hidden}";
-                    _visible.Add((RectTransform)_overflowText.transform);
+                    if (_overflowText != null) _overflowText.text = $"+{hidden}";
+                    _visible.Add(_overflowRoot);
                 }
             }
 
@@ -175,13 +230,13 @@ namespace UJam.Runtime.UI
         {
             if (!_built) return;
 
-            foreach (KeyValuePair<ElementType, Image> pair in _slots)
+            foreach (KeyValuePair<ElementType, RectTransform> pair in _slots)
             {
                 if (pair.Value.gameObject.activeSelf) pair.Value.gameObject.SetActive(false);
             }
 
-            if (_overflowText != null && _overflowText.gameObject.activeSelf)
-                _overflowText.gameObject.SetActive(false);
+            if (_overflowRoot != null && _overflowRoot.gameObject.activeSelf)
+                _overflowRoot.gameObject.SetActive(false);
 
             _visible.Clear();
         }
@@ -189,14 +244,15 @@ namespace UJam.Runtime.UI
         /// <summary>표시 중인 속성이 하나라도 있는지 확인한다.</summary>
         public bool HasVisible => _visible.Count > 0;
 
-        // 켜져 있는 아이콘만 가로로 가운데 정렬한다
+        // 켜져 있는 슬롯만 가로로 가운데 정렬한다
         private void Layout()
         {
             if (_visible.Count == 0) return;
 
-            float step = _iconSize + _spacing;
+            float cell = CellSize;
+            float step = cell + _spacing;
             float totalWidth = step * _visible.Count - _spacing;
-            float startX = -totalWidth * 0.5f + _iconSize * 0.5f;
+            float startX = -totalWidth * 0.5f + cell * 0.5f;
 
             for (int i = 0; i < _visible.Count; i++)
             {

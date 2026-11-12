@@ -131,6 +131,9 @@ MonoBehaviour:
   _iconSize: 25
   _spacing: 2
   _verticalOffset: 20
+  _slotSprite: {fileID: 0}
+  _slotColor: {r: 0, g: 0, b: 0, a: 0}
+  _slotPadding: 3
   _maxVisible: 3
   _overflowFont: {fileID: 11400000, guid: 78cc551e5aa7848419af0d19ea25c4a4, type: 2}
   _overflowFontSize: 25

@@ -10124,8 +10124,23 @@ MonoBehaviour:
     centerIcon: {fileID: 0}
     centerIconSize: {x: 240, y: 240}
     tintCenterIcon: 0
-  _tenacity:
+  _lifeConversion:
     key: 55
+    color: {r: 0.9, g: 0.1, b: 0.1, a: 1}
+    alpha: 0.28
+    fadeIn: 0.1
+    hold: 0.4
+    fadeOut: 0.8
+    sparkleIcon: {fileID: 0}
+    sparkleCount: 0
+    sparkleSize: {x: 24, y: 48}
+    sparkleTilt: 0
+    tintSparkle: 0
+    centerIcon: {fileID: 2019014079, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
+    centerIconSize: {x: 320, y: 320}
+    tintCenterIcon: 0
+  _tenacity:
+    key: 56
     color: {r: 1, g: 0.85, b: 0.2, a: 1}
     alpha: 0.28
     fadeIn: 0.15
@@ -10140,7 +10155,7 @@ MonoBehaviour:
     centerIconSize: {x: 240, y: 240}
     tintCenterIcon: 0
   _resurrect:
-    key: 56
+    key: 57
     color: {r: 1, g: 0.85, b: 0.4, a: 1}
     alpha: 0.4
     fadeIn: 0.08
@@ -10154,7 +10169,7 @@ MonoBehaviour:
     centerIcon: {fileID: 2128191103, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
     centerIconSize: {x: 320, y: 320}
     tintCenterIcon: 0
-  _rageUpKey: 57
+  _rageUpKey: 48
   _clearKey: 45
 --- !u!114 &1707880199
 MonoBehaviour:

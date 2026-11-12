@@ -21,11 +21,13 @@ namespace UJam.Runtime.Player
     // 사격 결과 종류 (피드백 분기용 / 허공, 외부 물체, 적)
     public enum ShotResult { Miss, World, Enemy }
 
+    // 발사 가능 상태. UI나 사운드가 읽을 수 있도록 공개한다.
+    public enum ShooterState { Ready, Cooldown }
+
     public class PlayerShooter : MonoBehaviour
     {
         public event Action<ItemEvent> OnShootingHit; // 시각적 총알 도착 통지. 아이템 발동은 중앙 Shooting 이벤트를 사용한다.
         public event Action<ShotResult, RaycastHit> OnShotLanded; // 총알 도착 시 착탄 이펙트에 결과를 전달한다.
-        private float nextShotAt;
 
         // Ray를 쏠 카메라 오브젝트
         private Camera _aimCamera;
@@ -45,6 +47,36 @@ namespace UJam.Runtime.Player
         [SerializeField, Min(0.01f)] private float _bulletVisualSpeed = 80f; // 투사체 발사 속도
         [SerializeField, Min(0.01f)] private float _bulletVisualLifetime = 3f; // 투사체 시각화 시간
 
+        [Header("발사 속도 제한")]
+        [SerializeField, Min(1)]
+        [Tooltip("한 번에 몰아 쏠 수 있는 최대 발수. 1이면 공격속도 간격을 그대로 지키고, 올릴수록 짧은 연사를 허용한다.")]
+        private int _maxCharges = 1;
+
+        // 남은 발사 토큰. 초당 AttackSpeed만큼 차오르고 발사할 때 1씩 소모한다.
+        private float _charges;
+
+        /// <summary>현재 발사 가능 여부. 조준점이나 사운드가 읽는다.</summary>
+        public ShooterState State => _charges >= 1f ? ShooterState.Ready : ShooterState.Cooldown;
+
+        /// <summary>다음 한 발까지 남은 시간(초). 이미 발사 가능하면 0을 반환한다.</summary>
+        public float CooldownRemaining
+        {
+            get
+            {
+                if (_charges >= 1f || _playerStatus == null) return 0f;
+                return (1f - _charges) / _playerStatus.AttackSpeed;
+            }
+        }
+
+        /// <summary>다음 한 발의 충전 진행도(0~1). UI 게이지용.</summary>
+        public float ChargeRatio => Mathf.Clamp01(_charges);
+
+        private void Awake()
+        {
+            // 전투 시작 직후 바로 쏠 수 있도록 가득 채운 상태로 시작한다
+            _charges = _maxCharges;
+        }
+
         /// <summary>
         /// PlayerCombatSystem으로부터 호출되어 초기화된다.
         /// PlayerCombatSystem에 저장된 속성을 인자를 통해 전달받은 뒤, 아래의 함수에서 사용한다.
@@ -60,17 +92,35 @@ namespace UJam.Runtime.Player
             _bulletSpawnPoint = combatSystem.BulletSpawnPoint;
             _bulletPrefab = combatSystem.BulletPrefab;
             _playerStatus = combatSystem.PlayerStatus;
+
+            _charges = _maxCharges;
+        }
+
+        /// <summary>
+        /// 발사 토큰을 매 프레임 충전한다.
+        /// 충전 속도가 AttackSpeed이므로 버프로 공격속도가 오르면 그 비율 그대로 빨라진다.
+        /// </summary>
+        private void Update()
+        {
+            if (_playerStatus == null || _charges >= _maxCharges) return;
+
+            _charges = Mathf.Min(_maxCharges, _charges + _playerStatus.AttackSpeed * Time.deltaTime);
         }
 
         /// <summary>
         /// 즉발형 공격으로, 가장 먼저 Ray에 맞은 적 하나에 한해서 TakeDamage를 호출하여 데미지를 입힌다.
         /// 또한, Ray가 맞은 위치로 Projectile을 날려보내서 시각적인 피드백을 만든다.
+        /// 토큰이 모자라면 입력을 무시한다.
         /// </summary>
         public void TryShoot()
         {
-            if (Time.time < nextShotAt || _playerStatus == null || _playerStatus.CurrentHealth <= 0) return;
+            if (_playerStatus == null || _playerStatus.CurrentHealth <= 0) return;
+
+            // 공격속도 제한. 남은 토큰이 한 발에 못 미치면 이번 입력은 버린다.
+            if (_charges < 1f) return;
+
             // 투사체 발사를 위한 최소 조건을 충족하고 있는지 확인
-            if (_aimCamera == null || _playerStatus == null || (_bulletPrefab != null && _bulletSpawnPoint == null)
+            if (_aimCamera == null || (_bulletPrefab != null && _bulletSpawnPoint == null)
                 || !IsPositiveFinite(_playerStatus.AttackDamage) || !IsPositiveFinite(_maxDistance)
                 || !IsPositiveFinite(_bulletVisualSpeed) || !IsPositiveFinite(_bulletVisualLifetime))
             {
@@ -78,10 +128,12 @@ namespace UJam.Runtime.Player
                 return;
             }
 
+            // 유효성 검사를 통과한 뒤에 소모해야 실패한 입력이 토큰을 먹지 않는다
+            _charges -= 1f;
+
             // 1. 데미지 산정
 
             float damage = _playerStatus.AttackDamage * _playerStatus.DamageMultiplier;
-            nextShotAt = Time.time + 1f / _playerStatus.AttackSpeed;
 
 
             // 2. Ray를 통해 투사체를 날려보낼 방향 계산

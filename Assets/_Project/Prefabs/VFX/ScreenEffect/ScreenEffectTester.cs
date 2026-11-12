@@ -6,6 +6,7 @@ namespace UJam.Runtime.UI
     /// <summary>
     /// 화면 효과 확인용 임시 코드. 메인 로직과 무관하게 키 입력으로 발동한다.
     /// 효과마다 테두리, 파티클 아이콘, 중앙 아이콘 설정을 따로 가진다.
+    /// 키 배치: 5 아드레날린 / 6 긴급수리 / 7 생명력전환 / 8 집념 / 9 리저렉션 / 0 광전사의 분노
     /// </summary>
     public class ScreenEffectTester : MonoBehaviour
     {
@@ -62,7 +63,7 @@ namespace UJam.Runtime.UI
             }
         }
 
-        [Header("아드레날린 (13)")]
+        [Header("5 — 아드레날린 (13)")]
         [SerializeField] private EffectSetting _adrenaline = new EffectSetting
         {
             key = KeyCode.Alpha5,
@@ -71,7 +72,7 @@ namespace UJam.Runtime.UI
             sparkleTilt = 0f
         };
 
-        [Header("긴급 수리 (14)")]
+        [Header("6 — 긴급 수리 (14)")]
         [SerializeField] private EffectSetting _repair = new EffectSetting
         {
             key = KeyCode.Alpha6,
@@ -80,27 +81,40 @@ namespace UJam.Runtime.UI
             sparkleTilt = 15f, tintSparkle = true
         };
 
-        [Header("집념 (17)")]
-        [SerializeField] private EffectSetting _tenacity = new EffectSetting
+        [Header("7 — 생명력 전환 (15)")]
+        [SerializeField] private EffectSetting _lifeConversion = new EffectSetting
         {
             key = KeyCode.Alpha7,
+            color = new Color(0.9f, 0.1f, 0.1f),   // 붉은색 (체력 지불)
+            alpha = 0.28f,                          // 광전사의 분노 3단계와 같은 깊이
+            fadeIn = 0.1f, hold = 0.4f, fadeOut = 0.8f,
+            sparkleCount = 0                        // 파티클 없음, 중앙에 공격력 아이콘만
+        };
+
+        [Header("8 — 집념 (17)")]
+        [SerializeField] private EffectSetting _tenacity = new EffectSetting
+        {
+            key = KeyCode.Alpha8,
             color = new Color(1f, 0.85f, 0.2f),    // 노랑 (공속)
             alpha = 0.28f, fadeIn = 0.15f, hold = 1.5f, fadeOut = 0.35f,
             sparkleTilt = 0f
         };
 
-        [Header("리저렉션 (25)")]
+        [Header("9 — 리저렉션 (25)")]
         [SerializeField] private EffectSetting _resurrect = new EffectSetting
         {
-            key = KeyCode.Alpha8,
+            key = KeyCode.Alpha9,
             color = new Color(1f, 0.85f, 0.4f),    // 금빛 (부활)
             alpha = 0.4f, fadeIn = 0.08f, hold = 0.3f, fadeOut = 1.2f,
             sparkleCount = 0                        // 파티클 없음
         };
 
-        [Header("광전사의 분노 (27)")]
-        [SerializeField] private KeyCode _rageUpKey = KeyCode.Alpha9;
-        [SerializeField] private KeyCode _clearKey = KeyCode.Minus;
+        [Header("0 — 광전사의 분노 (27)")]
+        [SerializeField, Tooltip("누를 때마다 단계가 오르고 최대를 넘기면 0으로 돌아간다")]
+        private KeyCode _rageUpKey = KeyCode.Alpha0;
+
+        [SerializeField, Tooltip("모든 화면 효과를 즉시 해제한다")]
+        private KeyCode _clearKey = KeyCode.Minus;
 
         private int _rageStep;
 
@@ -111,6 +125,7 @@ namespace UJam.Runtime.UI
 
             if (Input.GetKeyDown(_adrenaline.key)) _adrenaline.Play(manager);
             if (Input.GetKeyDown(_repair.key)) _repair.Play(manager);
+            if (Input.GetKeyDown(_lifeConversion.key)) _lifeConversion.Play(manager);
             if (Input.GetKeyDown(_tenacity.key)) _tenacity.Play(manager);
             if (Input.GetKeyDown(_resurrect.key)) _resurrect.Play(manager);
 
