@@ -84,7 +84,9 @@ namespace UJam.Runtime.Test
             {
                 if (owned.TryGetValue(id, out var passive)) Remove(passive);
                 else Own(id);
-                message = id + " " + meta.Name + (owned.ContainsKey(id) ? " 장착됨 · 우클릭 사격/체력 버튼으로 확인" : " 해제됨");
+                string hint = id == "16" || id == "22" || id == "24"
+                    ? " 장착됨 · 아래 발동 조건으로 확인" : " 장착됨 · 우클릭 사격/체력 버튼으로 확인";
+                message = id + " " + meta.Name + (owned.ContainsKey(id) ? hint : " 해제됨");
                 return;
             }
             selected = Own(id);
@@ -192,6 +194,48 @@ namespace UJam.Runtime.Test
             message = "전체 초기화 완료 · 아이템 ID를 선택하세요";
         }
 
+        /// <summary>조건을 채우기 전에 적이 죽지 않도록 리뷰 인스턴스의 체력만 충분히 준비한다.</summary>
+        public void PreparePassiveTargets()
+        {
+            if (player == null) return;
+            RespawnDummies();
+            float health = Mathf.Max(1000, player.AttackDamage * player.DamageMultiplier * 100);
+            foreach (var enemy in dummies) enemy.Status.ConfigureSpawnStats(health, 0, 0);
+            message = "패시브 표적 준비 · 같은 적에게 우클릭 5회 / 스킬 5회 / 처치 4회로 확인";
+        }
+
+        /// <summary>실제 슬롯 시전으로 과부화의 사용 횟수와 적중 조건을 확인한다.</summary>
+        public bool CastPassiveReviewSkill()
+        {
+            if (player == null || player.CurrentHealth <= 0 || !owned.ContainsKey("22")) return false;
+            var target = dummies.Where(enemy => enemy != null && enemy.Status.HP > 0)
+                .OrderBy(enemy => (enemy.transform.position - rowCenter).sqrMagnitude).FirstOrDefault();
+            if (target == null) { message = "살아 있는 표적이 없습니다 · 표적을 재배치하세요"; return false; }
+            SelectItem("1");
+            bool used = ConfirmTarget(target.transform.position);
+            if (used) message = "집중 사격 실제 시전 · 과부화는 5번째 스킬의 적중 시 발동합니다";
+            return used;
+        }
+
+        /// <summary>실제 플레이어 처치 이벤트를 쌓고 살아 있는 이웃에게 시체 폭발 피해를 확인한다.</summary>
+        public bool KillPassiveReviewTarget()
+        {
+            if (player == null || player.CurrentHealth <= 0 || !owned.ContainsKey("24")) return false;
+            var living = dummies.Where(enemy => enemy != null && enemy.Status.HP > 0).ToArray();
+            if (living.Length == 0) { message = "살아 있는 표적이 없습니다 · 표적을 재배치하세요"; return false; }
+            var target = living[0];
+            if (living.Length > 1)
+            {
+                Vector3 position = living[1].transform.position + rowRight * (ItemWorld.CellWidth * .5f);
+                position.y = target.transform.position.y;
+                target.transform.position = position;
+            }
+            float percent = target.Status.HP * 200 / Mathf.Max(.01f, player.AttackDamage * player.DamageMultiplier);
+            bool killed = player.DealDamage(target, percent, "Review") > 0 && target.Status.HP <= 0;
+            if (killed) message = "실제 플레이어 처치 · 시체 폭발은 4번째 처치 위치에서 주변 적에게 피해를 줍니다";
+            return killed;
+        }
+
         private static Bounds BodyBounds(EnemyBase enemy)
         {
             Renderer[] body = enemy.GetComponentsInChildren<Renderer>(true)
@@ -228,6 +272,22 @@ namespace UJam.Runtime.Test
             GUILayout.Label("ID 선택 → 지면 좌클릭\n우클릭: 조준 취소 / 사격\nID 재선택: 쿨타임 초기화", small);
             DrawIDs(1, 15, "액티브");
             DrawIDs(16, 30, "패시브 · 클릭하여 장착/해제");
+            if (owned.ContainsKey("16") || owned.ContainsKey("22") || owned.ContainsKey("24"))
+            {
+                GUILayout.Label("패시브 발동 확인", small);
+                if (GUILayout.Button("튼튼한 표적 재배치", GUILayout.Height(30))) PreparePassiveTargets();
+                if (owned.ContainsKey("16")) GUILayout.Label("16 은화살: 같은 적에게 우클릭 사격 5회. 빗나가거나 표적이 바뀌면 연속 적중이 초기화됩니다.", small);
+                if (owned.ContainsKey("22"))
+                {
+                    GUILayout.Label("22 과부화: 스킬 5회 사용 후 해당 시전의 적중 대상에 발동합니다.", small);
+                    if (GUILayout.Button("22 확인: 집중 사격 1회 시전", GUILayout.Height(30))) CastPassiveReviewSkill();
+                }
+                if (owned.TryGetValue("24", out var corpse))
+                {
+                    GUILayout.Label("24 시체 폭발: 실제 처치 누적 " + player.GetCount(corpse) + "/4 · 발동 시 초기화", small);
+                    if (GUILayout.Button("24 확인: 이웃 옆에서 적 1체 처치", GUILayout.Height(30))) KillPassiveReviewTarget();
+                }
+            }
             if (selected != null)
             {
                 ItemMeta meta = selected.Meta;

@@ -116,6 +116,11 @@ namespace UJam.Runtime.UI
         [SerializeField, Tooltip("모든 화면 효과를 즉시 해제한다")]
         private KeyCode _clearKey = KeyCode.Minus;
 
+        [Header("반짝임")]
+        [SerializeField, Range(0, 10)]
+        [Tooltip("긴급 수리 발동 시 좌우 각각 생성할 반짝임 개수")]
+        private int _repairSparkleCount = 4;
+
         private int _rageStep;
 
         private void Update()

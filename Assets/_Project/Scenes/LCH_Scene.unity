@@ -1960,7 +1960,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   previewPrefab: {fileID: 0}
-  rectanglePreviewPrefab: {fileID: 2878677094038920207, guid: 7f926d388b965959ac819d58f5003df8, type: 3}
 --- !u!114 &202004997
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9911,7 +9910,7 @@ PrefabInstance:
     - target: {fileID: 1967415335216073599, guid: a9ea3f06ed48d4c448a9698393a9c415, type: 3}
       propertyPath: _entries.Array.data[0].prefab
       value: 
-      objectReference: {fileID: 4828323728818920166, guid: 6a02f58a447a04040bde8833c44048bf, type: 3}
+      objectReference: {fileID: 6658925932257759686, guid: 14048f8344e01c04c8c11a3c9a3dff69, type: 3}
     - target: {fileID: 1967415335216073599, guid: a9ea3f06ed48d4c448a9698393a9c415, type: 3}
       propertyPath: _entries.Array.data[1].prefab
       value: 
