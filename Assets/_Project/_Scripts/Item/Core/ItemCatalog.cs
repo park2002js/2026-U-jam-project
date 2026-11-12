@@ -130,9 +130,9 @@ namespace Ujam.Runtime.Item
             // 16. 은화살
             new Item("16", new ItemMeta("은화살", "슈팅추가효과, 스택", price: 100, cooldown: 0f,
                 grade: 1, kind: ItemKind.Passive, target: ItemTarget.Player,
-                preview: new ItemPreview(ItemPreviewType.None), iconName: "Item_16",
+                preview: new ItemPreview(ItemPreviewType.None), iconName: "Item_16", vfxPath: "ItemFX/SilverArrow_VFX",
                 description: "계속해서 적을 맞추면 적에게 추가 피해를 입힙니다."),
-                new ItemRuntime(ItemTrigger.Shooting, new SilverArrowEffect(hits: 5, damagePercent: 100f))),
+                new ItemRuntime(ItemTrigger.Shooting, new SilverArrowEffect(hits: 5, damagePercent: 100f, vfxDiameter: 3.5f, vfxDuration: 1.5f))),
 
             // 17. 집념
             new Item("17", new ItemMeta("집념", "슈팅추가효과, 스택, 버프", price: 100, cooldown: 0f,
@@ -172,9 +172,9 @@ namespace Ujam.Runtime.Item
             // 22. 과부화
             new Item("22", new ItemMeta("과부화", "스킬, 속성, 스택", price: 100, cooldown: 0f,
                 grade: 1, kind: ItemKind.Passive, target: ItemTarget.Player,
-                preview: new ItemPreview(ItemPreviewType.None), iconName: "Item_22",
+                preview: new ItemPreview(ItemPreviewType.None), iconName: "Item_22", vfxPath: "ItemFX/Overload_VFX",
                 description: "플레이어의 무기가 일정 횟수 사용되면 과부화를 일으켜 추가피해와 함께 감전 속성을 부여합니다."),
-                new ItemRuntime(ItemTrigger.SkillHit, new OverloadEffect(uses: 5, damagePercent: 100f))),
+                new ItemRuntime(ItemTrigger.SkillHit, new OverloadEffect(uses: 5, damagePercent: 100f, vfxDiameter: 3.5f, vfxDuration: 1.5f))),
 
             // 23. 염화
             new Item("23", new ItemMeta("염화", "버프, 속성", price: 100, cooldown: 0f,
@@ -186,9 +186,9 @@ namespace Ujam.Runtime.Item
             // 24. 시체 폭발
             new Item("24", new ItemMeta("시체 폭발", "버프, 원형", price: 100, cooldown: 0f,
                 grade: 1, kind: ItemKind.Passive, target: ItemTarget.Player,
-                preview: new ItemPreview(ItemPreviewType.None), iconName: "Item_24",
+                preview: new ItemPreview(ItemPreviewType.None), iconName: "Item_24", vfxPath: "ItemFX/CorpseExplosion_VFX",
                 description: "특정 번째로 죽은 적에게 폭발을 일으켜 그 주변에 피해를 입힙니다."),
-                new ItemRuntime(ItemTrigger.EnemyKilled, new CorpseExplosionEffect(kills: 4, radius: 1f, damagePercent: 100f))),
+                new ItemRuntime(ItemTrigger.EnemyKilled, new CorpseExplosionEffect(kills: 4, radius: 1f, damagePercent: 100f, vfxDuration: 4.5f))),
 
             // 25. 리저렉션
             new Item("25", new ItemMeta("리저렉션", "버프", price: 100, cooldown: 0f,

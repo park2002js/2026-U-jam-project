@@ -1,5 +1,7 @@
 using System;
 using System.Collections;
+using UJam.Runtime.Enemy;
+using UJam.Runtime.Player;
 using UnityEngine;
 
 namespace Ujam.Runtime.Item
@@ -11,6 +13,38 @@ namespace Ujam.Runtime.Item
         private float referenceDiameter = 1f;
 
         public float ReferenceDiameter => referenceDiameter;
+
+        /// <summary>적 몸체 중심과 같은 화면 위치에서, 몸체보다 카메라 가까이에 타격 효과를 배치한다.</summary>
+        public static Vector3 HitPosition(ItemUseContext context, EnemyBase enemy)
+        {
+            if (context == null) throw new ArgumentNullException(nameof(context));
+            if (enemy == null) return context.Position;
+            var combat = context.Player != null ? context.Player.GetComponentInParent<PlayerCombatManager>() : null;
+            Camera camera = combat != null && combat.AimCamera != null ? combat.AimCamera : Camera.main;
+            if (camera == null) return enemy.transform.position;
+
+            Bounds bounds = new Bounds(enemy.transform.position + Vector3.up, Vector3.one);
+            bool found = false;
+            foreach (var renderer in enemy.GetComponentsInChildren<Renderer>())
+            {
+                if (!renderer.enabled || !(renderer is MeshRenderer || renderer is SkinnedMeshRenderer)) continue;
+                if (found) bounds.Encapsulate(renderer.bounds);
+                else { bounds = renderer.bounds; found = true; }
+            }
+            if (!found)
+                foreach (var collider in enemy.GetComponentsInChildren<Collider>())
+                {
+                    if (!collider.enabled) continue;
+                    if (found) bounds.Encapsulate(collider.bounds);
+                    else { bounds = collider.bounds; found = true; }
+                }
+            Vector3 direction = camera.orthographic ? -camera.transform.forward : camera.transform.position - bounds.center;
+            direction = direction.sqrMagnitude > .0001f ? direction.normalized : -camera.transform.forward;
+            float clearance = Vector3.Dot(new Vector3(Mathf.Abs(direction.x), Mathf.Abs(direction.y), Mathf.Abs(direction.z)), bounds.extents) + .2f;
+            float depth = Vector3.Dot(bounds.center - camera.transform.position, camera.transform.forward);
+            float maximum = Mathf.Max(0, (depth - camera.nearClipPlane - .05f) / Mathf.Max(.001f, -Vector3.Dot(direction, camera.transform.forward)));
+            return bounds.center + direction * Mathf.Min(clearance, maximum);
+        }
 
         public void Play(float diameter, float duration)
         {
@@ -38,7 +72,7 @@ namespace Ujam.Runtime.Item
             Destroy(gameObject, duration);
         }
 
-        public static IEnumerator Spawn(ItemUseContext context, float diameter, float duration, Transform parent = null)
+        public static IEnumerator Spawn(ItemUseContext context, float diameter, float duration, Transform parent = null, Vector3? position = null)
         {
             Validate(diameter, duration);
             if (context == null) throw new ArgumentNullException(nameof(context));
@@ -50,7 +84,7 @@ namespace Ujam.Runtime.Item
             yield return ItemAssets.LoadAsync(path, loaded => prefab = loaded);
             if (prefab == null || !context.Item.IsEquipped || attached && parent == null) yield break;
 
-            GameObject instance = Instantiate(prefab, context.Position + Vector3.up * .03f,
+            GameObject instance = Instantiate(prefab, (position ?? context.Position) + Vector3.up * .03f,
                 Quaternion.LookRotation(context.Item.Meta.Preview.Direction));
             context.Item.Runtime.Track(instance);
             var vfx = instance.GetComponent<ItemVfx>();

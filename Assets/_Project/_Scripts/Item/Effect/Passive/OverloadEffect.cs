@@ -6,9 +6,10 @@ namespace Ujam.Runtime.Item
     public class OverloadEffect : ItemEffect
     {
         private readonly int uses;
-        private readonly float damagePercent;
+        private readonly float damagePercent, vfxDiameter, vfxDuration;
         /// <summary>Catalog에서 발동 주기와 추가 피해 공격력 계수를 지정한다.</summary>
-        public OverloadEffect(int uses, float damagePercent) { this.uses = uses; this.damagePercent = damagePercent; }
+        public OverloadEffect(int uses, float damagePercent, float vfxDiameter = 3.5f, float vfxDuration = 1.5f)
+        { this.uses = uses; this.damagePercent = damagePercent; this.vfxDiameter = vfxDiameter; this.vfxDuration = vfxDuration; }
         /// <summary>장착 시 PlayerStatus의 전체 스킬 사용 카운터를 등록한다.</summary>
         public override void OnEquip(ItemUseContext c) => c.Player.RegisterSkillCounter(c.Item, uses);
         /// <summary>해제 시 해당 아이템의 카운터 집계를 중지한다.</summary>
@@ -20,11 +21,13 @@ namespace Ujam.Runtime.Item
 
             foreach (var enemy in c.Enemies)
             {
-                if (!c.Player.ClaimSkillBonus(c.Signal.Cast, c.Item, enemy)) continue;
+                if (enemy == null || enemy.Status == null || enemy.Status.HP <= 0 ||
+                    !c.Player.ClaimSkillBonus(c.Signal.Cast, c.Item, enemy)) continue;
 
+                var point = ItemVfx.HitPosition(c, enemy);
                 c.Damage(enemy, damagePercent);
                 c.Element(enemy, ElementType.Shock);
-                /* VFX: 과부화 폭발/감전 표현을 이곳에 추가한다. */
+                c.Run(ItemVfx.Spawn(c, vfxDiameter, vfxDuration, position: point));
             }
         }
     }
