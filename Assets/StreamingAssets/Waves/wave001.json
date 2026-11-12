@@ -1,21 +1,82 @@
 {
   "enemies": [
     {
-      "prefabName": "Eyebeast",
+      "prefabName": "Golem",
       "statusSettings": [
         {
           "spawns": [
-            { "x": 1, "z": 1, "waitTime": 1 }
+            { "x": 2, "z": 4, "waitTime": 0 },
+            { "x": 13, "z": 5, "waitTime": 0 }
           ]
         }
       ]
     },
     {
-      "prefabName": "Golem",
+      "prefabName": "Big_Golem",
       "statusSettings": [
         {
           "spawns": [
-            { "x": 10, "z": 10, "waitTime": 1 }
+            { "x": 8, "z": 4, "waitTime": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Slime",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 4, "z": 5, "waitTime": 3 },
+            { "x": 11, "z": 4, "waitTime": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Rollbug",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 1, "z": 6, "waitTime": 6 },
+            { "x": 14, "z": 5, "waitTime": 6 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Eyebeast",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 3, "z": 6, "waitTime": 9 },
+            { "x": 7, "z": 5, "waitTime": 9 },
+            { "x": 12, "z": 6, "waitTime": 9 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Sniper_Eyebeast",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 1, "z": 7, "waitTime": 9 },
+            { "x": 5, "z": 7, "waitTime": 9 },
+            { "x": 10, "z": 7, "waitTime": 9 },
+            { "x": 14, "z": 7, "waitTime": 9 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Witch",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 2, "z": 5, "waitTime": 12 },
+            { "x": 6, "z": 6, "waitTime": 12 },
+            { "x": 9, "z": 5, "waitTime": 12 },
+            { "x": 13, "z": 6, "waitTime": 12 }
           ]
         }
       ]

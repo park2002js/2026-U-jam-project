@@ -14,8 +14,12 @@ namespace Ujam.Runtime.Item
         {
             c.Player.TakeDamage(new UJam.Runtime.Combat.DamageInfo(c.Player.MaxHealth * healthCost / 100f, c.Item.ID, ignoreDamageTaken: true));
 
-            if (c.Player.CurrentHealth > 0) BuffManager.Instance.SetTimed(c.Player, c.Item, BuffStat.Damage, damagePercent, duration);
-            /* VFX: 체력 지불과 데미지 강화 표현을 이곳에 추가한다. */
+            if (c.Player.CurrentHealth > 0)
+            {
+                BuffManager.Instance.SetTimed(c.Player, c.Item, BuffStat.Damage, damagePercent, duration);
+                ItemScreenVfx.Play(c);
+            }
         }
+        public override void OnUnequip(ItemUseContext c) => ItemScreenVfx.Stop(c.Item);
     }
 }

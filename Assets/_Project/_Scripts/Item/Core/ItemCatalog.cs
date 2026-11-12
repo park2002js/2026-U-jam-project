@@ -111,11 +111,11 @@ namespace Ujam.Runtime.Item
                 new ItemRuntime(ItemTrigger.SkillUse, new AdrenalineEffect(attack: 10f, speed: 10f, duration: 5f))),
 
             // 14. 긴급 수리
-            new Item("14", new ItemMeta("긴급 수리", "스킬, 회복, 스택", price: 100, cooldown: 0f,
+            new Item("14", new ItemMeta("긴급 수리", "스킬, 회복, 소모품", price: 100, cooldown: 0f,
                 grade: 1, kind: ItemKind.Active, target: ItemTarget.Player,
                 preview: new ItemPreview(ItemPreviewType.None), iconName: "Item_14",
-                description: "사용 즉시 거점을 보수하여 체력을 회복시킵니다. 3번만 사용가능하며, 3번째로 사용할 경우 해당 아이템은 삭제됩니다."),
-                new ItemRuntime(ItemTrigger.SkillUse, new EmergencyRepairEffect(healPercent: 10f, uses: 3))),
+                description: "사용 즉시 거점을 보수하여 체력을 회복하고, 이 아이템을 소모합니다."),
+                new ItemRuntime(ItemTrigger.SkillUse, new EmergencyRepairEffect(healPercent: 10f, uses: 1))),
 
             // 15. 생명력 전환
             new Item("15", new ItemMeta("생명력 전환", "스킬, 버프", price: 200, cooldown: 30f,

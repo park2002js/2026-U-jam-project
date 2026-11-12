@@ -11,7 +11,7 @@ namespace Ujam.Runtime.Item
         public override void Execute(ItemUseContext c)
         {
             c.Player.Heal(c.Player.MaxHealth * healPercent / 100f);
-            /* VFX: 거점 수리/회복 표현을 이곳에 추가한다. */
+            ItemScreenVfx.Play(c);
 
             if (c.Player.Increment(c.Item) >= uses) c.Item.Consume();
         }

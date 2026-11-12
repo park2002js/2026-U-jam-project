@@ -17,7 +17,8 @@ namespace Ujam.Runtime.Item
             if (!c.Player.ConsecutiveHit(c.Item, target, hits)) return;
 
             BuffManager.Instance.SetTimed(c.Player, c.Item, BuffStat.AttackSpeed, percent, duration);
-            /* VFX: 플레이어 공격속도 강화 표현을 이곳에 추가한다. */
+            ItemScreenVfx.Play(c);
         }
+        public override void OnUnequip(ItemUseContext c) => ItemScreenVfx.Stop(c.Item);
     }
 }

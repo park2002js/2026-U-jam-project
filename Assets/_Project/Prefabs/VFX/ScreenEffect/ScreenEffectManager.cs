@@ -14,6 +14,13 @@ namespace UJam.Runtime.UI
     {
         public static ScreenEffectManager Instance { get; private set; }
 
+        [SerializeField, Tooltip("테스터용 전역 관리자로 등록한다. 아이템 프리팹은 각자 독립적으로 재생한다.")]
+        private bool _registerAsInstance = true;
+
+        public float SparkleDuration => _sparkleLifetime + .25f;
+        public float CenterIconDuration => _centerIconLifetime;
+        public float RageFadeDuration => _rageFadeSpeed > 0 ? 1f / _rageFadeSpeed : 0;
+
         [Header("References")]
         [SerializeField, Tooltip("순간 효과용 비네트 (아드레날린, 긴급수리, 집념, 리저렉션)")]
         private Image _flashVignette;
@@ -66,8 +73,11 @@ namespace UJam.Runtime.UI
 
         private void Awake()
         {
-            if (Instance != null && Instance != this) { Destroy(this); return; }
-            Instance = this;
+            if (_registerAsInstance)
+            {
+                if (Instance != null && Instance != this) { Destroy(this); return; }
+                Instance = this;
+            }
 
             SetAlpha(_flashVignette, 0f);
             SetAlpha(_rageVignette, 0f);

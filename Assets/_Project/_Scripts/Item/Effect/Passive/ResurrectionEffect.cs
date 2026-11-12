@@ -12,7 +12,7 @@ namespace Ujam.Runtime.Item
             if (!c.Player.Revive(healPercent)) return;
 
             c.Signal.DeathPrevented = true;
-            /* VFX: 거점 부활/보호 표현을 이곳에 추가한다. */
+            ItemScreenVfx.Play(c);
 
             c.Item.Consume();
         }

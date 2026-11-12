@@ -13,7 +13,8 @@ namespace Ujam.Runtime.Item
         {
             BuffManager.Instance.SetTimed(c.Player, c.Item, BuffStat.AttackDamage, attack, duration);
             BuffManager.Instance.SetTimed(c.Player, c.Item, BuffStat.AttackSpeed, speed, duration);
-            /* VFX: 플레이어 강화 표현을 추가한다. 지속 시간은 BuffManager와 맞춘다. */
+            ItemScreenVfx.Play(c);
         }
+        public override void OnUnequip(ItemUseContext c) => ItemScreenVfx.Stop(c.Item);
     }
 }
