@@ -61,8 +61,8 @@ namespace UJam.EditorTools
             {
                 string icon = "Item_" + id.ToString("D2");
                 Sprite sprite = Resources.Load<Sprite>("Art/Item/" + icon);
-                Require(sprite != null && sprite.texture.width == 256 && sprite.texture.height == 256,
-                    icon + " must be a square numbered Sprite.");
+                Require(sprite != null && sprite.texture.width == 128 && sprite.texture.height == 128,
+                    icon + " must be a 128x128 item Sprite.");
                 Require(ItemCatalog.GetMeta(id.ToString()).ItemSprite == sprite,
                     "Catalog is still using a fallback icon for item " + id);
             }
@@ -80,7 +80,7 @@ namespace UJam.EditorTools
             }
             Require(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/ItemEffects/Item_001_HorizontalCylinder.prefab") == null,
                 "The retired HorizontalCylinder prefab still exists.");
-            Debug.Log("[ItemVfxChecks] Thirty numbered icons, six Circle previews, VFX resource mappings and reference diameters passed.");
+            Debug.Log("[ItemVfxChecks] Thirty item icons, six Circle previews, VFX resource mappings and reference diameters passed.");
         }
 
         private static void RequestedRun()

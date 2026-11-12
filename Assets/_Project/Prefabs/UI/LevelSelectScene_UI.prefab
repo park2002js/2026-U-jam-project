@@ -88,7 +88,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2fbed054a2374a76b4194a212abb0895, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  level1SceneName: _MainScene 1
+  level1SceneName: _MainScene
   level2SceneName: 2
   level3SceneName: 3
 --- !u!1 &7158259133734015459
