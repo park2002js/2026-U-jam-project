@@ -2396,6 +2396,16 @@ MonoBehaviour:
   _rageColor: {r: 1, g: 0.1, b: 0.1, a: 1}
   _rageMaxAlpha: 0.5
   _rageFadeSpeed: 3
+  _sparkleParent: {fileID: 0}
+  _sparklePoolSize: 18
+  _sparkleEdgeRatio: 0.18
+  _sparkleRiseSpeed: 40
+  _sparkleLifetime: 0.8
+  _centerIconParent: {fileID: 0}
+  _centerIconOffsetY: 0
+  _centerIconAlpha: 0.85
+  _centerIconLifetime: 1.4
+  _centerIconPopScale: 1.25
 --- !u!4 &378432598 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4021645171301757241, guid: b052646694e3fb0428a60911633c0540, type: 3}
@@ -4945,8 +4955,8 @@ MonoBehaviour:
   _camera: {fileID: 0}
   _barParent: {fileID: 1105960302}
   _barPrefab: {fileID: 7782926079160768337, guid: 74c8f212e3d11274fabf22da0fe10ce0, type: 3}
-  _worldOffset: {x: 0, y: 2, z: 0}
-  _hideDelay: 3
+  _worldOffset: {x: 0, y: 3, z: 0}
+  _hideDelay: 5
   _prewarmCount: 8
   _keepWhileElementActive: 1
 --- !u!114 &834465468
@@ -10084,20 +10094,68 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: de40d80d94fb3104c9bf93dab7c5a46d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _adrenalineKey: 53
-  _repairKey: 54
-  _tenacityKey: 55
-  _resurrectKey: 56
+  _adrenaline:
+    key: 53
+    color: {r: 0.78, g: 0.14, b: 1, a: 1}
+    alpha: 0.3
+    fadeIn: 0.3
+    hold: 4.2
+    fadeOut: 0.5
+    sparkleIcon: {fileID: -1838916575, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
+    sparkleCount: 4
+    sparkleSize: {x: 72, y: 72}
+    sparkleTilt: 0
+    tintSparkle: 0
+    centerIcon: {fileID: 0}
+    centerIconSize: {x: 240, y: 240}
+    tintCenterIcon: 0
+  _repair:
+    key: 54
+    color: {r: 0.3, g: 1, b: 0.5, a: 1}
+    alpha: 0.35
+    fadeIn: 0.1
+    hold: 0.15
+    fadeOut: 0.5
+    sparkleIcon: {fileID: 21300000, guid: b4e988bce61dae745978d0d0f164fc22, type: 3}
+    sparkleCount: 4
+    sparkleSize: {x: 24, y: 48}
+    sparkleTilt: 15
+    tintSparkle: 1
+    centerIcon: {fileID: 0}
+    centerIconSize: {x: 240, y: 240}
+    tintCenterIcon: 0
+  _tenacity:
+    key: 55
+    color: {r: 1, g: 0.85, b: 0.2, a: 1}
+    alpha: 0.28
+    fadeIn: 0.15
+    hold: 1.5
+    fadeOut: 0.35
+    sparkleIcon: {fileID: 1369640239, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
+    sparkleCount: 4
+    sparkleSize: {x: 72, y: 72}
+    sparkleTilt: 0
+    tintSparkle: 0
+    centerIcon: {fileID: 0}
+    centerIconSize: {x: 240, y: 240}
+    tintCenterIcon: 0
+  _resurrect:
+    key: 56
+    color: {r: 1, g: 0.85, b: 0.4, a: 1}
+    alpha: 0.4
+    fadeIn: 0.08
+    hold: 0.3
+    fadeOut: 1.2
+    sparkleIcon: {fileID: 0}
+    sparkleCount: 0
+    sparkleSize: {x: 24, y: 48}
+    sparkleTilt: 0
+    tintSparkle: 0
+    centerIcon: {fileID: 2128191103, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
+    centerIconSize: {x: 320, y: 320}
+    tintCenterIcon: 0
   _rageUpKey: 57
   _clearKey: 45
-  _adrenalineColor: {r: 0.78, g: 0.14, b: 1, a: 1}
-  _repairColor: {r: 0.3, g: 1, b: 0.5, a: 1}
-  _tenacityColor: {r: 1, g: 0.85, b: 0.2, a: 1}
-  _resurrectColor: {r: 1, g: 0.85, b: 0.4, a: 1}
-  _adrenalineAlpha: 0.3
-  _repairAlpha: 0.35
-  _tenacityAlpha: 0.28
-  _resurrectAlpha: 0.4
 --- !u!114 &1707880199
 MonoBehaviour:
   m_ObjectHideFlags: 0
