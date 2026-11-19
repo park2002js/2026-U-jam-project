@@ -1960,6 +1960,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   previewPrefab: {fileID: 0}
+  rectanglePreviewPrefab: {fileID: 0}
 --- !u!114 &202004997
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2003,6 +2004,7 @@ MonoBehaviour:
     m_Bits: 64
   _bulletVisualSpeed: 500
   _bulletVisualLifetime: 3
+  _maxCharges: 1
 --- !u!114 &202004999
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2390,6 +2392,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd202b5734d892640a6730262b63be53, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _registerAsInstance: 1
   _flashVignette: {fileID: 1510508457}
   _rageVignette: {fileID: 705083908}
   _rageColor: {r: 1, g: 0.1, b: 0.1, a: 1}
@@ -9044,7 +9047,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f60dee3851a4a44ebd56a1163244122, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _gold: 0
 --- !u!4 &1539360656
 Transform:
   m_ObjectHideFlags: 0
@@ -10039,6 +10041,7 @@ GameObject:
   - component: {fileID: 1707880196}
   - component: {fileID: 1707880198}
   - component: {fileID: 1707880199}
+  - component: {fileID: 1707880200}
   m_Layer: 0
   m_Name: Tester
   m_TagString: Untagged
@@ -10170,6 +10173,7 @@ MonoBehaviour:
     tintCenterIcon: 0
   _rageUpKey: 48
   _clearKey: 45
+  _repairSparkleCount: 4
 --- !u!114 &1707880199
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10186,6 +10190,33 @@ MonoBehaviour:
   _freezeKey: 120
   _shockKey: 99
   _bleedKey: 118
+  _dealTinyDamage: 1
+--- !u!114 &1707880200
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1707880195}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f415d8e6b94812f479861150ab1ee749, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _bindings:
+  - key: 98
+    type: 0
+    duration: -1
+  - key: 110
+    type: 1
+    duration: -1
+  - key: 109
+    type: 2
+    duration: -1
+  - key: 285
+    type: 3
+    duration: -1
+  _clearKey: 278
   _dealTinyDamage: 1
 --- !u!4 &1738106285 stripped
 Transform:
