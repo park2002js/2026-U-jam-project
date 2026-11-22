@@ -7,7 +7,7 @@ namespace Ujam.Runtime.Item
     {
         private readonly float attack, speed, duration;
         /// <summary>Catalog에서 공격력/공격속도 증가율과 시간을 정한다.</summary>
-        public AdrenalineEffect(float attack, float speed, float duration) { this.attack = attack; this.speed = speed; this.duration = duration; }
+        public AdrenalineEffect(float attack, float speed, float duration) : base("13") { this.attack = attack; this.speed = speed; this.duration = duration; }
         /// <summary>중앙 SkillUse가 호출한다.</summary>
         public override void Execute(ItemUseContext c)
         {

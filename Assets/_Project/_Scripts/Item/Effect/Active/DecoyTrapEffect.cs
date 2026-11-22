@@ -1,20 +1,22 @@
 using System.Collections;
+using System.Collections.Generic;
+using UJam.Runtime.Enemy;
 using UJam.Runtime.Systems;
 using UnityEngine;
 
 namespace Ujam.Runtime.Item
 {
-    /// <summary>미끼덫: 단위 Collider Prefab을 설치하고 미끼 컴포넌트에 체력 감소/도발/수명을 위임한다.</summary>
+    /// <summary>미끼덫: 착지 시 Dummy Prefab을 복제하고 체력/크기/수명/도발은 Prefab에 맡긴다.</summary>
     public class DecoyTrapEffect : ItemEffect
     {
-        private readonly float health, duration, radius, delay, fallDuration, incomingSpeed, impactSpeed, impactLifetime, spawnHeight, incomingDelay;
+        private readonly float delay, fallDuration, incomingSpeed, impactSpeed, impactLifetime, spawnHeight, incomingDelay;
         private readonly string prefabPath;
-        /// <summary>Catalog에서 체력/수명/도발 반경/Prefab 경로를 정한다.</summary>
-        public DecoyTrapEffect(float health, float duration, float radius, string prefabPath, float delay = 1f,
+        /// <summary>Catalog에서는 Prefab 경로와 낙하/착탄 연출 시점만 정한다.</summary>
+        public DecoyTrapEffect(string prefabPath, float delay = 1f,
             float fallDuration = 1f, float incomingSpeed = 1f, float impactSpeed = 1f, float impactLifetime = 1.5f,
-            float spawnHeight = 10f, float incomingDelay = 0f)
+            float spawnHeight = 10f, float incomingDelay = 0f) : base("6")
         {
-            this.health = health; this.duration = duration; this.radius = radius; this.prefabPath = prefabPath;
+            this.prefabPath = prefabPath;
             this.delay = delay; this.fallDuration = fallDuration; this.incomingSpeed = incomingSpeed;
             this.impactSpeed = impactSpeed; this.impactLifetime = impactLifetime; this.spawnHeight = spawnHeight; this.incomingDelay = incomingDelay;
         }
@@ -34,20 +36,27 @@ namespace Ujam.Runtime.Item
             if (!c.Item.IsEquipped) yield break;
 
             var instance = Object.Instantiate(prefab, c.Position, Quaternion.identity);
-            instance.SetActive(false);
             instance.name = "미끼덫";
-            instance.transform.localScale = Vector3.one * (radius * ItemWorld.CellWidth * 2);
 
-            var decoy = instance.AddComponent<DecoyController>();
-            decoy.Initialize(health, duration, c.EnemyMask, enemy => c.ReportHits(new[] { enemy }));
             c.Item.Runtime.Track(instance);
+            var decoy = instance.GetComponent<DecoyController>();
+            if (decoy == null)
+            {
+                Object.Destroy(instance);
+                throw new System.InvalidOperationException("미끼 Prefab에 DecoyController가 필요합니다.");
+            }
+            decoy.Taunted += enemy => c.ReportHits(new[] { enemy });
+            // 활성 Prefab은 복제 즉시 Overlap을 끝내므로 이미 도발한 적도 스킬 적중으로 전달한다.
+            foreach (var enemy in new List<EnemyBase>(instance.GetComponent<AreaTrigger>().Enemies))
+                c.ReportHits(new[] { enemy });
 
             if (visual != null)
             {
-                visual.CreateSettled(instance.transform);
-                visual.Impact(radius * ItemWorld.CellWidth * 2, impactSpeed, impactLifetime);
+                var sphere = instance.GetComponent<SphereCollider>();
+                Vector3 scale = instance.transform.lossyScale;
+                float diameter = sphere.radius * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z)) * 2;
+                visual.Impact(diameter, impactSpeed, impactLifetime);
             }
-            instance.SetActive(true);
         }
     }
 }

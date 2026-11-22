@@ -31,7 +31,8 @@ namespace UJam.Runtime.Systems
 
             Physics.SyncTransforms();
             // 생성 시에만 Overlap. 이후에는 Enter/Exit만 사용한다.
-            float radius = sphere.radius * Mathf.Abs(transform.lossyScale.x);
+            Vector3 scale = transform.lossyScale;
+            float radius = sphere.radius * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z));
             foreach (var other in Physics.OverlapSphere(transform.TransformPoint(sphere.center), radius, layers,
                 QueryTriggerInteraction.Collide)) OnTriggerEnter(other);
         }

@@ -409,8 +409,9 @@ namespace UJam.EditorTools
             Require(decoy != null && entry.movedDown, "Decoy did not fall and create its gameplay object.");
             entry.impactAt = Time.time - start;
             Require(Mathf.Abs(entry.impactAt - 1) < .2f, "Decoy landing time differs from Effect delay.");
-            Require(visual.ImpactInstance != null && visual.SettledInstance != null, "Decoy landing lacks dust or its model.");
-            GameObject model = visual.SettledInstance;
+            Require(visual.ImpactInstance != null, "Decoy landing lacks dust.");
+            GameObject model = decoy.transform.GetChild(0).gameObject;
+            Require(model.GetComponentsInChildren<Renderer>(true).Length > 0, "Dummy prefab lacks its model.");
             Require(model.transform.IsChildOf(decoy.transform) && Near(model.transform.lossyScale.x, 1), "Decoy model is detached or inherits its taunt radius scale.");
             Require(inside.FSM.Targets.Contains(decoy.gameObject) && !outside.FSM.Targets.Contains(decoy.gameObject), "Decoy taunt range is incorrect.");
             entry.observedDiameter = decoy.GetComponent<SphereCollider>().radius * decoy.transform.lossyScale.x * 2;

@@ -7,7 +7,7 @@ namespace Ujam.Runtime.Item
     {
         private readonly float thickness, length, delay, damagePercent, fallDuration, sweepDuration, incomingSpeed, impactSpeed, impactLifetime, spawnHeight;
         public CrossBombardmentEffect(float thickness, float delay, float damagePercent, float length = 10f, float fallDuration = .3f,
-            float sweepDuration = .25f, float incomingSpeed = 1f, float impactSpeed = 1f, float impactLifetime = 1.5f, float spawnHeight = 10f)
+            float sweepDuration = .25f, float incomingSpeed = 1f, float impactSpeed = 1f, float impactLifetime = 1.5f, float spawnHeight = 10f) : base("9")
         {
             HorizontalBombardmentEffect.Validate(thickness, delay, damagePercent, fallDuration, sweepDuration, incomingSpeed, impactSpeed, impactLifetime, spawnHeight);
             if (!float.IsFinite(length) || length <= 0) throw new ArgumentOutOfRangeException(nameof(length));

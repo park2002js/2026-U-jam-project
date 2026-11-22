@@ -7,7 +7,7 @@ namespace Ujam.Runtime.Item
     {
         private readonly float percent;
         /// <summary>Catalog에서 증가/감소 보정률을 지정한다.</summary>
-        public MiserEffect(float percent) => this.percent = percent;
+        public MiserEffect(float percent) : base("30") => this.percent = percent;
         /// <summary>Equipped 이벤트에서 호출한다. 조건형 보정의 해제는 Item.Unequip이 담당한다.</summary>
         public override void Execute(ItemUseContext c)
         {

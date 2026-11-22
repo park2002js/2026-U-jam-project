@@ -20,6 +20,8 @@ namespace UJam.Runtime.UI
         private int _slot;
         private Action<int> _buy;
 
+        internal string Description => _item?.Description;
+
         /// <summary>상품 구매 버튼에 자신의 슬롯을 전달하는 클릭 함수를 등록합니다.</summary>
         private void OnEnable()
         {

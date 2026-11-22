@@ -6,70 +6,75 @@ using UnityEngine;
 
 namespace UJam.Runtime.Systems
 {
-    /// <summary>미끼 자체의 체력/수명/도발을 관리한다. ItemEffect는 위치/체력/수명만 정하고 이 컴포넌트에 맡긴다.</summary>
-    // 이 스크립트를 추가할 때 같은 GameObject에 영역 감지를 담당하는 AreaTrigger가 없으면 Unity가 함께 추가한다.
+    /// <summary>Prefab의 체력/수명/도발 반경으로 배치 즉시 동작하고, 소멸 시 모든 유인 대상에게 알린다.</summary>
+    [DisallowMultipleComponent]
     [RequireComponent(typeof(AreaTrigger))]
     public class DecoyController : MonoBehaviour, IDamageable
     {
-        private float maxHealth, health, duration;
-        private LayerMask enemyMask;
-        private bool initialized;
-        private Action<EnemyBase> onTaunt;
+        [SerializeField, Min(1f)] private float maxHealth = 100f;
+        [SerializeField, Min(.01f)] private float duration = 20f;
+        [SerializeField, Min(.01f), Tooltip("도발 Trigger의 반경. 루트 Scale이 1일 때 월드 단위.")]
+        private float tauntRadius = 6f;
+        [SerializeField] private LayerMask enemyMask = ~0;
+        private float health, remainingLifetime;
         private readonly HashSet<EnemyBase> taunted = new();
         public float Health => health;
+        public event Action<EnemyBase> Taunted;
 
-        /// <summary>비활성 인스턴스에 설정한 뒤 SetActive(true) 한다. OnEnable이 초기 Overlap과 진입 구독을 시작한다.</summary>
-        public void Initialize(float hitPoints, float lifetime, LayerMask mask, Action<EnemyBase> onEnter)
-        {
-            maxHealth = Mathf.Max(1, hitPoints); duration = Mathf.Max(0.01f, lifetime);
-            enemyMask = mask; onTaunt = onEnter; initialized = true;
-        }
         private void OnEnable()
         {
-            if (!initialized) return;
-
-            health = maxHealth;
-            GetComponent<AreaTrigger>().Initialize(enemyMask, Taunt, Release);
+            health = Mathf.Max(1f, maxHealth);
+            remainingLifetime = Mathf.Max(.01f, duration);
+            GetComponent<SphereCollider>().radius = Mathf.Max(.01f, tauntRadius);
+            var area = GetComponent<AreaTrigger>();
+            area.enabled = true;
+            // Overlap과 이후 Trigger 진입은 같은 Taunt를 호출한다. 이탈해도 소멸 전까지 우선순위를 유지한다.
+            area.Initialize(enemyMask, Taunt, null);
         }
         private void Update()
         {
-            if (!initialized) return;
-
-            health = Mathf.Max(0, health - maxHealth / duration * Time.deltaTime);
-
-            if (health <= 0) { gameObject.SetActive(false); Destroy(gameObject); }
+            remainingLifetime -= Time.deltaTime;
+            if (remainingLifetime <= 0) Despawn();
         }
         private void Taunt(EnemyBase enemy)
         {
-            if (enemy.FSM == null || !taunted.Add(enemy)) return;
+            if (!isActiveAndEnabled || health <= 0 || enemy == null || enemy.FSM == null) return;
 
+            taunted.Add(enemy);
             enemy.FSM.Targets.Remove(gameObject);
             enemy.FSM.Targets.Add(gameObject);
             enemy.ReTargeting();
 
-            onTaunt?.Invoke(enemy);
+            Taunted?.Invoke(enemy);
         }
         private void Release(EnemyBase enemy)
         {
             taunted.Remove(enemy);
             if (enemy == null || enemy.FSM == null) return;
 
-            enemy.FSM.Targets.Remove(gameObject);
-            if (enemy.Status.HP > 0 && enemy.FSM.Targets.Count > 0) enemy.ReTargeting();
+            if (enemy.FSM.Targets.Remove(gameObject) && enemy.Status != null && enemy.Status.HP > 0)
+                enemy.ReTargeting();
         }
         private void OnDisable()
         {
+            health = 0;
+            GetComponent<AreaTrigger>().enabled = false;
             foreach (var enemy in new List<EnemyBase>(taunted)) Release(enemy);
+        }
+        private void Despawn()
+        {
+            gameObject.SetActive(false);
+            Destroy(gameObject);
         }
         /// <summary>적 공격을 받으면 실제 감소량을 반환하고, 체력이 소진되면 도발도 해제한다.</summary>
         public float TakeDamage(DamageInfo info)
         {
-            if (!float.IsFinite(info.Damage) || info.Damage <= 0 || health <= 0) return 0;
+            if (!isActiveAndEnabled || !float.IsFinite(info.Damage) || info.Damage <= 0 || health <= 0) return 0;
 
             float applied = Mathf.Min(health, info.Damage);
             health -= applied;
 
-            if (health <= 0) { gameObject.SetActive(false); Destroy(gameObject); }
+            if (health <= 0) Despawn();
             return applied;
         }
     }

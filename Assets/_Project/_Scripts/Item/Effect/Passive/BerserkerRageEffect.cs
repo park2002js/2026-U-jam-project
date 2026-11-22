@@ -7,7 +7,7 @@ namespace Ujam.Runtime.Item
     {
         private readonly float stepPercent;
         /// <summary>Catalog에서 한 체력 단계당 증가율을 지정한다.</summary>
-        public BerserkerRageEffect(float stepPercent) => this.stepPercent = stepPercent;
+        public BerserkerRageEffect(float stepPercent) : base("27") => this.stepPercent = stepPercent;
         /// <summary>장착 즉시 현재 체력 단계도 반영한다.</summary>
         public override void OnEquip(ItemUseContext c) => Execute(c);
         public override void OnUnequip(ItemUseContext c) => ItemScreenVfx.Stop(c.Item);

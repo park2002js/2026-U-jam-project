@@ -8,7 +8,7 @@ namespace Ujam.Runtime.Item
         private readonly int hits;
         private readonly float damagePercent, vfxDiameter, vfxDuration;
         /// <summary>Catalog에서 연속 횟수와 추가 피해 공격력 계수를 지정한다.</summary>
-        public SilverArrowEffect(int hits, float damagePercent, float vfxDiameter = 3.5f, float vfxDuration = 1.5f)
+        public SilverArrowEffect(int hits, float damagePercent, float vfxDiameter = 3.5f, float vfxDuration = 1.5f) : base("16")
         { this.hits = hits; this.damagePercent = damagePercent; this.vfxDiameter = vfxDiameter; this.vfxDuration = vfxDuration; }
         /// <summary>매 Shooting 이벤트에서 호출한다. 카운트는 PlayerStatus가 아이템별로 관리한다.</summary>
         public override void Execute(ItemUseContext c)

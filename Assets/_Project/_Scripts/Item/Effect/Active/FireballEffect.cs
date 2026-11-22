@@ -12,7 +12,7 @@ namespace Ujam.Runtime.Item
         /// <summary>delay는 시전 후 착탄 시각, fallDuration은 이동 시간, Speed는 각 파티클의 재생 배율이다.</summary>
         public FireballEffect(float radius, float damagePercent, float delay, float fallDuration = 1f,
             float incomingSpeed = 1f, float impactSpeed = 1f, float impactLifetime = 1.5f,
-            float spawnHeight = 10f, float incomingDelay = 0f)
+            float spawnHeight = 10f, float incomingDelay = 0f) : base("2")
         {
             this.radius = radius; this.damagePercent = damagePercent; this.delay = delay;
             this.fallDuration = fallDuration; this.incomingSpeed = incomingSpeed; this.impactSpeed = impactSpeed;

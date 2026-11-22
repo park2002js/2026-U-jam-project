@@ -8,7 +8,7 @@ namespace Ujam.Runtime.Item
         private readonly float radius, percent, duration;
         private readonly string prefabPath;
         /// <summary>Catalog에서 반경/보정률/지속 시간/단위 Collider Prefab 경로를 정한다.</summary>
-        public FogEffect(float radius, float percent, float duration, string prefabPath)
+        public FogEffect(float radius, float percent, float duration, string prefabPath) : base("4")
         { this.radius = radius; this.percent = percent; this.duration = duration; this.prefabPath = prefabPath; }
         /// <summary>중앙 SkillUse가 호출한다. 처음에는 Overlap, 이후에는 TriggerEnter/Exit로 판정한다.</summary>
         public override void Execute(ItemUseContext c)

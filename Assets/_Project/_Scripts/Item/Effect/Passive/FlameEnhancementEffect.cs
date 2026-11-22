@@ -7,7 +7,7 @@ namespace Ujam.Runtime.Item
     {
         private readonly float percent;
         /// <summary>Catalog에서 화상 계수에 더할 퍼센트포인트를 지정한다.</summary>
-        public FlameEnhancementEffect(float percent) => this.percent = percent;
+        public FlameEnhancementEffect(float percent) : base("23") => this.percent = percent;
         /// <summary>Equipped 이벤트에서 호출한다. Item.Unequip이 이 출처의 보정을 제거한다.</summary>
         public override void Execute(ItemUseContext c)
         {

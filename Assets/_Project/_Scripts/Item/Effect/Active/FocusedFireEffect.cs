@@ -8,7 +8,7 @@ namespace Ujam.Runtime.Item
         private readonly float radius, damagePercent, duration;
         private readonly int shots;
         /// <summary>Catalog에서 반경/타격 횟수/피해 계수와 VFX 유지 시간을 지정한다.</summary>
-        public FocusedFireEffect(float radius, int shots, float damagePercent, float duration)
+        public FocusedFireEffect(float radius, int shots, float damagePercent, float duration) : base("1")
         { this.radius = radius; this.shots = shots; this.damagePercent = damagePercent; this.duration = duration; }
         /// <summary>중앙 SkillUse가 호출한다. 모든 타격을 같은 프레임에 처리한다.</summary>
         public override void Execute(ItemUseContext c) => c.Run(Fire(c));
