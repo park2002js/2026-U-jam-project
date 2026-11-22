@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using UJam.Runtime.Shop;
 using Ujam.Runtime.Item;
@@ -17,7 +19,10 @@ namespace UJam.Runtime.UI
         private const int ItemCount = 6; // 아이템 진열대의 칸 갯수
 
         [SerializeField] private Button _rerollButton;
+        [SerializeField] private RectTransform _descriptionPopup;
+        [SerializeField] private TMP_Text _descriptionText;
 
+        private UIShopItem _hoveredItem;
         private ShopManager _shopManager;
         private List<string> _items;
         private readonly List<UIShopItem> _slots = new List<UIShopItem>();
@@ -38,6 +43,25 @@ namespace UJam.Runtime.UI
         private void OnDisable()
         {
             if (_rerollButton != null) _rerollButton.onClick.RemoveListener(Reroll);
+        }
+
+        internal void ShowDescription(UIShopItem item, PointerEventData pointer)
+        {
+            if (string.IsNullOrWhiteSpace(item.Description)) return;
+            if (!RectTransformUtility.ScreenPointToWorldPointInRectangle(
+                (RectTransform)_descriptionPopup.parent, pointer.position, pointer.enterEventCamera, out Vector3 position)) return;
+
+            _hoveredItem = item;
+            _descriptionText.text = item.Description;
+            _descriptionPopup.position = position;
+            _descriptionPopup.gameObject.SetActive(true);
+        }
+
+        internal void HideDescription(UIShopItem item)
+        {
+            if (_hoveredItem != item) return;
+            _hoveredItem = null;
+            _descriptionPopup.gameObject.SetActive(false);
         }
 
         /// <summary>
