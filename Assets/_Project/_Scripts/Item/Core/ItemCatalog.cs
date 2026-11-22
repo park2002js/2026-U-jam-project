@@ -6,7 +6,7 @@ namespace Ujam.Runtime.Item
     /// <summary>
     /// 아이템 제작/수치 조정의 첫 진입점. 아래 new Item의 Meta/Effect 생성자 인자만 수정한다.
     /// 새 아이템은 전용 Effect 클래스와 여기의 new Item 한 개를 추가한다.
-    /// CSV에 없는 가격은 등급×100, 은화살 추가 피해는 공격력 100%, 미끼 도발은 3칸을 기본값으로 정했다.
+    /// CSV에 없는 가격은 등급×100, 은화살 추가 피해는 공격력 100%를 기본값으로 정했다. 미끼 수치는 Dummy Prefab에서 정한다.
     /// 파도는 비고의 판정 폭 5×1칸, 전체 이동 거리 10칸을 따른다. 21번의 전류 표기는 출혈로 해석했다.
     /// </summary>
     public static class ItemCatalog
@@ -54,8 +54,8 @@ namespace Ujam.Runtime.Item
             new Item("6", new ItemMeta("미끼덫", "스킬", price: 100, cooldown: 10f,
                 grade: 1, kind: ItemKind.Active, target: ItemTarget.Enemies,
                 preview: new ItemPreview(ItemPreviewType.None), iconName: "Item_06", vfxPath: "ItemFX/DecoyTrap_VFX",
-                description: "적들의 어그로를 끌어주는 미끼입니다. 설치된 순간부터 천천히 체력이 감소합니다."),
-                new ItemRuntime(ItemTrigger.SkillUse, new DecoyTrapEffect(health: 100f, duration: 20f, radius: 3f, prefabPath: ItemAssets.AreaPath,
+                description: "적들의 어그로를 끌어주는 미끼입니다. 체력이 소진되거나 지속시간이 끝나면 사라집니다."),
+                new ItemRuntime(ItemTrigger.SkillUse, new DecoyTrapEffect(prefabPath: ItemAssets.DummyPath,
                     delay: 1f, fallDuration: 1f, incomingSpeed: 1f, impactSpeed: 1f, impactLifetime: 1.5f, spawnHeight: 10f, incomingDelay: 0f))),
 
             // 7. 냉각

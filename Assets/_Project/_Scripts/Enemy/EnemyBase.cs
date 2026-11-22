@@ -91,9 +91,13 @@ namespace UJam.Runtime.Enemy
         public virtual void BeginCombat(GameObject target = null)
         {
             if (_combatStarted || _dead) return;
+            // 같은 프레임에 배치된 미끼의 초기 Overlap이 Start보다 먼저 등록한 우선순위를 보존한다.
+            var priorities = _fsm.Targets.FindAll(candidate => candidate != null && candidate.activeInHierarchy &&
+                candidate != target && !candidate.CompareTag("BaseCore"));
             _combatStarted = true;
             _defaultTarget = target;
             Idle();
+            _fsm.Targets.AddRange(priorities);
             _fsm.SetState(Animation != null && Animation.HasState("Spawn")
                 ? EnemyStateType.Spawn
                 : EnemyStateType.Move);

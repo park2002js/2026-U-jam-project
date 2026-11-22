@@ -5,7 +5,7 @@ namespace Ujam.Runtime.Item
     {
         private readonly float percent;
         /// <summary>Catalog에서 실제 피해 대비 회복 비율을 지정한다.</summary>
-        public LifeStealEffect(float percent) => this.percent = percent;
+        public LifeStealEffect(float percent) : base("26") => this.percent = percent;
         /// <summary>ShootingResolved에서 호출한다.</summary>
         public override void Execute(ItemUseContext c)
         {

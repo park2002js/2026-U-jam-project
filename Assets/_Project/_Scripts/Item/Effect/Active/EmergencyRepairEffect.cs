@@ -6,7 +6,7 @@ namespace Ujam.Runtime.Item
         private readonly float healPercent;
         private readonly int uses;
         /// <summary>Catalog에서 최대 체력 회복률과 사용 횟수를 정한다.</summary>
-        public EmergencyRepairEffect(float healPercent, int uses) { this.healPercent = healPercent; this.uses = uses; }
+        public EmergencyRepairEffect(float healPercent, int uses) : base("14") { this.healPercent = healPercent; this.uses = uses; }
         /// <summary>중앙 SkillUse가 호출한다. 최대 체력 상태에서도 1회 사용으로 센다.</summary>
         public override void Execute(ItemUseContext c)
         {

@@ -97,6 +97,7 @@ namespace Ujam.Runtime.Item
     {
         private static readonly Dictionary<string, GameObject> cache = new();
         public const string AreaPath = "ItemPipeline/TriggerSphere";
+        public const string DummyPath = "ItemPipeline/Dummy";
 
         /// <summary>Effect의 코루틴에서 yield return으로 호출한다. 실패하면 null을 돌려주고 오류 경로를 남긴다.</summary>
         public static IEnumerator LoadAsync(string path, Action<GameObject> loaded)

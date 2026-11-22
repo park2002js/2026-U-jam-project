@@ -8,7 +8,7 @@ namespace Ujam.Runtime.Item
         private readonly int uses;
         private readonly float damagePercent, vfxDiameter, vfxDuration;
         /// <summary>Catalog에서 발동 주기와 추가 피해 공격력 계수를 지정한다.</summary>
-        public OverloadEffect(int uses, float damagePercent, float vfxDiameter = 3.5f, float vfxDuration = 1.5f)
+        public OverloadEffect(int uses, float damagePercent, float vfxDiameter = 3.5f, float vfxDuration = 1.5f) : base("22")
         { this.uses = uses; this.damagePercent = damagePercent; this.vfxDiameter = vfxDiameter; this.vfxDuration = vfxDuration; }
         /// <summary>장착 시 PlayerStatus의 전체 스킬 사용 카운터를 등록한다.</summary>
         public override void OnEquip(ItemUseContext c) => c.Player.RegisterSkillCounter(c.Item, uses);

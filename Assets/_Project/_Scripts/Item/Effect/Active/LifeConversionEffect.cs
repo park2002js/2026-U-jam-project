@@ -7,7 +7,7 @@ namespace Ujam.Runtime.Item
     {
         private readonly float healthCost, damagePercent, duration;
         /// <summary>Catalog에서 체력 지불률/데미지 증가율/시간을 정한다.</summary>
-        public LifeConversionEffect(float healthCost, float damagePercent, float duration)
+        public LifeConversionEffect(float healthCost, float damagePercent, float duration) : base("15")
         { this.healthCost = healthCost; this.damagePercent = damagePercent; this.duration = duration; }
         /// <summary>중앙 SkillUse가 호출한다. 지불로 사망할 수 있고 부활 패시브도 정상 작동한다.</summary>
         public override void Execute(ItemUseContext c)

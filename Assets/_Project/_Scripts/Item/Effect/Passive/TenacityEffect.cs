@@ -9,7 +9,7 @@ namespace Ujam.Runtime.Item
         private readonly int hits;
         private readonly float percent, duration;
         /// <summary>Catalog에서 연속 횟수/공격속도 증가율/지속 시간을 지정한다.</summary>
-        public TenacityEffect(int hits, float percent, float duration) { this.hits = hits; this.percent = percent; this.duration = duration; }
+        public TenacityEffect(int hits, float percent, float duration) : base("17") { this.hits = hits; this.percent = percent; this.duration = duration; }
         /// <summary>매 Shooting 이벤트에서 호출한다. 빗나가거나 대상이 바뀌면 연속 판정이 초기화된다.</summary>
         public override void Execute(ItemUseContext c)
         {

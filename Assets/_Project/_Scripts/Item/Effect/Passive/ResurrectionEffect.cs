@@ -5,7 +5,7 @@ namespace Ujam.Runtime.Item
     {
         private readonly float healPercent;
         /// <summary>Catalog에서 부활 시 최대 체력 회복 비율을 지정한다.</summary>
-        public ResurrectionEffect(float healPercent) => this.healPercent = healPercent;
+        public ResurrectionEffect(float healPercent) : base("25") => this.healPercent = healPercent;
         /// <summary>BeforeDeath에서만 호출한다. 먼저 성공한 한 개체만 소모된다.</summary>
         public override void Execute(ItemUseContext c)
         {

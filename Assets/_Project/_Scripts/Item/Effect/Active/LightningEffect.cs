@@ -12,7 +12,7 @@ namespace Ujam.Runtime.Item
         /// <summary>delay는 착탄 시각, incomingDelay는 번개 시작 시각, fallDuration과 Speed는 이동·파티클 속도다.</summary>
         public LightningEffect(float radius, float damagePercent, float delay, float fallDuration = .15f,
             float incomingSpeed = 1f, float impactSpeed = 1f, float impactLifetime = 1.5f,
-            float spawnHeight = 10f, float incomingDelay = .85f)
+            float spawnHeight = 10f, float incomingDelay = .85f) : base("11")
         {
             this.radius = radius; this.damagePercent = damagePercent; this.delay = delay;
             this.fallDuration = fallDuration; this.incomingSpeed = incomingSpeed; this.impactSpeed = impactSpeed;

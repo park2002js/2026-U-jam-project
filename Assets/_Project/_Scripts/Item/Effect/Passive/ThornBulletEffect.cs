@@ -8,7 +8,7 @@ namespace Ujam.Runtime.Item
     {
         private readonly float chance;
         /// <summary>Catalog에서 0~100의 발동 확률을 지정한다.</summary>
-        public ThornBulletEffect(float chance) => this.chance = Mathf.Clamp(chance, 0, 100);
+        public ThornBulletEffect(float chance) : base("21") => this.chance = Mathf.Clamp(chance, 0, 100);
         /// <summary>매 Shooting 이벤트에서 호출한다. 미적중에는 아무 일도 하지 않는다.</summary>
         public override void Execute(ItemUseContext c)
         {

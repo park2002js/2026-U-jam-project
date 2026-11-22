@@ -52,6 +52,7 @@ Unity의 입력·물리·프레임 갱신이 필요한 Player 컴포넌트, Runt
 
 새 아이템은 전용 Effect 클래스 하나를 만들고, Catalog의 `definitions`에 다음 형태로 추가한다.
 기존 아이템의 반경·피해·확률·지속시간은 Effect 파일을 수정하지 않고 Catalog 생성자 인자에서 조정한다.
+미끼 인형의 체력·수명·도발 반경은 예외로 `Dummy.prefab`의 `DecoyController`에서 조정한다.
 
 ```csharp
 new Item("31",
@@ -82,6 +83,27 @@ inventory.TryRemove("11");                    // 해제 + 보유 목록에서 �
 
 직접 연결하는 경우 `Item.Equip(player, enemyMask)` / `Item.Unequip()`을 사용할 수 있다.
 일반 획득은 Inventory API를 사용해야 보유 수량과 스킬 슬롯도 함께 갱신된다.
+
+## 아이템 효과음
+
+모든 Effect 생성자는 `base("아이템ID")`로 `Resources/Audio/Item/<ID>`의 AudioClip을 읽어 `protected readonly AudioClip[] clips`에 보관한다.
+실제 파일 위치는 `Assets/_Project/Resources/Audio/Item/<ID>/`이며 폴더가 없거나 클립이 없으면 `clips`는 null이다.
+Effect도 아이템 복사본 사이에서 공유하므로 클립 로딩은 정의 생성 시 한 번만 실행된다. Catalog 전체 초기화는 메인 스레드의 로딩 단계에서 수행한다.
+
+재생 시점과 파일명은 각 Effect가 정한다. 현재는 로딩만 연결했으며 실제 재생 호출은 추가하지 않았다.
+아래는 Effect 내부에서 사용할 호출 예시다. `GetClip`은 파일명(확장자 제외)이 없거나 `clips`가 null이면 null을 반환한다.
+
+```csharp
+SFXManager.Instance.Play(GetClip("Cast"));
+SFXManager.Instance.PlayAt(GetClip("Impact"), context.Position);
+```
+
+공통 API의 네임스페이스는 `UJam.Runtime.Systems`이며 UI와 적 코드에서도 같은 API를 사용한다.
+`Play`는 2D OneShot으로, `PlayAt`은 요청한 월드 위치의 독립 AudioSource로 재생한다. 동일 클립과 동일 위치의 연속 호출도 모두 중첩한다.
+null 클립은 호출 파일·함수·줄 번호를 Warning으로 기록하고 재생하지 않는다.
+`_MainScene`의 PlayerTurret 프리팹에 Manager와 2D AudioSource가 있으며, 위치 재생기는 터렛의 이동에 영향받지 않도록 월드에 따로 생성되고 종료 시 정리된다.
+
+검증 메뉴는 `Tools/Audio/Check SFX`, 배치 진입점은 `UJam.EditorTools.SfxChecks.RunBatch`다. 결과는 `Library/SfxChecks.json`에 기록된다.
 
 ## 발동과 시전 책임
 
@@ -223,13 +245,37 @@ Catalog의 모든 아이템에 `iconName: "Item_01"` 같은 번호 이미지를 
 세 시간은 별도로 조정할 수 있으며, `delay`에 도달하면 첫 VFX를 끝내고 착탄을 실행한다.
 에셋이 아직 준비되지 않은 최초 시전은 비동기 로드가 끝난 뒤 위 시간이 시작된다. 장착 시 미리 로드한다.
 착탄 VFX 지름은 실제 범위와 같은 `radius × CellWidth × 2`이고, 상위의 `impactReferenceDiameter`로 보정한다.
+미끼는 Dummy Prefab의 실제 SphereCollider 월드 지름을 사용한다.
 
 화염구는 Arsenal의 FireballRed/FireballExplosionRed, 낙뢰는 POLYGON LightningStrike와 Arsenal LightningExplosionBlue,
 미끼의 흑먼지는 POLYGON FX_Impact_Dirt_01을 복제·수정했다. 패키지 원본은 변경하지 않는다.
 불·전격의 복제본에는 전용 URP 파티클 재질을 적용했고, 지면 파동은 자체 32각 링 메시로 보정했다.
 허수아비는 제공된 `scarecrow.fbx`와 textures를 사용하고 URP Lit 재질을 만들었다.
-모델 높이는 2로 보정하고 도발 Collider 크기와 분리했다. 착지 후부터 기존 체력 100/20초 수명이 시작되며,
-피격 파괴·수명 만료·장착 해제 시 모델과 도발도 함께 정리된다. 6번 Preview는 기존 None을 유지한다.
+모델 높이는 2로 보정하고 도발 Collider 크기와 분리했다. 6번 Preview는 기존 None을 유지한다.
+
+### Dummy 인형 설정과 공격 우선순위
+
+실제 설치되는 인형은 `Assets/_Project/Prefabs/Resources/ItemPipeline/Dummy.prefab`이다.
+루트의 `DecoyController`에서 `Max Health`(기본 100), `Duration`(20초), `Taunt Radius`(월드 반경 6),
+`Enemy Mask`를 설정한다. 기본 그리드의 칸 너비가 2이므로 반경 6은 기존 3칸과 같다.
+`Taunt Radius`는 감지 Collider만 바꾸며 자식 `Decoy_Model`의 크기는 유지한다.
+`DecoyTrapEffect`는 1초 낙하가 끝난 위치에 이 프리팹을 복제하며 수치를 덮어쓰거나 컴포넌트를 추가하지 않는다.
+
+활성 인스턴스의 `OnEnable`에서 체력과 별도 수명 타이머를 시작하고, `AreaTrigger.Initialize`가 초기 Overlap을 수행한다.
+이후 Trigger 진입도 동일한 `Taunt`를 호출한다. 여러 Collider를 가진 적은 진입 한 번으로 집계한다.
+한 번 유인된 적은 범위를 벗어나도 우선순위를 유지하며, 재진입하면 해당 인형이 다시 최우선이 된다.
+
+적의 `EnemyFSM.Targets`는 마지막 유효 항목이 최우선이다. 기본 거점 위에 인형을 추가하므로 여러 인형 중 마지막으로 유인한 것이 우선한다.
+같은 프레임에 적과 인형을 생성해도 `BeginCombat`이 이미 등록된 우선순위를 보존한다.
+진행 중인 공격 애니메이션은 완료한 뒤 다음 공격부터 새 대상을 따른다.
+
+체력은 피격 때만 감소한다. 체력 0 또는 활성화 후 `Duration`초 중 먼저 도달한 조건으로 비활성화 후 파괴한다.
+`OnDisable`은 범위 밖에 있는 적까지 포함해 등록했던 모든 적의 대상 목록에서 자신을 제거하고 `ReTargeting`을 호출한다.
+따라서 피격 파괴·시간 만료·외부 Destroy·장착 해제 시 다음 인형 또는 거점으로 복귀하며, 남은 대상이 없어도 기존 이동을 정리한다.
+
+`Tools/Items/Run Dummy Checks` 또는 `Library/CheckDummy.request`로 전용 런타임 검사를 실행한다.
+결과는 `Library/DummyChecks.json`에 남긴다. 초기/추가 진입, 다중 Collider, 다중 인형 우선순위, 외부 파괴,
+비활성화/재활성화, 같은 프레임의 적 생성, 독립 수명, 마지막 대상 소멸 후 이동 정지를 검증한다.
 
 ## 가로·십자 폭격 VFX
 
@@ -414,7 +460,7 @@ Shock은 POLYGON `FX_Electricity_01`을 복제한 짧은 보라색 Trail을 몸�
 | 3 | 약화 | 반경 2, 5초 장판 B, 공격력 -10% |
 | 4 | 안개 | 반경 2, 5초 장판 B, 받는 피해 +20% |
 | 5 | 중력장 | 반경 2, 5초 장판 B, 이동속도 -20% |
-| 6 | 미끼덫 | 1초 낙하 후 HP 100, 20초간 체력 감소, 반경 3 도발 |
+| 6 | 미끼덫 | 1초 낙하 후 Dummy Prefab 설치: HP 100 또는 20초 만료, 월드 반경 6 도발 |
 | 7 | 냉각 | 반경 1, 1초 뒤 경직 1초 + 빙결 |
 | 8 | 가로 폭격 | 필드 전체 가로·폭 3칸, 2초 뒤 150% |
 | 9 | 십자 폭격 | 10×3칸 가로/세로, 2초 뒤 각각 120%, 교차점 2회 |
@@ -449,7 +495,7 @@ Shock은 POLYGON `FX_Electricity_01`을 복제한 짧은 보라색 Trail을 몸�
 ## CSV에서 보충하거나 해석한 값
 
 - 가격/이미지가 없어서 가격은 등급 × 100으로 보충했고, 아이콘은 현재 번호 확인용 임시 이미지로 연결했다.
-- 은화살의 추가 피해량은 미기재이므로 100%, 미끼 도발 반경은 3칸을 기본값으로 지정했다.
+- 은화살의 추가 피해량은 미기재이므로 100%, 미끼 도발 반경은 Dummy Prefab에서 월드 6(기본 그리드 3칸)으로 지정했다.
 - 파도는 비고의 5×1 판정을 적용하고 대상란의 세로 10칸을 전체 이동 거리로 사용했다.
 - 생명력 전환은 설명·비고에 따라 최대체력 자체를 줄이지 않고 현재체력을 지불한다. 지불로 사망할 수 있다.
 - 가시 탄환의 발동 효과란에 적힌 전류는 이름·설명에 따라 출혈로 해석했다.

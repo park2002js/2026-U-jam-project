@@ -11,7 +11,7 @@ namespace Ujam.Runtime.Item
     {
         private readonly float width, depth, distance, duration, interval, push;
         /// <summary>Catalog에서 판정 폭/두께/이동 거리/수명/검사 간격/밀기 거리를 정한다.</summary>
-        public WaveEffect(float width, float depth, float distance, float duration, float interval, float push)
+        public WaveEffect(float width, float depth, float distance, float duration, float interval, float push) : base("10")
         { this.width = width; this.depth = depth; this.distance = distance; this.duration = duration; this.interval = interval; this.push = push; }
         /// <summary>중앙 SkillUse가 호출한다.</summary>
         public override void Execute(ItemUseContext c) => c.Run(Move(c));

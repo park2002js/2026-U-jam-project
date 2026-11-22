@@ -12,7 +12,7 @@ namespace Ujam.Runtime.Item
     {
         private readonly float thickness, delay, damagePercent, fallDuration, sweepDuration, incomingSpeed, impactSpeed, impactLifetime, spawnHeight;
         public HorizontalBombardmentEffect(float thickness, float delay, float damagePercent, float fallDuration = .3f,
-            float sweepDuration = .25f, float incomingSpeed = 1f, float impactSpeed = 1f, float impactLifetime = 1.5f, float spawnHeight = 10f)
+            float sweepDuration = .25f, float incomingSpeed = 1f, float impactSpeed = 1f, float impactLifetime = 1.5f, float spawnHeight = 10f) : base("8")
         {
             Validate(thickness, delay, damagePercent, fallDuration, sweepDuration, incomingSpeed, impactSpeed, impactLifetime, spawnHeight);
             this.thickness = thickness; this.delay = delay; this.damagePercent = damagePercent;

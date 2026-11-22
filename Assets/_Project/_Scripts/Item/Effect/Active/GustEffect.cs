@@ -8,7 +8,7 @@ namespace Ujam.Runtime.Item
     {
         private readonly float radius, duration;
         /// <summary>Catalog에서 반경과 VFX 유지 시간을 정한다. 바람 속성 수명은 ElementManager가 관리한다.</summary>
-        public GustEffect(float radius, float duration) { this.radius = radius; this.duration = duration; }
+        public GustEffect(float radius, float duration) : base("12") { this.radius = radius; this.duration = duration; }
         /// <summary>중앙 SkillUse가 호출한다.</summary>
         public override void Execute(ItemUseContext c) => c.Run(Blow(c));
         private IEnumerator Blow(ItemUseContext c)
