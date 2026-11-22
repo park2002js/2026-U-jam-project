@@ -120,19 +120,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _icons:
   - type: 0
-    sprite: {fileID: 2085597570, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
+    sprite: {fileID: -247181001, guid: 087796941245f1440b75dd23fe0ac146, type: 3}
   - type: 1
-    sprite: {fileID: 1836421515, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
+    sprite: {fileID: -2059160970, guid: 087796941245f1440b75dd23fe0ac146, type: 3}
   - type: 2
-    sprite: {fileID: -756865923, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
+    sprite: {fileID: 1166362167, guid: 087796941245f1440b75dd23fe0ac146, type: 3}
   - type: 3
-    sprite: {fileID: 75391510, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
-  _iconParent: {fileID: 0}
-  _iconSize: 25
+    sprite: {fileID: -284844337, guid: 087796941245f1440b75dd23fe0ac146, type: 3}
+  _debuffIcons:
+  - type: 0
+    sprite: {fileID: -1260950017, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
+  - type: 1
+    sprite: {fileID: -1935374233, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
+  - type: 2
+    sprite: {fileID: 1592350953, guid: 9a4bf2b280700c543b98aa9d9788a1ff, type: 3}
+  _iconSize: 32
   _spacing: 2
   _verticalOffset: 20
-  _slotSprite: {fileID: 0}
-  _slotColor: {r: 0, g: 0, b: 0, a: 0}
+  _slotSprite: {fileID: 21300000, guid: 90206fcf48fe4684bb79bc8465941f1b, type: 3}
+  _slotColor: {r: 1, g: 1, b: 1, a: 1}
   _slotPadding: 3
   _maxVisible: 3
   _overflowFont: {fileID: 11400000, guid: 78cc551e5aa7848419af0d19ea25c4a4, type: 2}
