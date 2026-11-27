@@ -100,7 +100,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _enemyName: Eyebeast
   _credits: 100
-  _maxHealth: 120
+  _maxHealth: 50
   _speed: 2.5
   _attackDamage: 80
   _attackSpeed: 1

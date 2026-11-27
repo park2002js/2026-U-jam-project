@@ -14,6 +14,9 @@ namespace UJam.Runtime.Shop
         // 씬 저장값과 무관하게 플레이어는 1000 재화로 시작한다.
         private long _gold = 1000L;
 
+        /// <summary>레벨 시작부터 TrySpend로 사용한 재화의 누적 합계입니다. 결산 창에서 사용합니다.</summary>
+        public long TotalSpent { get; private set; }
+
         // 외부 조회와 직접 변경에 사용할 현재 재화
         public long Gold
         {
@@ -79,6 +82,14 @@ namespace UJam.Runtime.Shop
             return true;
         }
 
+        /// <summary>구매 실패로 되돌려 주는 재화입니다. 사용한 금액 통계에서도 함께 뺍니다.</summary>
+        public void Refund(long amount)
+        {
+            if (amount <= 0L) return;
+            TotalSpent = TotalSpent > amount ? TotalSpent - amount : 0L;
+            AddCurrency(amount);
+        }
+
         // 향후 Shop에서 사용할 재화 차감
         public bool TrySpend(long amount)
         {
@@ -91,6 +102,7 @@ namespace UJam.Runtime.Shop
 
             // 검증된 비용 차감
             _gold -= amount;
+            TotalSpent += amount;
 
             //UIPlayer에 변경된 재화를 전달
             OnGoldChanged?.Invoke(_gold);

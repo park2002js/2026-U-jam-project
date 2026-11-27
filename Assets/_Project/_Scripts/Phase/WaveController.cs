@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UJam.Runtime.Enemy;
 using UJam.Runtime.Grid;
+using UJam.Runtime.Systems;
 using UnityEngine;
 
 namespace UJam.Runtime.Phase
@@ -53,6 +54,8 @@ namespace UJam.Runtime.Phase
         // 남은 수와 완료를 전달할 PhaseSystem
         private PhaseSystem _phaseSystem;
         private GameManager _gameManager;
+        private AudioClip _waveStartClip;
+        private AudioClip _waveClearClip;
 
         // 발표용 Enemy에 주입할 기본 거점 Target
         private GameObject _defaultEnemyTarget;
@@ -65,6 +68,18 @@ namespace UJam.Runtime.Phase
 
         // 현재 Wave에서 죽은 Enemy 수
         private int _deadEnemyCount;
+
+        /// <summary>레벨 시작부터 쓰러뜨린 Enemy의 누적 수입니다(소환·분열 개체 포함). 결산 창에서 사용합니다.</summary>
+        public int TotalDeadEnemyCount { get; private set; }
+
+        /// <summary>불러온 전체 Wave 수입니다.</summary>
+        public int WaveCount => _waves != null ? _waves.Length : 0;
+
+        /// <summary>시작한 Wave의 번호(1부터)입니다. 아직 시작 전이면 0입니다.</summary>
+        public int CurrentWaveNumber => _currentWaveIndex + 1;
+
+        /// <summary>진행할 다음 Wave가 남아 있는지 여부입니다. 마지막 Wave를 끝내면 게임 클리어로 판단합니다.</summary>
+        public bool HasNextWave => _waves != null && _currentWaveIndex + 1 < _waves.Length && _waves[_currentWaveIndex + 1] != null;
 
         // Wave 준비 또는 전투가 진행 중인지 여부
         private bool _isWaveRunning;
@@ -82,6 +97,8 @@ namespace UJam.Runtime.Phase
             }
 
             Instance = this;
+            _waveStartClip = Resources.Load<AudioClip>("Audio/Game/WaveStart");
+            _waveClearClip = Resources.Load<AudioClip>("Audio/Game/WaveClear");
 
              // JSON 파일에서 Wave 정보 불러오기
             LoadWaveData();
@@ -202,6 +219,7 @@ namespace UJam.Runtime.Phase
         // 생성 대기 중인 적까지 남은 수에 포함하고 각각 Wave 시작 기준의 지연 생성을 예약한다.
         public void WaveStart()
         {
+            if (_gameManager != null && _gameManager.IsGameOver) return;
             if (_isWaveRunning)
             {
                 Debug.LogWarning("[WaveController] Wave 시작 실패: 이미 Wave가 진행 중임", this);
@@ -215,6 +233,9 @@ namespace UJam.Runtime.Phase
             _aliveEnemyIds.Clear();
             _remainingEnemyCount = nextWave.TotalEnemyCount;
             _deadEnemyCount = 0;
+
+            var sfx = SFXManager.Instance;
+            if (sfx != null) sfx.Play(_waveStartClip);
 
             if (_phaseSystem != null)
             {
@@ -250,6 +271,7 @@ namespace UJam.Runtime.Phase
 
             _remainingEnemyCount -= 1;
             _deadEnemyCount += 1;
+            TotalDeadEnemyCount += 1;
             bool isWaveComplete = _remainingEnemyCount == 0;
 
             if (isWaveComplete) _isWaveRunning = false;
@@ -264,9 +286,11 @@ namespace UJam.Runtime.Phase
             }
 
             // 마지막 Enemy 사망인지 확인
-            if (isWaveComplete && _phaseSystem != null)
+            if (isWaveComplete && (_gameManager == null || !_gameManager.IsGameOver))
             {
-                _phaseSystem.CompleteCombatPhase();
+                var sfx = SFXManager.Instance;
+                if (sfx != null) sfx.Play(_waveClearClip);
+                if (_phaseSystem != null) _phaseSystem.CompleteCombatPhase();
             }
 
             // 사망 보고 성공 반환

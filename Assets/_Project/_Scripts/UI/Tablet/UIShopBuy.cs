@@ -87,20 +87,49 @@ namespace UJam.Runtime.UI
         public void Reroll()
         {
             if (!isActiveAndEnabled || _shopManager == null || _items == null) return;
+            UIItemReplacePrompt.Instance?.Cancel(); // 진열이 바뀌면 진행 중이던 교체 선택은 취소한다.
             _items = _shopManager.Reroll(ItemCount);
             RefreshItems();
         }
 
         /// <summary>
         /// 슬롯 구매가 성공한 경우에만 Sold Out으로 표시합니다. 잔액 부족 등 실패 시 진열을 유지합니다.
+        /// 액티브 아이템인데 스킬칸이 가득 차 있으면 "제거할 아이템을 고르십시오"를 띄우고,
+        /// 플레이어가 고른 스킬칸의 아이템과 교체하며 구매합니다.
         /// </summary>
         public void BuyItem(int slot)
         {
             if (!isActiveAndEnabled || _shopManager == null || _items == null || slot < 0 || slot >= _items.Count) return;
             string itemId = _items[slot];
-            if (ShopBuy.IsPlaceholder(itemId) || ItemCatalog.GetMeta(itemId) == null) return;
-            if (!_shopManager.BuyItem(slot)) return;
+            ItemMeta meta = ItemCatalog.GetMeta(itemId);
+            if (ShopBuy.IsPlaceholder(itemId) || meta == null) return;
 
+            UIItemReplacePrompt prompt = UIItemReplacePrompt.Instance;
+            if (prompt != null) prompt.Cancel();
+
+            switch (_shopManager.TryBuy(slot))
+            {
+                case PurchaseResult.Purchased:
+                    MarkSoldOut(slot);
+                    break;
+                case PurchaseResult.NeedsSkillReplacement:
+                    if (prompt == null)
+                    {
+                        Debug.LogWarning("[UIShopBuy] 스킬칸이 가득 찼지만 교체 선택 UI(UIItemReplacePrompt)가 없습니다.", this);
+                        break;
+                    }
+                    prompt.Begin(meta.ItemSprite, skillSlot =>
+                    {
+                        // 선택하는 사이 진열이 바뀌지 않았을 때만 구매를 마친다.
+                        if (!isActiveAndEnabled || _items == null || slot >= _items.Count || _items[slot] != itemId) return;
+                        if (_shopManager.BuyItemReplacing(slot, skillSlot)) MarkSoldOut(slot);
+                    });
+                    break;
+            }
+        }
+
+        private void MarkSoldOut(int slot)
+        {
             _items[slot] = null;
             if (slot < _slots.Count && _slots[slot] != null) _slots[slot].SetSoldOut();
         }

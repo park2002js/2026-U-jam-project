@@ -11,6 +11,8 @@ namespace UJam.Runtime.UI
     {
         [SerializeField] private Wallet _wallet;
         [SerializeField] private TMP_Text _currencyText;
+        [SerializeField, Tooltip("{0}에 재화가 들어갑니다. 코인 아이콘이 함께 표시되므로 기본값은 숫자만 표시합니다.")]
+        private string _format = "{0:N0}";
 
         /// <summary>
         /// Wallet.OnCurrencyChanged를 구독하고 UI가 다시 열릴 때도 현재 재화를 표시합니다.
@@ -42,7 +44,7 @@ namespace UJam.Runtime.UI
         /// </summary>
         private void OnSetGold(long currency)
         {
-            if (_currencyText != null) _currencyText.text = $"{currency:N0} $";
+            if (_currencyText != null) _currencyText.text = string.Format(string.IsNullOrEmpty(_format) ? "{0:N0}" : _format, currency);
         }
     }
 }

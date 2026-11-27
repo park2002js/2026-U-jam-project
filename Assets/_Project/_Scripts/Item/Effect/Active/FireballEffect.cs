@@ -25,11 +25,14 @@ namespace Ujam.Runtime.Item
             ItemCastVfx visual = null;
             yield return ItemCastVfx.Create(c, value => visual = value);
             if (!c.Item.IsEquipped) yield break;
-            if (visual != null) visual.BeginIncoming(spawnHeight, fallDuration, incomingSpeed, incomingDelay);
+            if (visual != null)
+                visual.BeginIncoming(spawnHeight, fallDuration, incomingSpeed, incomingDelay,
+                    () => SFXManager.Instance?.Play(GetClip("FireballCast")));
             yield return new WaitForSeconds(delay);
             if (!c.Item.IsEquipped) yield break;
 
             if (visual != null) visual.Impact(radius * ItemWorld.CellWidth * 2, impactSpeed, impactLifetime);
+            SFXManager.Instance?.PlayAt(GetClip("FireballImpact"), c.Position);
             var enemies = ItemWorld.Circle(c.Position, radius, c.EnemyMask);
             foreach (var enemy in enemies) { c.Damage(enemy, damagePercent); c.Element(enemy, ElementType.Burn); }
             c.ReportHits(enemies);

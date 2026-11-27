@@ -48869,7 +48869,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _enemyName: Witch
   _credits: 200
-  _maxHealth: 150
+  _maxHealth: 55
   _speed: 0.5
   _attackDamage: 50
   _attackSpeed: 1
@@ -48907,6 +48907,7 @@ MonoBehaviour:
   _skeletonPrefab: {fileID: 7184072171468012878, guid: ea922871b46db1549ac42ae753b0c9c6, type: 3}
   _summonInterval: 10
   _summonOffset: 1.5
+  _firstSummonDelay: 3
 --- !u!114 &5035761498893909907
 MonoBehaviour:
   m_ObjectHideFlags: 0

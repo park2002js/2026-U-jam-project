@@ -13,8 +13,12 @@ namespace UJam.Runtime.UI
         [SerializeField] private Image _hpBar;
         [SerializeField, Min(0f), Tooltip("바 전체 길이가 변하는 데 걸리는 시간. 0이면 즉시 반영합니다.")]
         private float _changeDuration = 0.2f;
+        [SerializeField, Tooltip("선택: 피해를 받을 때 크게 튀었다가 돌아오는 하트 아이콘입니다.")]
+        private RectTransform _pulseTarget;
 
         private float _targetFill;
+        private float _pulseTime = -1f;
+        private const float PulseDuration = 0.3f;
 
         /// <summary>
         /// HP_Bar를 아래에서 위로 채워지는 세로형 Filled 이미지로 설정합니다.
@@ -56,6 +60,18 @@ namespace UJam.Runtime.UI
         /// </summary>
         private void Update()
         {
+            if (_pulseTarget != null && _pulseTime >= 0f)
+            {
+                _pulseTime += Time.unscaledDeltaTime;
+                float p = Mathf.Clamp01(_pulseTime / PulseDuration);
+                _pulseTarget.localScale = Vector3.one * (1f + 0.28f * Mathf.Sin(p * Mathf.PI) * (1f - p * 0.5f));
+                if (p >= 1f)
+                {
+                    _pulseTarget.localScale = Vector3.one;
+                    _pulseTime = -1f;
+                }
+            }
+
             if (_hpBar == null || _hpBar.fillAmount == _targetFill) return;
             _hpBar.fillAmount = _changeDuration > 0f ? Mathf.MoveTowards(_hpBar.fillAmount, _targetFill, Time.unscaledDeltaTime / _changeDuration) : _targetFill;
         }
@@ -74,7 +90,9 @@ namespace UJam.Runtime.UI
         /// </summary>
         private void OnHealthChanged(float currentHealth, float maxHealth)
         {
+            float previous = _targetFill;
             _targetFill = maxHealth > 0f ? Mathf.Clamp01(currentHealth / maxHealth) : 0f;
+            if (_targetFill < previous - 0.0001f && isActiveAndEnabled) _pulseTime = 0f;
             if (_hpBar != null && _changeDuration <= 0f) _hpBar.fillAmount = _targetFill;
         }
     }

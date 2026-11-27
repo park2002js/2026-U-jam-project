@@ -57,7 +57,7 @@ namespace Ujam.Runtime.Item
 
         /// <summary>B형 장판 공통 설치. 단위 구체 Prefab을 복제/스케일하고 초기 Overlap 및 Enter/Exit로 조건형 디버프를 관리한다.</summary>
         public static IEnumerator ConditionArea(ItemUseContext context, string prefabPath, float radius, float seconds,
-            BuffStat stat, float percent)
+            BuffStat stat, float percent, AudioClip creationSound)
         {
             GameObject prefab = null;
             yield return ItemAssets.LoadAsync(prefabPath, loaded => prefab = loaded);
@@ -74,6 +74,7 @@ namespace Ujam.Runtime.Item
             {
                 yield return ItemVfx.Spawn(context, radius * CellWidth * 2f, seconds, area.transform);
                 if (!context.Item.IsEquipped || area == null) yield break;
+                SFXManager.Instance?.PlayAt(creationSound, context.Position);
                 relay.Initialize(context.EnemyMask,
                     enemy =>
                     {

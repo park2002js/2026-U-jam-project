@@ -31,7 +31,9 @@ namespace Ujam.Runtime.Item
             ItemCastVfx visual = null;
             yield return ItemCastVfx.Create(c, value => visual = value);
             if (!c.Item.IsEquipped) yield break;
-            if (visual != null) visual.BeginIncoming(spawnHeight, fallDuration, incomingSpeed, incomingDelay);
+            if (visual != null)
+                visual.BeginIncoming(spawnHeight, fallDuration, incomingSpeed, incomingDelay,
+                    () => SFXManager.Instance?.PlayAt(GetClip("DecoyDrop"), c.Position));
             yield return new WaitForSeconds(delay);
             if (!c.Item.IsEquipped) yield break;
 
@@ -46,6 +48,7 @@ namespace Ujam.Runtime.Item
                 throw new System.InvalidOperationException("미끼 Prefab에 DecoyController가 필요합니다.");
             }
             decoy.Taunted += enemy => c.ReportHits(new[] { enemy });
+            SFXManager.Instance?.PlayAt(GetClip("DecoyLand"), c.Position);
             // 활성 Prefab은 복제 즉시 Overlap을 끝내므로 이미 도발한 적도 스킬 적중으로 전달한다.
             foreach (var enemy in new List<EnemyBase>(instance.GetComponent<AreaTrigger>().Enemies))
                 c.ReportHits(new[] { enemy });

@@ -8,7 +8,7 @@ using UnityEngine.InputSystem;
 namespace UJam.Runtime.Player
 {
     /// <summary>
-    /// 두 스킬 슬롯과 쿨타임의 소유자. 사용이 정당하면 EventManager로 전달하며 Effect를 직접 호출하지 않는다.
+    /// 다섯 스킬 슬롯(숫자키 1~5)과 쿨타임의 소유자. 사용이 정당하면 EventManager로 전달하며 Effect를 직접 호출하지 않는다.
     /// ItemMeta의 Preview가 있으면 위치를 고른 뒤 좌클릭으로 확정하고, None은 즉시 확정한다.
     /// </summary>
     public class PlayerSkillManager : MonoBehaviour
@@ -19,8 +19,11 @@ namespace UJam.Runtime.Player
         [SerializeField, Tooltip("직사각형 Preview 프리팹")]
         private GameObject rectanglePreviewPrefab;
 
-        private readonly Item[] slots = new Item[2];
-        private readonly float[] readyAt = new float[2];
+        /// <summary>스킬 슬롯 수. 숫자키 1~5가 각각 0~4번 슬롯에 대응한다.</summary>
+        public const int SlotCount = 5;
+
+        private readonly Item[] slots = new Item[SlotCount];
+        private readonly float[] readyAt = new float[SlotCount];
         private PlayerCombatManager combat;
 
         private PlayerSkillPreview circlePreview, rectanglePreview;
@@ -29,7 +32,15 @@ namespace UJam.Runtime.Player
 
         public event Action<int, Item> OnSkillChanged;
         public event Action<int, Item> OnSkillUsed;
-        public int EmptySlots => (slots[0] == null ? 1 : 0) + (slots[1] == null ? 1 : 0);
+        public int EmptySlots
+        {
+            get
+            {
+                int empty = 0;
+                foreach (Item slot in slots) if (slot == null) empty++;
+                return empty;
+            }
+        }
 
         /// <summary>조준 중인지 여부. 입력 처리 쪽에서 기본 공격을 막을 때 참조한다.</summary>
         public bool IsAiming => aimingSlot >= 0;
@@ -95,7 +106,7 @@ namespace UJam.Runtime.Player
         /// <summary>Inventory에서 특정 개체가 사라질 때 해당 슬롯을 정리한다.</summary>
         public void Remove(Item item) { int slot = Array.IndexOf(slots, item); if (slot >= 0) UnEquip(slot); }
 
-        /// <summary>D/F 입력에서 호출한다. Meta의 Preview 형태가 조준 여부를 결정한다.</summary>
+        /// <summary>숫자키 1~5 입력에서 호출한다. Meta의 Preview 형태가 조준 여부를 결정한다.</summary>
         public void TryUse(int slot)
         {
             var item = GetSkill(slot);

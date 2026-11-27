@@ -7,7 +7,7 @@ namespace Ujam.Runtime.Item
     /// 아이템 제작/수치 조정의 첫 진입점. 아래 new Item의 Meta/Effect 생성자 인자만 수정한다.
     /// 새 아이템은 전용 Effect 클래스와 여기의 new Item 한 개를 추가한다.
     /// CSV에 없는 가격은 등급×100, 은화살 추가 피해는 공격력 100%를 기본값으로 정했다. 미끼 수치는 Dummy Prefab에서 정한다.
-    /// 파도는 비고의 판정 폭 5×1칸, 전체 이동 거리 10칸을 따른다. 21번의 전류 표기는 출혈로 해석했다.
+    /// 21번의 전류 표기는 출혈로 해석했다.
     /// </summary>
     public static class ItemCatalog
     {
@@ -19,14 +19,14 @@ namespace Ujam.Runtime.Item
                 grade: 1, kind: ItemKind.Active, target: ItemTarget.Enemies,
                 preview: new ItemPreview(ItemPreviewType.Circle, 2f), iconName: "Item_01", vfxPath: "ItemFX/FocusedFire_VFX",
                 description: "특정 영역을 향해 집중적으로 사격을 가합니다. 해당 위치에 있는 적들은 Shooting 공격을 받은 것과 같은 피해를 입습니다."),
-                new ItemRuntime(ItemTrigger.SkillUse, new FocusedFireEffect(radius: 0.5f, shots: 5, damagePercent: 100f, duration: 1f))),
+                new ItemRuntime(ItemTrigger.SkillUse, new FocusedFireEffect(radius: 0.5f, shots: 5, damagePercent: 110f, duration: 1f))),
 
             // 2. 화염구
             new Item("2", new ItemMeta("화염구", "스킬, 원형, 속성", price: 100, cooldown: 10f,
                 grade: 1, kind: ItemKind.Active, target: ItemTarget.Enemies,
                 preview: new ItemPreview(ItemPreviewType.Circle, 12f), iconName: "Item_02", vfxPath: "ItemFX/Fireball_VFX",
                 description: "전장에 화염구가 떨어져서 적들에게 피해와 동시에 화상을 부여합니다."),
-                new ItemRuntime(ItemTrigger.SkillUse, new FireballEffect(radius: 3f, damagePercent: 200f, delay: 1f,
+                new ItemRuntime(ItemTrigger.SkillUse, new FireballEffect(radius: 3f, damagePercent: 360f, delay: 1f,
                     fallDuration: 1f, incomingSpeed: 1f, impactSpeed: 1f, impactLifetime: 1.5f, spawnHeight: 10f, incomingDelay: 0f))),
 
             // 3. 약화
@@ -66,11 +66,11 @@ namespace Ujam.Runtime.Item
                 new ItemRuntime(ItemTrigger.SkillUse, new CoolingEffect(radius: 1f, delay: 1f, stunDuration: 1f))),
 
             // 8. 가로 폭격
-            new Item("8", new ItemMeta("가로 폭격", "스킬, 가로선", price: 0, cooldown: 10f,
+            new Item("8", new ItemMeta("가로 폭격", "스킬, 가로선", price: 100, cooldown: 10f,
                 grade: 2, kind: ItemKind.Active, target: ItemTarget.Enemies,
                 preview: new ItemPreview(ItemPreviewType.None), iconName: "Item_08", vfxPath: "ItemFX/HorizontalBombardment_VFX",
                 description: "전장의 가로줄에다가 폭격을 가해 적들을 쓸어버립니다."),
-                new ItemRuntime(ItemTrigger.SkillUse, new HorizontalBombardmentEffect(thickness: 3f, delay: 2f, damagePercent: 150f,
+                new ItemRuntime(ItemTrigger.SkillUse, new HorizontalBombardmentEffect(thickness: 3f, delay: 2f, damagePercent: 550f,
                     fallDuration: .3f, sweepDuration: .25f, incomingSpeed: 1f, impactSpeed: 1f, impactLifetime: 1.5f, spawnHeight: 10f))),
 
             // 9. 십자 폭격
@@ -78,22 +78,15 @@ namespace Ujam.Runtime.Item
                 grade: 2, kind: ItemKind.Active, target: ItemTarget.Enemies,
                 preview: new ItemPreview(ItemPreviewType.None), iconName: "Item_09", vfxPath: "ItemFX/CrossBombardment_VFX",
                 description: "2번의 폭격을 가해 적들에게 피해를 입힙니다. 십자가 겹치는 부분의 적들은 추가 피해를 입습니다."),
-                new ItemRuntime(ItemTrigger.SkillUse, new CrossBombardmentEffect(thickness: 3f, length: 10f, delay: 2f, damagePercent: 120f,
+                new ItemRuntime(ItemTrigger.SkillUse, new CrossBombardmentEffect(thickness: 3f, length: 10f, delay: 2f, damagePercent: 300f,
                     fallDuration: .3f, sweepDuration: .25f, incomingSpeed: 1f, impactSpeed: 1f, impactLifetime: 1.5f, spawnHeight: 10f))),
-
-            // 10. 파도
-            new Item("10", new ItemMeta("파도", "스킬, 직사각형, 디버프, 속성", price: 200, cooldown: 10f,
-                grade: 2, kind: ItemKind.Active, target: ItemTarget.Enemies,
-                preview: new ItemPreview(ItemPreviewType.Rectangle, 10f, 2f), iconName: "Item_10",
-                description: "파도를 생성합니다. 파도는 이동하며 적들을 밀어내고 빙결을 부여합니다."),
-                new ItemRuntime(ItemTrigger.SkillUse, new WaveEffect(width: 5f, depth: 1f, distance: 10f, duration: 10f, interval: 0.2f, push: 0.5f))),
 
             // 11. 낙뢰
             new Item("11", new ItemMeta("낙뢰", "스킬, 원형, 속성", price: 100, cooldown: 10f,
                 grade: 1, kind: ItemKind.Active, target: ItemTarget.Enemies,
                 preview: new ItemPreview(ItemPreviewType.Circle, 8f), iconName: "Item_11", vfxPath: "ItemFX/Lightning_VFX",
                 description: "전장에 낙뢰가 떨어져서 적들에게 피해와 동시에 감전을 부여합니다."),
-                new ItemRuntime(ItemTrigger.SkillUse, new LightningEffect(radius: 2f, damagePercent: 200f, delay: 1f,
+                new ItemRuntime(ItemTrigger.SkillUse, new LightningEffect(radius: 2f, damagePercent: 550f, delay: 1f,
                     fallDuration: .15f, incomingSpeed: 1f, impactSpeed: 1f, impactLifetime: 1.5f, spawnHeight: 10f, incomingDelay: .85f))),
 
             // 12. 돌풍
@@ -132,14 +125,14 @@ namespace Ujam.Runtime.Item
                 grade: 1, kind: ItemKind.Passive, target: ItemTarget.Player,
                 preview: new ItemPreview(ItemPreviewType.None), iconName: "Item_16", vfxPath: "ItemFX/SilverArrow_VFX",
                 description: "계속해서 적을 맞추면 적에게 추가 피해를 입힙니다."),
-                new ItemRuntime(ItemTrigger.Shooting, new SilverArrowEffect(hits: 5, damagePercent: 100f, vfxDiameter: 3.5f, vfxDuration: 1.5f))),
+                new ItemRuntime(ItemTrigger.Shooting, new SilverArrowEffect(hits: 4, damagePercent: 100f, vfxDiameter: 3.5f, vfxDuration: 1.5f))),
 
             // 17. 집념
             new Item("17", new ItemMeta("집념", "슈팅추가효과, 스택, 버프", price: 100, cooldown: 0f,
                 grade: 1, kind: ItemKind.Passive, target: ItemTarget.Player,
                 preview: new ItemPreview(ItemPreviewType.None), iconName: "Item_17",
                 description: "계속해서 적을 맞추면 플레이어의 공격 속도가 일시적으로 빨라집니다."),
-                new ItemRuntime(ItemTrigger.Shooting, new TenacityEffect(hits: 5, percent: 10f, duration: 2f))),
+                new ItemRuntime(ItemTrigger.Shooting, new TenacityEffect(hits: 4, percent: 10f, duration: 2f))),
 
             // 18. 화염 탄환
             new Item("18", new ItemMeta("화염 탄환", "슈팅추가효과, 속성", price: 100, cooldown: 0f,
@@ -167,28 +160,28 @@ namespace Ujam.Runtime.Item
                 grade: 1, kind: ItemKind.Passive, target: ItemTarget.Player,
                 preview: new ItemPreview(ItemPreviewType.None), iconName: "Item_21",
                 description: "플레이어의 슈팅 공격에 랜덤한 확률로 출혈 속성을 부여합니다."),
-                new ItemRuntime(ItemTrigger.Shooting, new ThornBulletEffect(chance: 10f))),
+                new ItemRuntime(ItemTrigger.Shooting, new ThornBulletEffect(chance: 25f))),
 
             // 22. 과부화
             new Item("22", new ItemMeta("과부화", "스킬, 속성, 스택", price: 100, cooldown: 0f,
                 grade: 1, kind: ItemKind.Passive, target: ItemTarget.Player,
                 preview: new ItemPreview(ItemPreviewType.None), iconName: "Item_22", vfxPath: "ItemFX/Overload_VFX",
                 description: "플레이어의 무기가 일정 횟수 사용되면 과부화를 일으켜 추가피해와 함께 감전 속성을 부여합니다."),
-                new ItemRuntime(ItemTrigger.SkillHit, new OverloadEffect(uses: 5, damagePercent: 100f, vfxDiameter: 3.5f, vfxDuration: 1.5f))),
+                new ItemRuntime(ItemTrigger.SkillHit, new OverloadEffect(uses: 5, damagePercent: 200f, vfxDiameter: 3.5f, vfxDuration: 1.5f))),
 
             // 23. 염화
             new Item("23", new ItemMeta("염화", "버프, 속성", price: 100, cooldown: 0f,
                 grade: 1, kind: ItemKind.Passive, target: ItemTarget.Player,
                 preview: new ItemPreview(ItemPreviewType.None), iconName: "Item_23",
                 description: "더 높은 고온의 불을 사용해 화상 속성 데미지를 상승시킵니다."),
-                new ItemRuntime(ItemTrigger.Equipped, new FlameEnhancementEffect(percent: 20f))),
+                new ItemRuntime(ItemTrigger.Equipped, new FlameEnhancementEffect(percent: 10f))),
 
             // 24. 시체 폭발
             new Item("24", new ItemMeta("시체 폭발", "버프, 원형", price: 100, cooldown: 0f,
                 grade: 1, kind: ItemKind.Passive, target: ItemTarget.Player,
                 preview: new ItemPreview(ItemPreviewType.None), iconName: "Item_24", vfxPath: "ItemFX/CorpseExplosion_VFX",
                 description: "특정 번째로 죽은 적에게 폭발을 일으켜 그 주변에 피해를 입힙니다."),
-                new ItemRuntime(ItemTrigger.EnemyKilled, new CorpseExplosionEffect(kills: 4, radius: 1f, damagePercent: 100f, vfxDuration: 4.5f))),
+                new ItemRuntime(ItemTrigger.EnemyKilled, new CorpseExplosionEffect(kills: 4, radius: 1f, damagePercent: 300f, vfxDuration: 4.5f))),
 
             // 25. 리저렉션
             new Item("25", new ItemMeta("리저렉션", "버프", price: 100, cooldown: 0f,

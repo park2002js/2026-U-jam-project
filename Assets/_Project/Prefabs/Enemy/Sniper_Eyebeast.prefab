@@ -100,7 +100,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _enemyName: Sniper Eyebeast
   _credits: 150
-  _maxHealth: 100
+  _maxHealth: 45
   _speed: 2.5
   _attackDamage: 100
   _attackSpeed: 0.8

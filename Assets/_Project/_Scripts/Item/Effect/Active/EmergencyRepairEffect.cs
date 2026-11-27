@@ -1,3 +1,5 @@
+using UJam.Runtime.Systems;
+
 namespace Ujam.Runtime.Item
 {
     /// <summary>긴급 수리: 최대 체력 비율 회복. 사용 횟수는 PlayerStatus에 저장하고 소진 시 이 보유 개체를 삭제한다.</summary>
@@ -12,6 +14,7 @@ namespace Ujam.Runtime.Item
         {
             c.Player.Heal(c.Player.MaxHealth * healPercent / 100f);
             ItemScreenVfx.Play(c);
+            SFXManager.Instance?.Play(GetClip("Repair"));
 
             if (c.Player.Increment(c.Item) >= uses) c.Item.Consume();
         }

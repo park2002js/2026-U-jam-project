@@ -25,7 +25,7 @@ namespace Ujam.Editor.Integration
             if (EditorApplication.isPlayingOrWillChangePlaymode)
                 throw new InvalidOperationException("Play Mode를 종료한 뒤 검사하세요.");
             checks = 0;
-            Require(ItemCatalog.IDs.Count() == 30, "30개 아이템");
+            Require(ItemCatalog.IDs.Count() == 29, "29개 아이템");
             foreach (string id in ItemCatalog.IDs)
             {
                 Item first = ItemCatalog.Create(id), second = ItemCatalog.Create(id);

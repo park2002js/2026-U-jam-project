@@ -20,7 +20,7 @@ namespace Ujam.Runtime.Item
         /// 실제 발동 조건을 통과한 지점에서 SFXManager.Instance.Play(GetClip("FireballCast"))를 호출하거나,
         /// 실제 적중/폭발 지점에서 SFXManager.Instance.PlayAt(GetClip("FireballImpact"), position)을 호출한다.
         /// null도 Manager에 전달하면 호출 파일/함수/줄을 기록하고 재생을 생략한다. clips[index]로 직접 접근하면 null 처리를 우회하므로 GetClip을 사용한다.
-        /// 파일을 추가하는 것만으로 자동 재생되지는 않는다. 재생 시점과 파일명 선택은 각 Effect의 책임이며, 현재는 로딩 구조만 연결되어 있다.
+        /// 파일을 추가하는 것만으로 자동 재생되지는 않는다. 재생 시점과 파일명 선택은 각 Effect의 책임이다.
         /// </summary>
         protected readonly AudioClip[] clips;
 

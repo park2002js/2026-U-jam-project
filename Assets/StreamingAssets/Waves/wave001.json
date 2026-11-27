@@ -5,40 +5,7 @@
       "statusSettings": [
         {
           "spawns": [
-            { "x": 2, "z": 4, "waitTime": 0 },
-            { "x": 13, "z": 5, "waitTime": 0 }
-          ]
-        }
-      ]
-    },
-    {
-      "prefabName": "Big_Golem",
-      "statusSettings": [
-        {
-          "spawns": [
-            { "x": 8, "z": 4, "waitTime": 0 }
-          ]
-        }
-      ]
-    },
-    {
-      "prefabName": "Slime",
-      "statusSettings": [
-        {
-          "spawns": [
-            { "x": 4, "z": 5, "waitTime": 3 },
-            { "x": 11, "z": 4, "waitTime": 3 }
-          ]
-        }
-      ]
-    },
-    {
-      "prefabName": "Rollbug",
-      "statusSettings": [
-        {
-          "spawns": [
-            { "x": 1, "z": 6, "waitTime": 6 },
-            { "x": 14, "z": 5, "waitTime": 6 }
+            { "x": 7, "z": 12, "waitTime": 0 }
           ]
         }
       ]
@@ -48,9 +15,27 @@
       "statusSettings": [
         {
           "spawns": [
-            { "x": 3, "z": 6, "waitTime": 9 },
-            { "x": 7, "z": 5, "waitTime": 9 },
-            { "x": 12, "z": 6, "waitTime": 9 }
+            { "x": 10, "z": 12, "waitTime": 1.5 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Slime",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 4, "z": 13, "waitTime": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Rollbug",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 9, "z": 12, "waitTime": 4.5 }
           ]
         }
       ]
@@ -60,10 +45,7 @@
       "statusSettings": [
         {
           "spawns": [
-            { "x": 1, "z": 7, "waitTime": 9 },
-            { "x": 5, "z": 7, "waitTime": 9 },
-            { "x": 10, "z": 7, "waitTime": 9 },
-            { "x": 14, "z": 7, "waitTime": 9 }
+            { "x": 3, "z": 12, "waitTime": 6 }
           ]
         }
       ]
@@ -73,10 +55,17 @@
       "statusSettings": [
         {
           "spawns": [
-            { "x": 2, "z": 5, "waitTime": 12 },
-            { "x": 6, "z": 6, "waitTime": 12 },
-            { "x": 9, "z": 5, "waitTime": 12 },
-            { "x": 13, "z": 6, "waitTime": 12 }
+            { "x": 11, "z": 13, "waitTime": 7.5 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Big_Golem",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 7, "z": 13, "waitTime": 9 }
           ]
         }
       ]

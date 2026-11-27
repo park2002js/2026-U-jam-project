@@ -27,7 +27,7 @@ RectTransform:
   m_GameObject: {fileID: 1043686644830454043}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.76, y: 0.76, z: 0.76}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8282902006176128139}
@@ -39,7 +39,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1150, y: 1000}
+  m_SizeDelta: {x: 1150, y: 930}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8399937444042112393
 CanvasRenderer:
@@ -62,15 +62,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: 21300000, guid: 865175e140df6604ab47c0620713ad64, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -89,6 +89,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3308454262609422170}
   - component: {fileID: 3466356939785299568}
+  - component: {fileID: 3120347211588676277}
   m_Layer: 5
   m_Name: Tablet_Frame_UI
   m_TagString: Untagged
@@ -132,6 +133,25 @@ MonoBehaviour:
   _itemShop: {fileID: 7963212876361649047}
   _itemUpgrade: {fileID: 3988797020212299918}
   _itemFusion: {fileID: 6892891398211021623}
+--- !u!114 &3120347211588676277
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1962340370222509045}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b429a655544a62246b423d300198895d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _target: {fileID: 3370743871303816575}
+  _canvasGroup: {fileID: 0}
+  _duration: 0.55
+  _delay: 0
+  _distance: 0
+  _overshoot: 0.9
+  _fade: 1
 --- !u!1 &3988797020212299918
 GameObject:
   m_ObjectHideFlags: 0
@@ -526,6 +546,10 @@ PrefabInstance:
     - target: {fileID: 8997869922494126483, guid: 08660ae6bc4ecff468649f9adce49105, type: 3}
       propertyPath: m_Name
       value: Tablet_Menu_UI
+      objectReference: {fileID: 0}
+    - target: {fileID: 8997869922494126483, guid: 08660ae6bc4ecff468649f9adce49105, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

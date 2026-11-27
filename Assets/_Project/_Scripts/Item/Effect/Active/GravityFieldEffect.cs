@@ -13,7 +13,7 @@ namespace Ujam.Runtime.Item
         /// <summary>중앙 SkillUse가 호출한다. 처음에는 Overlap, 이후에는 TriggerEnter/Exit로 판정한다.</summary>
         public override void Execute(ItemUseContext c)
         {
-            c.Run(ItemWorld.ConditionArea(c, prefabPath, radius, duration, BuffStat.MovementSpeed, -percent));
+            c.Run(ItemWorld.ConditionArea(c, prefabPath, radius, duration, BuffStat.MovementSpeed, -percent, GetClip("GravityFieldCreate")));
         }
     }
 }

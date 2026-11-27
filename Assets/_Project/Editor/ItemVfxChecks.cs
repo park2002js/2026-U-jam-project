@@ -56,14 +56,14 @@ namespace UJam.EditorTools
         [MenuItem("Tools/Items/Check Item VFX Assets")]
         public static void Run()
         {
-            Require(ItemCatalog.IDs.Count() == 30, "All thirty items must remain available.");
-            for (int id = 1; id <= 30; id++)
+            Require(ItemCatalog.IDs.Count() == 29, "Expected 29 registered items.");
+            foreach (string id in ItemCatalog.IDs)
             {
-                string icon = "Item_" + id.ToString("D2");
+                string icon = "Item_" + id.PadLeft(2, '0');
                 Sprite sprite = Resources.Load<Sprite>("Art/Item/" + icon);
                 Require(sprite != null && sprite.texture.width == 128 && sprite.texture.height == 128,
                     icon + " must be a 128x128 item Sprite.");
-                Require(ItemCatalog.GetMeta(id.ToString()).ItemSprite == sprite,
+                Require(ItemCatalog.GetMeta(id).ItemSprite == sprite,
                     "Catalog is still using a fallback icon for item " + id);
             }
             for (int i = 0; i < IDs.Length; i++)
@@ -80,7 +80,7 @@ namespace UJam.EditorTools
             }
             Require(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/ItemEffects/Item_001_HorizontalCylinder.prefab") == null,
                 "The retired HorizontalCylinder prefab still exists.");
-            Debug.Log("[ItemVfxChecks] Thirty item icons, six Circle previews, VFX resource mappings and reference diameters passed.");
+            Debug.Log("[ItemVfxChecks] Registered item icons, six Circle previews, VFX resource mappings and reference diameters passed.");
         }
 
         private static void RequestedRun()

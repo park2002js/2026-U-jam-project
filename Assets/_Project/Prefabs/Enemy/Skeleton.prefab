@@ -101,7 +101,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _enemyName: Skeleton
   _credits: 20
-  _maxHealth: 80
+  _maxHealth: 40
   _speed: 1
   _attackDamage: 80
   _attackSpeed: 2

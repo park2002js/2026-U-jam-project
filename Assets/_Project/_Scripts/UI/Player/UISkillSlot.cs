@@ -8,15 +8,25 @@ namespace UJam.Runtime.UI
     /// <summary>
     /// SkillSlotA/B에 부착하여 PlayerSkillManager의 해당 슬롯 아이콘과 쿨타임 표시를 관리합니다.
     /// </summary>
-    public class UISkillSlot : MonoBehaviour
+    public class UISkillSlot : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHandler
     {
+        /// <summary>교체 선택 중("제거할 아이템을 고르십시오")이면 이 스킬칸을 교체 대상으로 고릅니다.</summary>
+        public void OnPointerClick(UnityEngine.EventSystems.PointerEventData eventData)
+        {
+            if (eventData.button != UnityEngine.EventSystems.PointerEventData.InputButton.Left) return;
+            UIItemReplacePrompt.Instance?.TryPick(_slotIndex);
+        }
+
         [SerializeField] private PlayerSkillManager _skillManager;
         [SerializeField, Min(0)] private int _slotIndex;
         [SerializeField] private Image _skillIcon;
         [SerializeField] private Color _cooldownColor = new Color(0.35f, 0.35f, 0.35f, 1f);
+        [SerializeField, Tooltip("선택: 남은 쿨타임 비율만큼 덮는 Filled(Radial 360) 이미지입니다.")]
+        private Image _cooldownOverlay;
 
         private Color _normalColor = Color.white;
         private float _cooldownEndTime;
+        private float _cooldownDuration;
         private bool _isCoolingDown;
 
         /// <summary>
@@ -106,9 +116,16 @@ namespace UJam.Runtime.UI
         /// </summary>
         private void SetCooldown(float endTime)
         {
+            if (endTime > _cooldownEndTime + 0.001f) _cooldownDuration = Mathf.Max(0.01f, endTime - Time.time);
             _cooldownEndTime = endTime;
             _isCoolingDown = Time.time < _cooldownEndTime;
             if (_skillIcon != null) _skillIcon.color = _isCoolingDown ? _cooldownColor : _normalColor;
+            if (_cooldownOverlay != null)
+            {
+                float remaining = Mathf.Max(0f, _cooldownEndTime - Time.time);
+                _cooldownOverlay.fillAmount = _isCoolingDown && _cooldownDuration > 0f ? Mathf.Clamp01(remaining / _cooldownDuration) : 0f;
+                _cooldownOverlay.enabled = _isCoolingDown && _skillIcon != null && _skillIcon.enabled;
+            }
         }
     }
 }

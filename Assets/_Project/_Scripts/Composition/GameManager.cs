@@ -17,10 +17,17 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     public event Action OnGameOver;
+    public event Action OnGameClear;
     public event Action<PhaseState> OnPhaseChanged;
 
     public bool IsGameOver { get; private set; }
+    public bool IsGameClear { get; private set; }
     public bool IsInitialized { get; private set; }
+
+    /// <summary>
+    /// 레벨 시작부터 클리어(또는 게임 오버)까지 흐른 실제 시간(초)입니다. 정비 시간을 포함하며 일시정지(timeScale 0) 동안은 멈춥니다.
+    /// </summary>
+    public float PlayTime { get; private set; }
     public PhaseState CurrentPhase => _phaseSystem != null ? _phaseSystem.CurrentState : PhaseState.None;
 
     private PhaseSystem _phaseSystem;
@@ -73,11 +80,20 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 레벨이 진행 중인 동안 결산용 플레이 시간을 누적합니다. 일시정지(timeScale 0) 동안은 세지 않습니다.
+    /// </summary>
+    private void Update()
+    {
+        if (Instance != this || !IsInitialized || IsGameOver || IsGameClear || Time.timeScale <= 0f) return;
+        PlayTime += Time.unscaledDeltaTime;
+    }
+
+    /// <summary>
     /// UIManager의 전투 시작 요청을 PhaseSystem에 전달하며, 전환 가능 여부는 PhaseSystem이 판단합니다.
     /// </summary>
     public void StartCombatPhase()
     {
-        if (IsInitialized && !IsGameOver) _phaseSystem.StartCombatPhase();
+        if (IsInitialized && !IsGameOver && !IsGameClear) _phaseSystem.StartCombatPhase();
     }
 
     /// <summary>
@@ -85,7 +101,7 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void HandlePhaseChanged(PhaseState phase)
     {
-        if (!IsInitialized || IsGameOver) return;
+        if (!IsInitialized || IsGameOver || IsGameClear) return;
         if (phase == PhaseState.Preparation) ShopManager.Instance?.BeginPreparation();
         OnPhaseChanged?.Invoke(phase);
     }
@@ -95,11 +111,23 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void GameOver()
     {
-        if (IsGameOver) return;
+        if (IsGameOver || IsGameClear) return;
 
         IsGameOver = true;
         Debug.Log("[GameManager] Game Over 확정: OnGameOver 통지", this);
         OnGameOver?.Invoke();
+    }
+
+    /// <summary>
+    /// PhaseSystem이 마지막 Wave 완료를 보고하면 게임 클리어를 한 번만 알립니다. UIManager가 결산 창을 표시합니다.
+    /// </summary>
+    public void GameClear()
+    {
+        if (!IsInitialized || IsGameOver || IsGameClear) return;
+
+        IsGameClear = true;
+        Debug.Log($"[GameManager] Game Clear 확정: 플레이 시간 {PlayTime:0.0}초", this);
+        OnGameClear?.Invoke();
     }
 
     /// <summary>

@@ -201,8 +201,8 @@ namespace UJam.EditorTools
             var enemyHost = new GameObject("Tenacity target"); enemyHost.SetActive(false);
             enemyHost.AddComponent<EnemyStatus>().ConfigureSpawnStats(1000, 0, 0);
             var enemy = enemyHost.AddComponent<MeleeEnemy>(); enemyHost.SetActive(true); enemy.PrepareForTesting(null);
-            for (int i = 0; i < 4; i++) Shoot(player, enemy);
-            Require(ItemScreenVfx.GetActive(tenacity) == null, "Tenacity played before its fifth hit.");
+            for (int i = 0; i < 3; i++) Shoot(player, enemy);
+            Require(ItemScreenVfx.GetActive(tenacity) == null, "Tenacity played before its fourth hit.");
             Shoot(player, enemy); var tenacityFx = CheckCanvas(tenacity);
             Require(Near(BuffManager.Instance.Percent(player, BuffStat.AttackSpeed), 10), "Tenacity did not grant attack speed.");
             yield return new WaitForSeconds(.4f);
@@ -212,7 +212,7 @@ namespace UJam.EditorTools
             Require(ItemScreenVfx.GetActive(tenacity) == tenacityFx && Near(BuffManager.Instance.Percent(player, BuffStat.AttackSpeed), 10), "Tenacity refresh did not renew its lifetime.");
             yield return new WaitForSeconds(.4f);
             Require(tenacityFx != null && ItemScreenVfx.GetActive(tenacity) == null, "Tenacity must expire and retain its layer after its refreshed duration.");
-            for (int i = 0; i < 4; i++) Shoot(player, enemy);
+            for (int i = 0; i < 3; i++) Shoot(player, enemy);
             Shoot(player, null); Shoot(player, enemy);
             Require(ItemScreenVfx.GetActive(tenacity) == null, "Tenacity miss did not reset its streak.");
             inventory.TryRemove("17"); Object.Destroy(enemyHost);

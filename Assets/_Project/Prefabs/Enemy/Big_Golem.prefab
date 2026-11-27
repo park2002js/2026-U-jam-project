@@ -3268,8 +3268,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _enemyName: Big Golem
   _credits: 300
-  _maxHealth: 500
-  _speed: 0.5
+  _maxHealth: 100
+  _speed: 0.4
   _attackDamage: 30
   _attackSpeed: 1
   _attackRange: 1

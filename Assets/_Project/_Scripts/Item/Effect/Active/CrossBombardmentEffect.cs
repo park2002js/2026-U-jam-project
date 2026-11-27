@@ -16,6 +16,7 @@ namespace Ujam.Runtime.Item
             this.impactSpeed = impactSpeed; this.impactLifetime = impactLifetime; this.spawnHeight = spawnHeight;
         }
         public override void Execute(ItemUseContext c) => c.Run(HorizontalBombardmentEffect.Bombard(c, thickness, length, true,
-            delay, damagePercent, fallDuration, sweepDuration, incomingSpeed, impactSpeed, impactLifetime, spawnHeight));
+            delay, damagePercent, fallDuration, sweepDuration, incomingSpeed, impactSpeed, impactLifetime, spawnHeight,
+            GetClip("MissileImpact"), GetClip("MissileExplosion")));
     }
 }

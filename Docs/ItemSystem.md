@@ -1,14 +1,14 @@
 # 아이템 시스템
 
-CSV 30개 항목을 `ItemCatalog → Item → ItemRuntime → 전용 Effect` 구조로 구현했다.
-액티브 15개, 패시브 15개이며 아이템 ID는 CSV의 문자열 `"1"`부터 `"30"`까지다.
+아이템은 `ItemCatalog → Item → ItemRuntime → 전용 Effect` 구조를 사용한다.
+카탈로그에 액티브 14개, 패시브 15개가 등록되어 있다. 기존 CSV ID를 사용하며 ID 10 파도는 진열과 아이템 목록에서 제외한다.
 아이템 코드의 네임스페이스는 `Ujam.Runtime.Item`이다.
 
 ## 전체 흐름
 
 ```mermaid
 flowchart TD
-    Catalog["ItemCatalog.cs<br/>30개 정의 · 수치 조정 · ID 조회"]
+    Catalog["ItemCatalog.cs<br/>29개 정의 · 수치 조정 · ID 조회"]
     Meta["ItemMeta<br/>이름 · 태그 · 가격 · 등급<br/>쿨타임 · Preview · 아이콘"]
     Owned["Item<br/>ID + Meta + Runtime"]
     Inventory["PlayerInventory.TryAdd<br/>구매와 테스트 공통 장착"]
@@ -90,18 +90,22 @@ inventory.TryRemove("11");                    // 해제 + 보유 목록에서 �
 실제 파일 위치는 `Assets/_Project/Resources/Audio/Item/<ID>/`이며 폴더가 없거나 클립이 없으면 `clips`는 null이다.
 Effect도 아이템 복사본 사이에서 공유하므로 클립 로딩은 정의 생성 시 한 번만 실행된다. Catalog 전체 초기화는 메인 스레드의 로딩 단계에서 수행한다.
 
-재생 시점과 파일명은 각 Effect가 정한다. 현재는 로딩만 연결했으며 실제 재생 호출은 추가하지 않았다.
+재생 시점과 파일명은 각 Effect가 정한다. 파일을 교체할 때는 같은 이름을 쓰거나 Effect의 `GetClip` 호출을 수정한다.
 아래는 Effect 내부에서 사용할 호출 예시다. `GetClip`은 파일명(확장자 제외)이 없거나 `clips`가 null이면 null을 반환한다.
 
 ```csharp
-SFXManager.Instance.Play(GetClip("Cast"));
-SFXManager.Instance.PlayAt(GetClip("Impact"), context.Position);
+SFXManager.Instance?.Play(GetClip("FireballCast"));
+SFXManager.Instance?.PlayAt(GetClip("FireballImpact"), context.Position);
 ```
 
 공통 API의 네임스페이스는 `UJam.Runtime.Systems`이며 UI와 적 코드에서도 같은 API를 사용한다.
 `Play`는 2D OneShot으로, `PlayAt`은 요청한 월드 위치의 독립 AudioSource로 재생한다. 동일 클립과 동일 위치의 연속 호출도 모두 중첩한다.
 null 클립은 호출 파일·함수·줄 번호를 Warning으로 기록하고 재생하지 않는다.
 `_MainScene`의 PlayerTurret 프리팹에 Manager와 2D AudioSource가 있으며, 위치 재생기는 터렛의 이동에 영향받지 않도록 월드에 따로 생성되고 종료 시 정리된다.
+
+화염구·미끼덫은 발사 또는 낙하 시작과 지면 도달 시점, 약화·안개·중력장은 장판 생성 시점, 낙뢰는 예열과 피해 시점에 재생한다.
+가로·십자 폭격은 미사일마다 착탄음을 내고 동시 폭발 때 폭발음을 한 번 낸다. 아드레날린·긴급 수리·리저렉션은 효과 발동 시 재생한다.
+구매 성공과 웨이브 시작·클리어는 `Resources/Audio/Game`의 음원을 사용한다. 타이틀과 레벨 선택은 메뉴곡을, 메인 씬은 정비·전투에 맞는 곡을 별도 AudioSource에서 반복 재생한다.
 
 검증 메뉴는 `Tools/Audio/Check SFX`, 배치 진입점은 `UJam.EditorTools.SfxChecks.RunBatch`다. 결과는 `Library/SfxChecks.json`에 기록된다.
 
@@ -147,7 +151,7 @@ Preview 위치는 대상에 따라 마우스의 지면 위치 또는 플레이�
 Effect의 `PreviewRadiusCells`는 사용하지 않는다.
 
 현재 Catalog 초기값은 기존 전투 씬의 칸 크기 2에 맞춘 월드 표시 크기다.
-화염구는 12, 약화·안개·중력장·낙뢰·돌풍은 8, 냉각은 4, 파도는 X=10/Z=2다.
+화염구는 12, 약화·안개·중력장·낙뢰·돌풍은 8, 냉각은 4다.
 Effect의 실제 판정 반경·폭은 계속 칸 단위이므로 Grid 크기나 판정 수치를 바꿀 때는 Preview 값도 함께 조정한다.
 Preview 방향 설정은 실제 판정 방향을 바꾸지 않는다.
 연결된 Item VFX는 같은 Preview 방향을 사용한다.
@@ -451,7 +455,7 @@ Burn은 POLYGON의 작은 불 프리팹을 복제해 Polygon Arsenal의 유효�
 Shock은 POLYGON `FX_Electricity_01`을 복제한 짧은 보라색 Trail을 몸통 표면에서 회전시키며,
 작은 Noise와 빠른 소멸로 불규칙한 전기 스파크를 만든다. Blood는 지속 방출을 보완했고 패키지 원본은 수정하지 않았다.
 
-## 구현된 30개 아이템
+## 등록된 29개 아이템
 
 | ID | 이름 | 핵심 수치/동작 |
 |---|---|---|
@@ -464,7 +468,6 @@ Shock은 POLYGON `FX_Electricity_01`을 복제한 짧은 보라색 Trail을 몸�
 | 7 | 냉각 | 반경 1, 1초 뒤 경직 1초 + 빙결 |
 | 8 | 가로 폭격 | 필드 전체 가로·폭 3칸, 2초 뒤 150% |
 | 9 | 십자 폭격 | 10×3칸 가로/세로, 2초 뒤 각각 120%, 교차점 2회 |
-| 10 | 파도 | 5×1 판정, 10초간 +Z로 10칸, 0.2초 주기, 0.5칸 밀기 + 빙결 |
 | 11 | 낙뢰 | 반경 2, 1초 뒤 전격 폭발 + 200% + 감전 |
 | 12 | 돌풍 | 반경 2에 바람 |
 | 13 | 아드레날린 | 5초간 공격력/공격속도 +10% |
@@ -496,7 +499,6 @@ Shock은 POLYGON `FX_Electricity_01`을 복제한 짧은 보라색 Trail을 몸�
 
 - 가격/이미지가 없어서 가격은 등급 × 100으로 보충했고, 아이콘은 현재 번호 확인용 임시 이미지로 연결했다.
 - 은화살의 추가 피해량은 미기재이므로 100%, 미끼 도발 반경은 Dummy Prefab에서 월드 6(기본 그리드 3칸)으로 지정했다.
-- 파도는 비고의 5×1 판정을 적용하고 대상란의 세로 10칸을 전체 이동 거리로 사용했다.
 - 생명력 전환은 설명·비고에 따라 최대체력 자체를 줄이지 않고 현재체력을 지불한다. 지불로 사망할 수 있다.
 - 가시 탄환의 발동 효과란에 적힌 전류는 이름·설명에 따라 출혈로 해석했다.
 - 광전사의 분노는 효과란의 단계당 4%를 사용한다. 체력 비율은 직접 비교해 60% 등의 경계 오차를 피한다. 공격력·최대체력은 올림하고 공격속도는 소수 정밀도를 유지한다.

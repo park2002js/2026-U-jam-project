@@ -6,7 +6,7 @@ using UnityEngine;
 /*
 보유하기 시작한 Item들에게는 필요한 동작을 할 수 있도록 Equip함수를 호출해주며, 
 ItemList가 변경되는 API가 호출되는 즉시, 그 결과를 반영할 수 있도록 Event를 발생시켜 UI쪽이 ID를 전달받아 업데이트 할 수 있도록 한다.
-List는 기본값으로 8칸을 보유하며, 게임이 시작될 때 자체적으로 해당 칸 크기만큼 초기화 된다.
+List는 기본값으로 12칸을 보유하며, 게임이 시작될 때 자체적으로 해당 칸 크기만큼 초기화 된다.
 플레이어에게 보이는 "칸과 슬롯"은 PlayerInventory에서는 관리하지 않는다. 
 PlayerInventory는 말 그대로 보유한 아이템들의 ID 정보를 다루는 것이 주 목적이며, 
 그것이 어디에 위치하는지, 어떤 스킬 칸에 존재하는지는 상관 쓰지 않는다.
@@ -24,7 +24,7 @@ namespace UJam.Runtime.Player
         [SerializeField] private PlayerStatus _playerStatus;
         [SerializeField] private PlayerCombatManager _combatManager;
         [SerializeField] private PlayerSkillManager _skillManager;
-        [SerializeField, Min(1)] private int _slotCount = 8; // 플레이어가 보유할 수 있는 기본 아이템 슬롯 크기
+        [SerializeField, Min(1)] private int _slotCount = 12; // 플레이어가 보유할 수 있는 기본 아이템 슬롯 크기
         private readonly List<string> itemIds = new(); // 플레이어가 보유한 아이템 ID를 저장할 List
         private ItemEquipment equipment; // 보유하는 아이템들의 상태를 관리하는 객체
         private bool changing; // 동시에 ItemList를 변경하려는 요청이 들어왔을 때, 원자성을 보장하기 위한 변수
@@ -100,6 +100,42 @@ namespace UJam.Runtime.Player
                 return true;
             }
             finally { changing = false; }
+        }
+
+        /// <summary>
+        /// 액티브 아이템인데 스킬칸이 모두 차 있어, 구매하려면 기존 스킬칸 아이템과 교체해야 하는지 확인한다.
+        /// </summary>
+        public bool NeedsSkillReplacement(string id)
+        {
+            InitializeSlots();
+            ItemMeta meta = ItemCatalog.GetMeta(ItemCatalog.Normalize(id));
+            if (meta == null || meta.Kind != ItemKind.Active || !ResolvePlayer() || _skillManager == null) return false;
+            return _skillManager.EmptySlots == 0;
+        }
+
+        /// <summary>
+        /// 지정한 스킬칸에 장착된 아이템을 보유 목록에서 제거하고, 새 아이템을 추가해 같은 스킬칸에 장착한다.
+        /// 새 아이템 추가에 실패하면 제거했던 아이템을 되돌린다.
+        /// </summary>
+        public bool TryReplaceSkill(int skillSlot, string newId, out string removedId)
+        {
+            removedId = null;
+            InitializeSlots();
+            if (changing || !isActiveAndEnabled || !ResolvePlayer() || _skillManager == null) return false;
+
+            Item old = _skillManager.GetSkill(skillSlot);
+            if (old == null) return TryAdd(newId); // 그 사이 칸이 비었다면 그냥 추가한다.
+
+            int index = itemIds.IndexOf(old.ID);
+            if (index < 0 || !RemoveAt(index)) return false;
+            if (TryAdd(newId))
+            {
+                removedId = old.ID;
+                return true;
+            }
+
+            TryAdd(old.ID); // 교체 실패 시 원래 아이템을 복구한다.
+            return false;
         }
 
         /// <summary>전달받은 ID의 칸을 찾아 아이템 하나를 제거한다.</summary>

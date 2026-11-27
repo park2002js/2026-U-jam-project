@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb2acf4afa54afc49b94d5dea920dc98, type: 3}
+  m_Name: SoundBalance
+  m_EditorClassIdentifier: 
+  _entries:
+  - clip: {fileID: 8300000, guid: 60ea0fa6b9b44c3b949808d3412397b8, type: 3}
+    gain: 0.561
+  - clip: {fileID: 8300000, guid: 09242905dff54cbc95e31ab5aec548ea, type: 3}
+    gain: 0.933
+  - clip: {fileID: 8300000, guid: 059ae33512f340a9a4aac52576645079, type: 3}
+    gain: 0.395
+  - clip: {fileID: 8300000, guid: 7ba5c3a861b0473a8ee99a94eb46b503, type: 3}
+    gain: 1
+  - clip: {fileID: 8300000, guid: d7805e836029486f8c1047f8c17c12a7, type: 3}
+    gain: 1
+  - clip: {fileID: 8300000, guid: 50f6b005ea374712b5f6ee77d4754465, type: 3}
+    gain: 0.522
+  - clip: {fileID: 8300000, guid: fa63c78e42a44000bfb0a68fcf40011f, type: 3}
+    gain: 1
+  - clip: {fileID: 8300000, guid: 39dea1a48ef1488e8fad172474c8f4c8, type: 3}
+    gain: 1
+  - clip: {fileID: 8300000, guid: f47c635096d2425fa0a88cc2ce26f508, type: 3}
+    gain: 0.388
+  - clip: {fileID: 8300000, guid: 1653fbd6429f4b3088227d1b656c6334, type: 3}
+    gain: 0.98
+  - clip: {fileID: 8300000, guid: 0c3ee2487b8040e1bf862c4af08eedba, type: 3}
+    gain: 0.941
+  - clip: {fileID: 8300000, guid: bf9b69d334d64abfae26a37118f9f5a1, type: 3}
+    gain: 0.263
+  - clip: {fileID: 8300000, guid: f4a76174fafb4a7a8c35546aaeea5225, type: 3}
+    gain: 1
+  - clip: {fileID: 8300000, guid: 77ced27b9a6747fdba95b2e9dc9ec127, type: 3}
+    gain: 0.516
+  - clip: {fileID: 8300000, guid: 808826e4bcc240b894424b8c42cdda60, type: 3}
+    gain: 0.531
+  - clip: {fileID: 8300000, guid: 41d02bc7b7134c5e80d9b36651fb4e52, type: 3}
+    gain: 0.506
+  - clip: {fileID: 8300000, guid: 68667869ea304b9689b2119942d39894, type: 3}
+    gain: 1
+  - clip: {fileID: 8300000, guid: c4c2b03818ac4d96bf95ff5d510649bb, type: 3}
+    gain: 0.405
+  - clip: {fileID: 8300000, guid: 02f01ac3234649878b4cb0a4a27f11a4, type: 3}
+    gain: 0.282
+  - clip: {fileID: 8300000, guid: 2899e6bc854f458dac884870597b2d1e, type: 3}
+    gain: 1
+  - clip: {fileID: 8300000, guid: 1192a2a42d8c4086a630c1ad74ce2d00, type: 3}
+    gain: 0.282
+  - clip: {fileID: 8300000, guid: 3220260823cb41519c184761e19858d2, type: 3}
+    gain: 1

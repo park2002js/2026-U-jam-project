@@ -1,11 +1,14 @@
 {
   "enemies": [
     {
-      "prefabName": "Witch",
+      "prefabName": "Golem",
       "statusSettings": [
         {
           "spawns": [
-            { "x": 1, "z": 1, "waitTime": 1 }
+            { "x": 3, "z": 12, "waitTime": 0 },
+            { "x": 11, "z": 12, "waitTime": 0 },
+            { "x": 4, "z": 12, "waitTime": 10 },
+            { "x": 10, "z": 12, "waitTime": 10 }
           ]
         }
       ]
@@ -15,7 +18,40 @@
       "statusSettings": [
         {
           "spawns": [
-            { "x": 3, "z": 3, "waitTime": 1 }
+            { "x": 7, "z": 11, "waitTime": 0 },
+            { "x": 5, "z": 11, "waitTime": 2 },
+            { "x": 9, "z": 11, "waitTime": 2 },
+            { "x": 2, "z": 11, "waitTime": 16 },
+            { "x": 7, "z": 11, "waitTime": 16 },
+            { "x": 12, "z": 11, "waitTime": 16 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Rollbug",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 2, "z": 12, "waitTime": 4 },
+            { "x": 12, "z": 12, "waitTime": 4 },
+            { "x": 6, "z": 12, "waitTime": 14 },
+            { "x": 8, "z": 12, "waitTime": 14 },
+            { "x": 1, "z": 12, "waitTime": 22 },
+            { "x": 13, "z": 12, "waitTime": 22 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Slime",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 4, "z": 13, "waitTime": 6 },
+            { "x": 10, "z": 13, "waitTime": 6 },
+            { "x": 5, "z": 13, "waitTime": 18 },
+            { "x": 9, "z": 13, "waitTime": 18 }
           ]
         }
       ]
@@ -25,17 +61,11 @@
       "statusSettings": [
         {
           "spawns": [
-            { "x": 7, "z": 7, "waitTime": 1 }
-          ]
-        }
-      ]
-    },
-    {
-      "prefabName": "Witch",
-      "statusSettings": [
-        {
-          "spawns": [
-            { "x": 10, "z": 10, "waitTime": 1 }
+            { "x": 1, "z": 11, "waitTime": 8 },
+            { "x": 7, "z": 11, "waitTime": 8 },
+            { "x": 13, "z": 11, "waitTime": 8 },
+            { "x": 4, "z": 11, "waitTime": 20 },
+            { "x": 10, "z": 11, "waitTime": 20 }
           ]
         }
       ]
@@ -45,7 +75,18 @@
       "statusSettings": [
         {
           "spawns": [
-            { "x": 10, "z": 5, "waitTime": 2 }
+            { "x": 7, "z": 13, "waitTime": 10 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Witch",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 3, "z": 13, "waitTime": 12 },
+            { "x": 11, "z": 13, "waitTime": 12 }
           ]
         }
       ]

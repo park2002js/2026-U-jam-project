@@ -78,7 +78,8 @@ namespace UJam.EditorTools
         private static void CheckSceneAndItems()
         {
             Require(ClipsField != null, "ItemEffect must retain its loaded clips.");
-            Require(ItemCatalog.IDs.Count() == 30, "Expected all 30 item definitions.");
+            Require(ItemCatalog.IDs.Count() == 29 && ItemCatalog.GetMeta("10") == null,
+                "Expected 29 registered items with Wave excluded.");
             foreach (string id in ItemCatalog.IDs)
             {
                 Item first = ItemCatalog.Create(id), second = ItemCatalog.Create(id);
@@ -88,7 +89,19 @@ namespace UJam.EditorTools
                     id + ": constructor clips differ from its Resources folder, or an empty folder did not leave clips null.");
                 Require(ReferenceEquals(first.Runtime.Effect, second.Runtime.Effect), id + ": item copies must share Effect clip data.");
             }
-            Passed("All 30 item definitions retain expected clips (null when absent); item copies share their Effect.");
+            Passed("All 29 item definitions retain expected clips (null when absent); item copies share their Effect.");
+
+            foreach (string path in new[]
+            {
+                "Game/ShopPurchase", "Game/WaveStart", "Game/WaveClear",
+                "Item/2/FireballCast", "Item/2/FireballImpact", "Item/3/WeakenCreate",
+                "Item/4/FogCreate", "Item/5/GravityFieldCreate", "Item/6/DecoyDrop", "Item/6/DecoyLand",
+                "Item/8/MissileImpact", "Item/8/MissileExplosion", "Item/9/MissileImpact", "Item/9/MissileExplosion",
+                "Item/11/LightningWarmup", "Item/11/LightningStrike", "Item/13/Adrenaline", "Item/14/Repair",
+                "Item/25/Resurrection"
+            })
+                Require(Resources.Load<AudioClip>("Audio/" + path) != null, "Missing assigned sound: " + path);
+            Passed("All assigned item and gameplay sound effects load.");
 
             Scene scene = SceneManager.GetSceneByPath(MainScene);
             bool opened = !scene.isLoaded;
@@ -101,9 +114,39 @@ namespace UJam.EditorTools
                     "The main-scene SFXManager must belong to PlayerTurret.");
                 Require(scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<AudioListener>(true)).Count() == 1,
                     "The main scene must retain one AudioListener.");
-                Passed("_MainScene has one SFXManager under PlayerTurret and one AudioListener.");
+                CheckMusic(managers[0].GetComponent<BackgroundMusic>(), "Preparation", "Combat");
+                Passed("_MainScene has SFX and preparation/combat music on PlayerTurret, and one AudioListener.");
             }
             finally { if (opened) EditorSceneManager.CloseScene(scene, true); }
+
+            foreach (string name in new[] { "_TitleScene", "_LevelSelectScene" })
+            {
+                string path = $"Assets/_Project/Scenes/{name}.unity";
+                scene = SceneManager.GetSceneByPath(path);
+                opened = !scene.isLoaded;
+                if (opened) scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Additive);
+                try
+                {
+                    var listener = scene.GetRootGameObjects()
+                        .SelectMany(root => root.GetComponentsInChildren<AudioListener>(true)).Single();
+                    CheckMusic(listener.GetComponent<BackgroundMusic>(), "Menu", null);
+                }
+                finally { if (opened) EditorSceneManager.CloseScene(scene, true); }
+            }
+            Passed("Title and level select scenes have the menu track on their camera.");
+        }
+
+        private static void CheckMusic(BackgroundMusic music, string idle, string combat)
+        {
+            Require(music != null, "Missing BackgroundMusic for " + idle);
+            var settings = new SerializedObject(music);
+            var idleTrack = settings.FindProperty("idleTrack").objectReferenceValue as AudioClip;
+            var combatTrack = settings.FindProperty("combatTrack").objectReferenceValue as AudioClip;
+            Require(idleTrack != null && idleTrack.name == idle && idleTrack.loadType == AudioClipLoadType.Streaming,
+                "Incorrect idle music: " + idle);
+            Require(combat == null ? combatTrack == null :
+                combatTrack != null && combatTrack.name == combat && combatTrack.loadType == AudioClipLoadType.Streaming,
+                "Incorrect combat music for " + idle);
         }
 
         private static void Update()

@@ -33,19 +33,18 @@ namespace UJam.EditorTools
 
         private static void CheckMetadata()
         {
-            string[] aimingItems = { "1", "2", "3", "4", "5", "7", "10", "11", "12" };
-            Require(ItemCatalog.IDs.Count() == 30, "Catalog must retain all 30 item definitions.");
+            string[] aimingItems = { "1", "2", "3", "4", "5", "7", "11", "12" };
+            Require(ItemCatalog.IDs.Count() == 29 && ItemCatalog.GetMeta("10") == null,
+                "Expected 29 registered items with Wave excluded.");
             foreach (string id in ItemCatalog.IDs)
             {
                 ItemMeta meta = ItemCatalog.GetMeta(id);
-                ItemPreviewType expected = id == "10" ? ItemPreviewType.Rectangle :
-                    aimingItems.Contains(id) ? ItemPreviewType.Circle : ItemPreviewType.None;
+                ItemPreviewType expected = aimingItems.Contains(id) ? ItemPreviewType.Circle : ItemPreviewType.None;
                 Require(meta.Preview.Type == expected && Near(meta.Preview.Direction, Vector3.forward),
                     "Catalog Preview migration changed the cast shape or default direction for item " + id);
             }
-            Require(Near(ItemCatalog.GetMeta("11").Preview.Scale, new Vector2(8, 8)) &&
-                    Near(ItemCatalog.GetMeta("10").Preview.Scale, new Vector2(10, 2)),
-                "Catalog scale migration must preserve current circle and rectangle footprints.");
+            Require(Near(ItemCatalog.GetMeta("11").Preview.Scale, new Vector2(8, 8)),
+                "Catalog scale migration must preserve the Lightning circle footprint.");
             var uniform = new ItemPreview(ItemPreviewType.Circle, 3);
             var rectangle = new ItemPreview(ItemPreviewType.Rectangle, 2, 5, new Vector3(20, 7, 0));
             Require(Near(uniform.Scale, new Vector2(3, 3)) && Near(uniform.Direction, Vector3.forward),

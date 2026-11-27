@@ -11,6 +11,9 @@ namespace UJam.Runtime.Systems
     public sealed class SFXManager : MonoBehaviour
     {
         public static SFXManager Instance { get; private set; }
+        // 카메라(AudioListener)에서 전장까지 약 27~52 거리이므로, 전장 안의 3D 효과음이 2D 효과음과 비슷한 크기로 들리도록
+        // 이 거리 안에서는 감쇠하지 않는다(좌우 위치감은 유지).
+        [SerializeField, Min(.01f)] private float spatialMinDistance = 50f;
         private AudioSource source;
         private readonly List<AudioSource> spatialSources = new();
 
@@ -29,6 +32,15 @@ namespace UJam.Runtime.Systems
             source.playOnAwake = false;
             source.loop = false;
             source.spatialBlend = 0f;
+
+            // 설정창의 효과음 볼륨. PlayAt의 3D 효과음도 source.volume을 기준으로 재생한다.
+            ApplyVolume();
+            GameAudioSettings.Changed += ApplyVolume;
+        }
+
+        private void ApplyVolume()
+        {
+            if (source != null) source.volume = GameAudioSettings.SfxVolume;
         }
 
         /// <summary>위치에 관계없는 2D 효과음. 같은 클립의 연속 요청도 기존 소리 위에 겹쳐 재생한다.</summary>
@@ -37,7 +49,8 @@ namespace UJam.Runtime.Systems
         {
             if (!HasClip(clip, caller, file, line)) return;
 
-            source.PlayOneShot(clip);
+            // 클립마다 원본 음량이 달라 SoundBalance 배율로 서로 비슷한 크기로 맞춘다.
+            source.PlayOneShot(clip, SoundBalance.Gain(clip));
         }
 
         /// <summary>요청한 월드 위치에서 독립 재생한다. 호출자나 PlayerTurret이 움직여도 발음 위치를 유지한다.</summary>
@@ -52,8 +65,9 @@ namespace UJam.Runtime.Systems
             spatial.playOnAwake = false;
             spatial.clip = clip;
             spatial.spatialBlend = 1f;
+            spatial.minDistance = spatialMinDistance;
             spatial.dopplerLevel = 0f;
-            spatial.volume = source.volume;
+            spatial.volume = source.volume * SoundBalance.Gain(clip);
             spatial.outputAudioMixerGroup = source.outputAudioMixerGroup;
             spatialSources.Add(spatial);
             spatial.Play();
@@ -82,6 +96,7 @@ namespace UJam.Runtime.Systems
 
         private void OnDestroy()
         {
+            GameAudioSettings.Changed -= ApplyVolume;
             if (Instance == this) Instance = null;
             if (source != null) source.Stop();
             foreach (var spatial in spatialSources)

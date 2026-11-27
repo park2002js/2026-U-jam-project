@@ -69,6 +69,7 @@ namespace UJam.Runtime.UI
 
             _gameManager.OnPhaseChanged += HandlePhaseChanged;
             _gameManager.OnGameOver += RefreshCursor;
+            _gameManager.OnGameClear += RefreshCursor;
             RefreshCursor();
         }
 
@@ -81,6 +82,7 @@ namespace UJam.Runtime.UI
             {
                 _gameManager.OnPhaseChanged -= HandlePhaseChanged;
                 _gameManager.OnGameOver -= RefreshCursor;
+                _gameManager.OnGameClear -= RefreshCursor;
                 _gameManager = null;
             }
             Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
@@ -130,7 +132,7 @@ namespace UJam.Runtime.UI
             }
 
             if (_gameManager == null) return;
-            bool isCombat = !_gameManager.IsGameOver && _gameManager.CurrentPhase == PhaseState.Combat;
+            bool isCombat = !_gameManager.IsGameOver && !_gameManager.IsGameClear && _gameManager.CurrentPhase == PhaseState.Combat;
             Texture2D texture = isCombat ? _combatCursor : _preparationCursor;
             Vector2 hotspot = texture != null ? new Vector2(texture.width / 2f, texture.height / 2f) : Vector2.zero;
             Cursor.SetCursor(texture, hotspot, CursorMode.Auto);

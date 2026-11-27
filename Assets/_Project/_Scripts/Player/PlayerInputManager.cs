@@ -20,6 +20,9 @@ namespace UJam.Runtime.Player
             //     return;
             // }
 
+            // 설정창이 열려 게임이 멈춘 동안에는 사격·스킬 입력을 받지 않는다.
+            if (Time.timeScale <= 0f || UJam.Runtime.UI.UISettingsPanel.AnyOpen) return;
+
             // 마우스 '우'클릭 시 Shooting 발동
             if (Input.GetMouseButtonDown(1))
             {
@@ -33,17 +36,17 @@ namespace UJam.Runtime.Player
                 }
             }
 
-            // 키보드 'D' 키를 누를 시 1번 슬롯의 스킬 발동
-            if (Input.GetKeyDown(KeyCode.D))
+            // 숫자키 1~5(키패드 포함)를 누르면 각각 1~5번 스킬칸의 스킬 발동
+            for (int i = 0; i < SkillKeys.Length; i++)
             {
-                _playerCombatSystem.Skill1();
-            }
-
-            // 키보드 'F' 키를 누를 시 2번 슬롯의 스킬 발동
-            if (Input.GetKeyDown(KeyCode.F))
-            {
-                _playerCombatSystem.Skill2();
+                if (Input.GetKeyDown(SkillKeys[i]) || Input.GetKeyDown(SkillKeypadKeys[i]))
+                {
+                    _playerCombatSystem.UseSkill(i);
+                }
             }
         }
+
+        private static readonly KeyCode[] SkillKeys = { KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.Alpha4, KeyCode.Alpha5 };
+        private static readonly KeyCode[] SkillKeypadKeys = { KeyCode.Keypad1, KeyCode.Keypad2, KeyCode.Keypad3, KeyCode.Keypad4, KeyCode.Keypad5 };
     }
 }

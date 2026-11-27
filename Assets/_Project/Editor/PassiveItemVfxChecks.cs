@@ -216,9 +216,9 @@ namespace UJam.EditorTools
             report.items.Add(entry);
             MeleeEnemy target = Enemy(Vector3.zero), other = Enemy(Vector3.right * 6);
             float hp = target.Status.HP;
-            for (int i = 0; i < 4; i++) Shoot(player, target);
+            for (int i = 0; i < 3; i++) Shoot(player, target);
             yield return null;
-            Require(Live(item).Length == 0 && Near(target.Status.HP, hp), "SilverArrow activated before the fifth consecutive hit.");
+            Require(Live(item).Length == 0 && Near(target.Status.HP, hp), "SilverArrow activated before the fourth consecutive hit.");
             Shoot(player, target);
             Require(Near(hp - target.Status.HP, player.AttackDamage), "SilverArrow bonus damage was not applied immediately.");
             yield return WaitVisuals(item, 1);
@@ -227,12 +227,12 @@ namespace UJam.EditorTools
             yield return CheckExpiry(item, entry);
 
             hp = target.Status.HP;
-            for (int i = 0; i < 4; i++) Shoot(player, target);
+            for (int i = 0; i < 3; i++) Shoot(player, target);
             Shoot(player, null);
             Shoot(player, target);
             yield return null;
             Require(Live(item).Length == 0 && Near(target.Status.HP, hp), "SilverArrow did not reset on a miss.");
-            for (int i = 0; i < 3; i++) Shoot(player, target);
+            for (int i = 0; i < 2; i++) Shoot(player, target);
             float otherHp = other.Status.HP;
             Shoot(player, other);
             Shoot(player, target);
@@ -245,7 +245,7 @@ namespace UJam.EditorTools
             Item lethal = Equip("16", player);
             var victim = Enemy(new Vector3(10, 0, 0), 1);
             Vector3 deathPoint = victim.transform.position;
-            for (int i = 0; i < 5; i++) Shoot(player, victim);
+            for (int i = 0; i < 4; i++) Shoot(player, victim);
             Require(victim.Status.HP <= 0, "SilverArrow lethal bonus did not kill its target.");
             yield return WaitVisuals(lethal, 1);
             yield return new WaitForSeconds(.6f);
@@ -270,7 +270,7 @@ namespace UJam.EditorTools
             Require(Live(item).Length == 0 && Near(a.Status.HP, hp), "Overload activated before the fifth skill use.");
             SkillCast cast = player.BeginSkill(active);
             HitSkill(player, active, cast, a, b);
-            Require(Near(hp - a.Status.HP, player.AttackDamage) && Near(otherHp - b.Status.HP, player.AttackDamage),
+            Require(Near(hp - a.Status.HP, player.AttackDamage * 2f) && Near(otherHp - b.Status.HP, player.AttackDamage * 2f),
                 "Overload bonus damage was not applied per enemy.");
             Require(ElementManager.Instance.TryGet(a, ElementType.Shock, out _) && ElementManager.Instance.TryGet(b, ElementType.Shock, out _),
                 "Overload did not apply Shock.");
@@ -306,7 +306,7 @@ namespace UJam.EditorTools
             yield return null;
             Require(player.GetCount(item) == 3 && Live(item).Length == 0, "CorpseExplosion activated before the fourth real kill.");
             Kill(player, point);
-            Require(player.GetCount(item) == 0 && Near(hp - inside.Status.HP, player.AttackDamage) && Near(outside.Status.HP, outsideHp),
+            Require(player.GetCount(item) == 0 && Near(hp - inside.Status.HP, player.AttackDamage * 3f) && Near(outside.Status.HP, outsideHp),
                 "CorpseExplosion counter, damage or AoE boundary failed.");
             yield return WaitVisuals(item, 1);
             CheckVisuals(item, 4, point);

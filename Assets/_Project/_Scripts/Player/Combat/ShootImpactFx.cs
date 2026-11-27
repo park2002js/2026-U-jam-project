@@ -59,7 +59,9 @@ namespace UJam.Runtime.Player
 
             AudioSource source = obj.AddComponent<AudioSource>();
             source.clip = clip;
-            source.volume = _volume;
+            source.volume = _volume * UJam.Runtime.Systems.SoundBalance.Gain(clip) * UJam.Runtime.Systems.GameAudioSettings.SfxVolume;
+            // 카메라가 전장에서 약 27~52 떨어져 있으므로 SFXManager의 3D 효과음과 같은 감쇠 거리를 쓴다.
+            source.minDistance = 50f;
             // 피치를 조금씩 바꿔 반복 재생할 때 단조롭지 않게 함
             source.pitch = Random.Range(_pitchRange.x, _pitchRange.y);
             source.spatialBlend = _spatialBlend;

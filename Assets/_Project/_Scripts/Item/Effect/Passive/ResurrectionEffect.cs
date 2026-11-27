@@ -1,3 +1,5 @@
+using UJam.Runtime.Systems;
+
 namespace Ujam.Runtime.Item
 {
     /// <summary>리저렉션: 사망 직전 피해를 한 번 막고 회복한 후 이 아이템 개체를 소모한다.</summary>
@@ -13,6 +15,7 @@ namespace Ujam.Runtime.Item
 
             c.Signal.DeathPrevented = true;
             ItemScreenVfx.Play(c);
+            SFXManager.Instance?.Play(GetClip("Resurrection"));
 
             c.Item.Consume();
         }

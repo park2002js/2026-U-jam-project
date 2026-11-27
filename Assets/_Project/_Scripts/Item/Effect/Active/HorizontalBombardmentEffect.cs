@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UJam.Runtime.Enemy;
 using UJam.Runtime.Grid;
+using UJam.Runtime.Systems;
 using UnityEngine;
 
 namespace Ujam.Runtime.Item
@@ -20,21 +21,24 @@ namespace Ujam.Runtime.Item
             this.impactSpeed = impactSpeed; this.impactLifetime = impactLifetime; this.spawnHeight = spawnHeight;
         }
         public override void Execute(ItemUseContext c) => c.Run(Bombard(c, thickness, 0, false, delay, damagePercent,
-            fallDuration, sweepDuration, incomingSpeed, impactSpeed, impactLifetime, spawnHeight));
+            fallDuration, sweepDuration, incomingSpeed, impactSpeed, impactLifetime, spawnHeight,
+            GetClip("MissileImpact"), GetClip("MissileExplosion")));
 
         internal static IEnumerator Bombard(ItemUseContext c, float thickness, float length, bool cross, float delay, float damagePercent,
-            float fallDuration, float sweepDuration, float incomingSpeed, float impactSpeed, float impactLifetime, float spawnHeight)
+            float fallDuration, float sweepDuration, float incomingSpeed, float impactSpeed, float impactLifetime, float spawnHeight,
+            AudioClip landingSound, AudioClip explosionSound)
         {
             float castAt = Time.time;
             var areas = Areas(c.Position, thickness, length, cross, c.Item.Meta.Preview.Direction);
             ItemBombardmentVfx visual = null;
             yield return ItemBombardmentVfx.Create(c, value => visual = value);
             if (!c.Item.IsEquipped) yield break;
-            if (visual != null) visual.Begin(areas, spawnHeight, fallDuration, sweepDuration, incomingSpeed);
+            if (visual != null) visual.Begin(areas, spawnHeight, fallDuration, sweepDuration, incomingSpeed, landingSound);
             float remaining = delay - (Time.time - castAt);
             if (remaining > 0) yield return new WaitForSeconds(remaining);
             if (!c.Item.IsEquipped) yield break;
             if (visual != null) visual.Impact(impactSpeed, impactLifetime);
+            SFXManager.Instance?.PlayAt(explosionSound, areas[0].Center);
             var hits = new HashSet<EnemyBase>();
             foreach (var area in areas)
             {

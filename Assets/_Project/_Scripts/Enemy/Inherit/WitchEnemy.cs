@@ -8,6 +8,8 @@ namespace UJam.Runtime.Enemy
         [SerializeField] private SkeletonEnemy _skeletonPrefab;
         [SerializeField, Min(0.1f)] private float _summonInterval = 10f;
         [SerializeField, Min(0f)] private float _summonOffset = 1.5f;
+        [SerializeField, Min(-1f), Tooltip("등장 후 첫 소환까지의 시간(초). 음수면 소환 주기와 같습니다. 이후에는 소환 주기마다 소환합니다.")]
+        private float _firstSummonDelay = -1f;
         private float _nextSummon;
         private bool _started;
         private bool _summoned;
@@ -28,7 +30,7 @@ namespace UJam.Runtime.Enemy
         {
             if (_started) return;
             _started = true;
-            _nextSummon = Time.time + _summonInterval;
+            _nextSummon = Time.time + (_firstSummonDelay >= 0f ? _firstSummonDelay : _summonInterval);
         }
 
         public override bool TrySummon()

@@ -48,14 +48,14 @@ namespace UJam.Editor
 
         private static readonly Spec[] Specs =
         {
-            new Spec("Golem", "Golem", typeof(MeleeEnemy), .5f, 1, 1, 20, 200, 100, 18, new Vector3(4, 3.608423f, 4)),
-            new Spec("Big_Golem", "Golem", typeof(MeleeEnemy), .5f, 1, 1, 30, 500, 300, 18, new Vector3(5, 5.112474f, 5)),
-            new Spec("Eyebeast", "Eyebeast", typeof(RangedEnemy), .5f, 3, 1, 80, 120, 100, 15, new Vector3(2.399289f, 2.754892f, 2.142080f)),
-            new Spec("Sniper_Eyebeast", "Eyebeast", typeof(SniperEnemy), .5f, 5, .8f, 100, 100, 150, 30, new Vector3(2.399289f, 2.754892f, 2.142080f)),
-            new Spec("Witch", "Witch", typeof(WitchEnemy), .5f, 2, 1, 50, 150, 200, 33, new Vector3(2.021932f, 4.119852f, 2.441023f)),
-            new Spec("Skeleton", "Skeleton", typeof(SkeletonEnemy), 1, 1, 2, 80, 80, 20, 12, new Vector3(1.160144f, 2.747421f, 2.044519f)),
-            new Spec("Slime", "Slime", typeof(SlimeEnemy), .4f, 1, 1, 80, 150, 200, 27, new Vector3(3, 2.775f, 3)),
-            new Spec("Rollbug", "RollBug", typeof(RollbugEnemy), 2, .5f, 0, 200, 20, 500, -1, new Vector3(1.44f, 2, 1.977733f))
+            new Spec("Golem", "Golem", typeof(MeleeEnemy), .5f, 1, 1, 20, 70, 100, 18, new Vector3(4, 3.608423f, 4)),
+            new Spec("Big_Golem", "Golem", typeof(MeleeEnemy), .5f, 1, 1, 30, 100, 300, 18, new Vector3(5, 5.112474f, 5)),
+            new Spec("Eyebeast", "Eyebeast", typeof(RangedEnemy), .5f, 3, 1, 80, 50, 100, 15, new Vector3(2.399289f, 2.754892f, 2.142080f)),
+            new Spec("Sniper_Eyebeast", "Eyebeast", typeof(SniperEnemy), .5f, 5, .8f, 100, 45, 150, 30, new Vector3(2.399289f, 2.754892f, 2.142080f)),
+            new Spec("Witch", "Witch", typeof(WitchEnemy), .5f, 2, 1, 50, 55, 200, 33, new Vector3(2.021932f, 4.119852f, 2.441023f)),
+            new Spec("Skeleton", "Skeleton", typeof(SkeletonEnemy), 1, 1, 2, 80, 40, 20, 12, new Vector3(1.160144f, 2.747421f, 2.044519f)),
+            new Spec("Slime", "Slime", typeof(SlimeEnemy), .4f, 1, 1, 80, 60, 200, 27, new Vector3(3, 2.775f, 3)),
+            new Spec("Rollbug", "RollBug", typeof(RollbugEnemy), 2, .5f, 0, 200, 30, 500, -1, new Vector3(1.44f, 2, 1.977733f))
         };
 
         [Serializable]

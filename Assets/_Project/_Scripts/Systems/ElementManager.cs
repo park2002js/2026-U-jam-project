@@ -28,12 +28,12 @@ namespace UJam.Runtime.Systems
     {
         public static ElementManager Instance { get; private set; } = new();
         public float Duration { get; set; } = 5f;
-        public float BurnAttackPercent { get; set; } = 111f;
+        public float BurnAttackPercent { get; set; } = 40f;
         public float BurnInterval { get; set; } = 1f;
         public float FreezePercent { get; set; } = 10f;
         public float ShockPercent { get; set; } = 10f;
-        public int BleedThreshold { get; set; } = 5;
-        public float BleedMaxHealthPercent { get; set; } = 5f;
+        public int BleedThreshold { get; set; } = 3;
+        public float BleedMaxHealthPercent { get; set; } = 15f;
         public float BleedDamageCap { get; set; } = 1000f;
         private readonly Dictionary<(EnemyBase Enemy, ElementType Type), ElementState> states = new();
 

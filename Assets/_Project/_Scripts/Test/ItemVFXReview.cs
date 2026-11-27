@@ -381,17 +381,20 @@ namespace UJam.Runtime.Test
         private void DrawIDs(int first, int last, string title)
         {
             GUILayout.Label(title, small);
+            int shown = 0;
             for (int id = first; id <= last; id++)
             {
-                if ((id - first) % 5 == 0) GUILayout.BeginHorizontal();
                 string key = id.ToString();
+                if (ItemCatalog.GetMeta(key) == null) continue;
+                if (shown % 5 == 0) GUILayout.BeginHorizontal();
                 Color previous = GUI.backgroundColor;
                 if (id >= 16 && owned.ContainsKey(key)) GUI.backgroundColor = new Color(.35f, .95f, .65f);
                 else if (selected != null && selected.ID == key) GUI.backgroundColor = new Color(1, .8f, .25f);
                 if (GUILayout.Button(key, GUILayout.Height(32))) SelectItem(key);
                 GUI.backgroundColor = previous;
-                if ((id - first) % 5 == 4 || id == last) GUILayout.EndHorizontal();
+                if (++shown % 5 == 0) GUILayout.EndHorizontal();
             }
+            if (shown % 5 != 0) GUILayout.EndHorizontal();
         }
 
         private void DrawScreenReview()
@@ -688,7 +691,7 @@ namespace UJam.Runtime.Test
                 yield return new WaitForSeconds(1.2f);
                 Require(target.Status.HP < hp && ElementManager.Instance.TryGet(target, ElementType.Shock, out _), "Lightning did not damage/shock a real dummy.");
                 review.SelectItem("10");
-                Require(review.preview == review.rectangle && review.preview.transform.localScale == new Vector3(10, 1, 2), "Rectangle metadata was not applied.");
+                Require(!review.owned.ContainsKey("10") && !review.armed && review.preview == null, "Unregistered Wave must not equip or enter aiming.");
                 review.SelectItem("6");
                 Require(review.armed && review.preview == null, "None must aim without a Preview in this placement test.");
                 Require(review.ConfirmTarget(point), "Decoy cast rejected.");

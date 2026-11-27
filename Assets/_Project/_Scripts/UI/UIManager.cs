@@ -40,6 +40,10 @@ namespace UJam.Runtime.UI
         private UIVisibility _gameOver = new UIVisibility();
         [SerializeField, Tooltip("결과 화면 표현이 필요하면 연결합니다. 게임 오버 패널을 Game Over의 Show에 직접 넣어도 됩니다.")]
         private UIGameOver _gameOverView;
+        [SerializeField, Tooltip("모든 Wave를 클리어했을 때 켜거나 끌 UI입니다. Phase 표시보다 우선합니다.")]
+        private UIVisibility _gameClear = new UIVisibility();
+        [SerializeField, Tooltip("모든 Wave 클리어 시 결산 창을 표시할 UIGameResult입니다.")]
+        private UIGameResult _gameClearView;
 
         private GameManager _gameManager;
 
@@ -62,7 +66,9 @@ namespace UJam.Runtime.UI
 
             _gameManager.OnPhaseChanged += HandlePhaseChanged;
             _gameManager.OnGameOver += HandleGameOver;
+            _gameManager.OnGameClear += HandleGameClear;
             if (_gameManager.IsGameOver) HandleGameOver();
+            else if (_gameManager.IsGameClear) HandleGameClear();
             else HandlePhaseChanged(_gameManager.CurrentPhase);
         }
 
@@ -74,6 +80,7 @@ namespace UJam.Runtime.UI
             if (_gameManager == null) return;
             _gameManager.OnPhaseChanged -= HandlePhaseChanged;
             _gameManager.OnGameOver -= HandleGameOver;
+            _gameManager.OnGameClear -= HandleGameClear;
             _gameManager = null;
         }
 
@@ -82,7 +89,7 @@ namespace UJam.Runtime.UI
         /// </summary>
         private void HandlePhaseChanged(PhaseState phase)
         {
-            if (_gameManager == null || _gameManager.IsGameOver) return;
+            if (_gameManager == null || _gameManager.IsGameOver || _gameManager.IsGameClear) return;
             if (phase == PhaseState.Preparation) _preparation.Apply();
             else if (phase == PhaseState.Combat) _combat.Apply();
         }
@@ -95,6 +102,17 @@ namespace UJam.Runtime.UI
             Debug.Log("[UIManager] Game Over 신호 수신", this);
             _gameOver.Apply();
             if (_gameOverView != null) _gameOverView.DefeatGame();
+        }
+
+        /// <summary>
+        /// GameManager의 게임 클리어 알림에 맞춰 UI를 전환하고 UIGameResult에 결산 창 표시를 요청합니다.
+        /// </summary>
+        private void HandleGameClear()
+        {
+            Debug.Log("[UIManager] Game Clear 신호 수신", this);
+            _gameClear.Apply();
+            if (_gameClearView != null) _gameClearView.ShowClear();
+            else Debug.LogWarning("[UIManager] 결산 창(UIGameResult)이 연결되지 않았습니다.", this);
         }
 
         /// <summary>

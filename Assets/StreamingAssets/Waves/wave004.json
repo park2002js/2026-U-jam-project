@@ -1,0 +1,108 @@
+{
+  "enemies": [
+    {
+      "prefabName": "Golem",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 2, "z": 12, "waitTime": 0 },
+            { "x": 7, "z": 12, "waitTime": 0 },
+            { "x": 12, "z": 12, "waitTime": 0 },
+            { "x": 4, "z": 12, "waitTime": 1.5 },
+            { "x": 10, "z": 12, "waitTime": 1.5 },
+            { "x": 5, "z": 12, "waitTime": 15.5 },
+            { "x": 9, "z": 12, "waitTime": 15.5 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Eyebeast",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 3, "z": 11, "waitTime": 3 },
+            { "x": 6, "z": 11, "waitTime": 3 },
+            { "x": 9, "z": 11, "waitTime": 3 },
+            { "x": 12, "z": 11, "waitTime": 3 },
+            { "x": 2, "z": 11, "waitTime": 15.5 },
+            { "x": 12, "z": 11, "waitTime": 15.5 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Rollbug",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 1, "z": 12, "waitTime": 5 },
+            { "x": 8, "z": 12, "waitTime": 5 },
+            { "x": 14, "z": 12, "waitTime": 5 },
+            { "x": 3, "z": 12, "waitTime": 14 },
+            { "x": 11, "z": 12, "waitTime": 14 },
+            { "x": 2, "z": 12, "waitTime": 21 },
+            { "x": 6, "z": 12, "waitTime": 21 },
+            { "x": 8, "z": 12, "waitTime": 21 },
+            { "x": 12, "z": 12, "waitTime": 21 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Big_Golem",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 4, "z": 13, "waitTime": 7 },
+            { "x": 10, "z": 13, "waitTime": 7 },
+            { "x": 7, "z": 13, "waitTime": 19 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Sniper_Eyebeast",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 2, "z": 11, "waitTime": 8.5 },
+            { "x": 7, "z": 11, "waitTime": 8.5 },
+            { "x": 12, "z": 11, "waitTime": 8.5 },
+            { "x": 4, "z": 11, "waitTime": 17 },
+            { "x": 10, "z": 11, "waitTime": 17 },
+            { "x": 1, "z": 11, "waitTime": 23 },
+            { "x": 13, "z": 11, "waitTime": 23 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Slime",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 5, "z": 13, "waitTime": 10 },
+            { "x": 9, "z": 13, "waitTime": 10 },
+            { "x": 3, "z": 13, "waitTime": 19 },
+            { "x": 11, "z": 13, "waitTime": 19 }
+          ]
+        }
+      ]
+    },
+    {
+      "prefabName": "Witch",
+      "statusSettings": [
+        {
+          "spawns": [
+            { "x": 1, "z": 13, "waitTime": 12 },
+            { "x": 7, "z": 13, "waitTime": 12 },
+            { "x": 13, "z": 13, "waitTime": 12 },
+            { "x": 4, "z": 13, "waitTime": 23 },
+            { "x": 10, "z": 13, "waitTime": 23 }
+          ]
+        }
+      ]
+    }
+  ]
+}

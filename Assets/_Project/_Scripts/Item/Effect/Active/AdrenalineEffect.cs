@@ -14,6 +14,7 @@ namespace Ujam.Runtime.Item
             BuffManager.Instance.SetTimed(c.Player, c.Item, BuffStat.AttackDamage, attack, duration);
             BuffManager.Instance.SetTimed(c.Player, c.Item, BuffStat.AttackSpeed, speed, duration);
             ItemScreenVfx.Play(c);
+            SFXManager.Instance?.Play(GetClip("Adrenaline"));
         }
         public override void OnUnequip(ItemUseContext c) => ItemScreenVfx.Stop(c.Item);
     }

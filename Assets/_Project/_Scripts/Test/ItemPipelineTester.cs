@@ -16,7 +16,7 @@ namespace Ujam.Runtime.Item
     {
         [SerializeField] private PlayerInventory inventory;
         [UnityEngine.Serialization.FormerlySerializedAs("itemGuids")]
-        [SerializeField] private List<string> itemIds = new() { "11", "20" };
+        [SerializeField] private List<string> itemIds = new();
         [SerializeField] private bool equipOnStart = true;
         private void Start() { if (equipOnStart) EquipItems(); }
 
@@ -49,8 +49,9 @@ namespace Ujam.Runtime.Item
         [ContextMenu("Check item contracts")]
         public void CheckContracts()
         {
-            Assert.AreEqual(30, ItemCatalog.IDs.Count());
-            Assert.AreEqual(15, ItemCatalog.IDs.Count(id => ItemCatalog.GetMeta(id).Kind == ItemKind.Active));
+            Assert.AreEqual(29, ItemCatalog.IDs.Count());
+            Assert.AreEqual(14, ItemCatalog.IDs.Count(id => ItemCatalog.GetMeta(id).Kind == ItemKind.Active));
+            Assert.IsNull(ItemCatalog.Create("Item_010"));
             var first = ItemCatalog.Create("11");
             var second = ItemCatalog.Create("Item011");
             Assert.AreEqual(first.Meta, second.Meta);
@@ -84,7 +85,7 @@ namespace Ujam.Runtime.Item
                 buffs.RemoveSource(b);
                 Assert.AreApproximatelyEqual(1f, buffs.Multiplier(player, BuffStat.AttackDamage));
             }
-            Debug.Log("30개 아이템 및 개체/이벤트/버프 계약 검사 통과.", this);
+            Debug.Log("29개 아이템 및 개체/이벤트/버프 계약 검사 통과.", this);
         }
     }
 }

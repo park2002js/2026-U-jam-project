@@ -86,6 +86,14 @@ namespace UJam.Runtime.Shop
 
         public bool BuyItem(int slot) => IsInitialized && shopBuy.BuyItem(slot, Wallet.Instance, playerInventory);
 
+        /// <summary>구매를 시도하고, 액티브 아이템인데 스킬칸이 가득 차 있으면 교체 선택이 필요하다고 알립니다.</summary>
+        public PurchaseResult TryBuy(int slot) =>
+            IsInitialized ? shopBuy.TryBuy(slot, Wallet.Instance, playerInventory) : PurchaseResult.Failed;
+
+        /// <summary>선택한 스킬칸의 아이템을 제거하고 그 자리에 상품을 장착합니다.</summary>
+        public bool BuyItemReplacing(int slot, int skillSlot) =>
+            IsInitialized && shopBuy.BuyItemReplacing(slot, skillSlot, Wallet.Instance, playerInventory);
+
 
         // ==========================
         // 조합

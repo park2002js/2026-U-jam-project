@@ -34,7 +34,8 @@ namespace UJam.Runtime.Enemy
                 SlimeEnemy child = Instantiate(_splitPrefab, position, _splitPrefab.transform.rotation, transform.parent);
                 child._canSplit = false;
                 child.transform.localScale = _splitPrefab.transform.localScale * 0.5f;
-                child.Status.ConfigureSpawnStats(75f, 40f, 0);
+                // 분열체 체력은 본체 최대 체력의 절반(본체 60 → 분열체 30, 평타 3방)으로 맞춘다.
+                child.Status.ConfigureSpawnStats(Mathf.Max(1f, Status.MaxHealth * 0.5f), 40f, 0);
                 if (WaveController.Instance != null) WaveController.Instance.RegisterAdditionalEnemy(child, this);
                 child.BeginCombat(target);
             }

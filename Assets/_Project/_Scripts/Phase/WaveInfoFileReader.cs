@@ -130,6 +130,14 @@ namespace UJam.Runtime.Phase
                     return null;
                 }
 
+                // Skeleton은 Witch의 소환으로만 등장해야 하므로 Wave 데이터의 직접 배치는 무시한다.
+                // (남은 적 수에도 포함하지 않아 Wave 완료 판정이 어긋나지 않는다.)
+                if (enemyPrefab.GetComponent<UJam.Runtime.Enemy.SkeletonEnemy>() != null)
+                {
+                    Debug.LogError($"[WaveInfoFileReader] {enemyJson.prefabName}은(는) Witch 소환으로만 등장합니다. Wave 데이터의 직접 배치를 무시합니다.");
+                    continue;
+                }
+
                 // 해당 Prefab의 각 Status 설정을 확인
                 foreach (StatusSettingJson statusSetting
                          in enemyJson.statusSettings)

@@ -281,12 +281,12 @@ namespace UJam.EditorTools
                 long goldBeforeChildren = rewardWallet.Gold;
                 foreach (SlimeEnemy child in children)
                 {
-                    Require(child.transform.localScale == Vector3.one * .5f && child.Status.HP == 75 &&
+                    Require(child.transform.localScale == Vector3.one * .5f && child.Status.HP == 30 &&
                         child.Status.OutgoingDamage == 40 && child.Status.Credits == 0, "Slime child stats or scale are wrong.");
                     int deathCount = 0;
                     int effectsBeforeDeath = child.GetComponent<EnemyVfx>().PlayedEffects;
                     child.Status.Died += () => deathCount++;
-                    Require(child.TakeDamage(new DamageInfo(1000)) == 75f &&
+                    Require(child.TakeDamage(new DamageInfo(1000)) == 30f &&
                             child.TakeDamage(new DamageInfo(1000)) == 0f && deathCount == 1,
                         "Slime child death was not applied exactly once.");
                     Require(child.GetComponent<EnemyVfx>().PlayedEffects == effectsBeforeDeath,

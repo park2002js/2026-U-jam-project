@@ -82,6 +82,15 @@ namespace UJam.Runtime.Player
             }
         }
 
+        /// <summary>숫자키 1~5가 0~4번 스킬 슬롯을 사용한다.</summary>
+        public void UseSkill(int slot)
+        {
+            if (_playerSkillManager != null)
+            {
+                _playerSkillManager.TryUse(slot);
+            }
+        }
+
         public void Skill1()
         {
             if (_playerSkillManager != null)

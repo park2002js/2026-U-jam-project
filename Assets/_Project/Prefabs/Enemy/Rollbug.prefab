@@ -100,7 +100,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _enemyName: Rollbug
   _credits: 500
-  _maxHealth: 20
+  _maxHealth: 30
   _speed: 10
   _attackDamage: 200
   _attackSpeed: 0

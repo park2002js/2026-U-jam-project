@@ -55,21 +55,22 @@ namespace Ujam.Runtime.Item
             loaded(visual);
         }
 
-        public void BeginIncoming(float height, float fallDuration, float playbackSpeed, float startDelay = 0)
+        public void BeginIncoming(float height, float fallDuration, float playbackSpeed, float startDelay = 0, Action onIncoming = null)
         {
             Positive(height, nameof(height));
             Positive(fallDuration, nameof(fallDuration));
             Positive(playbackSpeed, nameof(playbackSpeed));
             Positive(incomingScale, nameof(incomingScale));
             if (!float.IsFinite(startDelay) || startDelay < 0) throw new ArgumentOutOfRangeException(nameof(startDelay));
-            falling = StartCoroutine(Fall(height, fallDuration, playbackSpeed, startDelay));
+            falling = StartCoroutine(Fall(height, fallDuration, playbackSpeed, startDelay, onIncoming));
         }
 
-        private IEnumerator Fall(float height, float duration, float speed, float delay)
+        private IEnumerator Fall(float height, float duration, float speed, float delay, Action onIncoming)
         {
             if (delay > 0) yield return new WaitForSeconds(delay);
             Incoming = Instantiate(incomingPrefab, transform);
             Incoming.transform.localScale *= incomingScale;
+            onIncoming?.Invoke();
             if (incomingMotion == ItemIncomingMotion.CameraProjectile && viewCamera != null)
             {
                 yield return FlyFromCamera(height, duration, speed);

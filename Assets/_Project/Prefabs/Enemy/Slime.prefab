@@ -103,7 +103,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _enemyName: Slime
   _credits: 200
-  _maxHealth: 150
+  _maxHealth: 60
   _speed: 0.4
   _attackDamage: 80
   _attackSpeed: 1

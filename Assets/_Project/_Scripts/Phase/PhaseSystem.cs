@@ -110,11 +110,20 @@ namespace UJam.Runtime.Phase
 
         /// <summary>
         /// WaveController의 완료 보고를 받아 생존 적이 없는 전투를 정비 Phase로 전환합니다.
+        /// 마지막 Wave였다면 정비로 가지 않고 GameManager에 게임 클리어를 알립니다.
         /// </summary>
         internal void CompleteCombatPhase()
         {
             if (_remainingEnemyCount > 0 || (GameManager.Instance != null && GameManager.Instance.IsGameOver)) return;
-            if (_currentState == PhaseState.Combat) StartPreparationPhase();
+            if (_currentState != PhaseState.Combat) return;
+
+            if (_waveController != null && !_waveController.HasNextWave)
+            {
+                GameManager.Instance?.GameClear();
+                return;
+            }
+
+            StartPreparationPhase();
         }
 
         /// <summary>

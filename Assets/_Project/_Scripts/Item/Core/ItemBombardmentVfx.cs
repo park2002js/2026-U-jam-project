@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UJam.Runtime.Player;
+using UJam.Runtime.Systems;
 using UnityEngine;
 
 namespace Ujam.Runtime.Item
@@ -55,7 +56,8 @@ namespace Ujam.Runtime.Item
             loaded(visual);
         }
 
-        public void Begin(ItemBombardmentArea[] areas, float spawnHeight, float fallDuration, float sweepDuration, float incomingSpeed)
+        public void Begin(ItemBombardmentArea[] areas, float spawnHeight, float fallDuration, float sweepDuration, float incomingSpeed,
+            AudioClip landingSound)
         {
             if (areas == null || areas.Length == 0) throw new ArgumentException(nameof(areas));
             Positive(spawnHeight, nameof(spawnHeight)); Positive(fallDuration, nameof(fallDuration));
@@ -85,16 +87,18 @@ namespace Ujam.Runtime.Item
                         bombs.Add(null);
                     }
             }
-            incoming = StartCoroutine(Drop(spawnHeight, fallDuration, incomingSpeed));
+            incoming = StartCoroutine(Drop(spawnHeight, fallDuration, incomingSpeed, landingSound));
         }
 
-        private IEnumerator Drop(float height, float duration, float speed)
+        private IEnumerator Drop(float height, float duration, float speed, AudioClip landingSound)
         {
+            var landed = new bool[targets.Count];
             for (float elapsed = 0; ; elapsed += Time.deltaTime)
             {
                 bool done = true;
                 for (int i = 0; i < targets.Count; i++)
                 {
+                    if (landed[i]) continue;
                     if (elapsed < starts[i]) { done = false; continue; }
                     if (bombs[i] == null)
                     {
@@ -104,6 +108,11 @@ namespace Ujam.Runtime.Item
                     float t = Mathf.Clamp01((elapsed - starts[i]) / duration);
                     bombs[i].transform.position = targets[i] + Vector3.up * (height * (1 - t * t));
                     if (t < 1) done = false;
+                    else
+                    {
+                        landed[i] = true;
+                        SFXManager.Instance?.PlayAt(landingSound, targets[i]);
+                    }
                 }
                 if (done) yield break;
                 yield return null;

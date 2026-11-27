@@ -18,28 +18,16 @@ public class UILevelSelectManager : MonoBehaviour
     // 선택한 레벨의 씬으로 이동한다. None은 아무 동작도 하지 않는다.
     public void LevelSelect(Level level)
     {
-        string sceneName;
-        switch (level)
-        {
-            case Level.Level1:
-                sceneName = level1SceneName;
-                break;
-            case Level.Level2:
-                sceneName = level2SceneName;
-                break;
-            case Level.Level3:
-                sceneName = level3SceneName;
-                break;
-            default:
-                return;
-        }
+        string sceneName = GetSceneName(level);
+        if (sceneName == null) return;
 
-        if (string.IsNullOrWhiteSpace(sceneName))
+        if (!IsLevelAvailable(level))
         {
-            Debug.LogWarning($"{level}에 연결할 씬 이름을 지정해 주세요.", this);
+            Debug.LogWarning($"{level}에 연결할 씬 이름을 지정하고 Build Settings에 등록해 주세요. (현재: '{sceneName}')", this);
             return;
         }
 
+        Time.timeScale = 1f;
         SceneManager.LoadScene(sceneName);
     }
 
@@ -47,5 +35,28 @@ public class UILevelSelectManager : MonoBehaviour
     public void LevelSelect(int level)
     {
         LevelSelect((Level)level);
+    }
+
+    /// <summary>
+    /// 레벨에 연결된 씬이 Build Settings에 등록되어 실제로 불러올 수 있는지 확인합니다.
+    /// 불가능한 레벨은 레벨 선택 화면에서 잠김으로 표시됩니다.
+    /// </summary>
+    public bool IsLevelAvailable(Level level)
+    {
+        string sceneName = GetSceneName(level);
+        return !string.IsNullOrWhiteSpace(sceneName) && Application.CanStreamedLevelBeLoaded(sceneName);
+    }
+
+    public bool IsLevelAvailable(int level) => IsLevelAvailable((Level)level);
+
+    private string GetSceneName(Level level)
+    {
+        switch (level)
+        {
+            case Level.Level1: return level1SceneName ?? string.Empty;
+            case Level.Level2: return level2SceneName ?? string.Empty;
+            case Level.Level3: return level3SceneName ?? string.Empty;
+            default: return null;
+        }
     }
 }
