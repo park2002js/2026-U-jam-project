@@ -40,6 +40,7 @@ namespace UJam.EditorTools.LowPolyUI
             BuildTitleScene();
             ApplyMainScene();   // 프리팹 갱신으로 dirty가 된 메인 씬을 먼저 저장해야 테스트 씬을 열 수 있습니다.
             ApplyTestScenes();
+            ApplyResolutionDefaults();
             Debug.Log("[LowPolyUIBuilder] 전체 UI 구성 완료");
         }
 
@@ -691,6 +692,44 @@ namespace UJam.EditorTools.LowPolyUI
             }
             AssetDatabase.SaveAssets();
             Debug.Log("[LowPolyUIBuilder] 타이틀 + 레벨 선택 통합 완료");
+        }
+
+        // ================================================================== Resolution
+
+        /// <summary>
+        /// 1920x1080 기준을 프로젝트 전체에 맞춥니다.
+        /// - 타이틀 씬 캔버스: 메인 씬과 같은 '화면 크기에 맞춰 늘림, 기준 1920x1080, 가로 맞춤'
+        /// - 빌드 기본 해상도: 1920x1080 (모니터 원래 해상도 대신 1920x1080으로 실행, 전체 화면 창 모드 유지)
+        /// </summary>
+        [MenuItem("Tools/UJam/UI/9. Apply 1920x1080 Defaults", priority = 9)]
+        public static void ApplyResolutionDefaults()
+        {
+            PlayerSettings.defaultIsNativeResolution = false;
+            PlayerSettings.defaultScreenWidth = 1920;
+            PlayerSettings.defaultScreenHeight = 1080;
+            AssetDatabase.SaveAssets();
+
+            Scene active = SceneManager.GetActiveScene();
+            if (active.isDirty && active.path != TitleScenePath)
+            {
+                Debug.LogError($"[LowPolyUIBuilder] 현재 씬({active.path})에 저장되지 않은 변경이 있습니다. 저장 후 다시 실행하세요.");
+                return;
+            }
+            string returnTo = active.path;
+            Scene title = active.path == TitleScenePath ? active : EditorSceneManager.OpenScene(TitleScenePath, OpenSceneMode.Single);
+            foreach (CanvasScaler scaler in title.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<CanvasScaler>(true)))
+            {
+                if (!scaler.GetComponent<Canvas>().isRootCanvas) continue;
+                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scaler.referenceResolution = new Vector2(1920, 1080);
+                scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+                scaler.matchWidthOrHeight = 0f;
+                EditorUtility.SetDirty(scaler);
+            }
+            EditorSceneManager.MarkSceneDirty(title);
+            EditorSceneManager.SaveScene(title);
+            if (!string.IsNullOrEmpty(returnTo) && returnTo != TitleScenePath) EditorSceneManager.OpenScene(returnTo, OpenSceneMode.Single);
+            Debug.Log("[LowPolyUIBuilder] 1920x1080 기준 적용 완료(타이틀 캔버스 · 빌드 기본 해상도)");
         }
 
         // ================================================================== Settings + Game Over
